@@ -89,15 +89,55 @@ This document records the exact physical specifications, primary manufacturer so
 
 ---
 
+## Device 3: Samsung Galaxy Watch5 (40 mm)
+
+### 1. Model Identification
+- **Exact Generation & Model:** Samsung Galaxy Watch5 40 mm (Bluetooth SM-R900 / LTE SM-R905)
+- **Release Year:** August 2022
+- **Operating System:** Wear OS Powered by Samsung (One UI Watch)
+- **Primary Sources:**
+  - Samsung Official Business Specifications: [Samsung Galaxy Watch5 40mm Graphite](https://www.samsung.com/uk/watches/galaxy-watch/galaxy-watch5-40mm-graphite-bt-sm-r900nzaaeua/)
+  - Samsung Developer Documentation & Wear OS Specifications (396x396, 330 ppi, 28.7g).
+
+### 2. Specification Breakdown
+
+| Dimension / Property | Status | Value | Source / Confidence |
+| :--- | :--- | :--- | :--- |
+| **Case Dimensions (W x H x D)** | Confirmed Manufacturer Spec | 40.4 × 39.3 × 9.8 mm | Official Samsung specifications. Note: 9.8 mm depth excludes rear BioActive sensor glass protrusion. |
+| **Display Diameter** | Confirmed Manufacturer Spec | 1.2 inches (30.4 mm active diameter) | Official Samsung specifications. |
+| **Display Resolution** | Confirmed Manufacturer Spec | 396 × 396 pixels (~330 ppi) | Official Samsung specifications, Super AMOLED. |
+| **Case Material** | Confirmed Manufacturer Spec | Armor Aluminum (Graphite Black / Pink Gold / Silver) | Official Samsung specifications. |
+| **Front Glass Material** | Confirmed Manufacturer Spec | Sapphire Crystal (flat) | Official Samsung specifications. |
+| **Bezel / Rim Structure** | Estimated from Product Ref | ~2.3 mm border from active display to protective outer rim; raised aluminum lip (~0.26 mm) | Visual inspection of hardware & high-res product renders. Slim touch-bezel border. |
+| **Right Side Buttons** | Estimated from Product Ref | Two elongated pill buttons: Power/Home (top with red accent), Back button (bottom). | Product photographs & CAD specs. |
+| **Lugs & Strap** | Confirmed Manufacturer Spec | 20 mm standard lug width, integrated sculpted aluminum lugs. | Samsung strap compatibility guide. |
+
+### 3. Visual & Architectural Observations
+- **Case Silhouette:** Noticeably more compact than the 44 mm sibling ($40.4 \times 39.3\text{ mm}$ vs $44.4 \times 43.3\text{ mm}$). Proportionally tighter lug stance while retaining standard 20 mm strap gap.
+- **Display & Bezel:** 1.2" (30.4 mm) screen with $396 \times 396\text{ px}$. Flat sapphire crystal recessed slightly inside the micro-chamfered protective aluminum outer rim.
+- **Finish:** Matte Armor Aluminum with satin sheen.
+
+### 4. WearView 3D Modeling Approximation
+- In scene units ($1\text{ unit} = 1\text{ mm}$):
+  - Case radius: $R = 18.2\text{ mm}$ top rim, tapering to $17.4\text{ mm}$ base; width across bumpers $39.2\text{ mm}$; depth $9.8\text{ mm}$.
+  - Active screen radius: $R_{\text{screen}} = 15.2\text{ mm}$ (diameter $30.4\text{ mm}$).
+  - Display resolution: $396 \times 396\text{ px}$.
+  - Bezel ring: Inner radius $15.2\text{ mm}$, outer radius $17.5\text{ mm}$ ($2.3\text{ mm}$ slim touch border).
+  - Raised outer rim: Extruded aluminum ring raised $+0.26\text{ mm}$ above sapphire glass plane.
+  - Buttons: Flank at $+X$, Power button at $Z = -5.8\text{ mm}$ with red accent stripe, Back button at $Z = +5.8\text{ mm}$.
+  - Lugs: 20 mm gap ($10.0\text{ mm}$ half-width), extending North/South with downward curvature.
+
+---
+
 ## 5. Summary Comparison for 3D Modeling
 
-| Feature | Samsung Galaxy Watch5 (44 mm) | Google Pixel Watch (Gen 1, 41 mm) |
-| :--- | :--- | :--- |
-| **Overall Size** | Larger ($44.4 \times 43.3 \times 9.8\text{ mm}$) | Compact ($41.0 \times 41.0 \times 12.3\text{ mm}$) |
-| **Glass Top** | Flat sapphire crystal with raised aluminum bezel lip | Continuous 3D domed Corning Gorilla Glass 5 |
-| **Bezel Feel** | Protected sports watch with dark inner border and protective metal lip | Seamless glossy pebble with curved bezel following glass dome |
-| **Active Display** | $34.6\text{ mm}$ diameter ($1.4"$) | $33.0\text{ mm}$ calibrated diameter |
-| **Resolution** | $450 \times 450\text{ px}$ | $450 \times 450\text{ px}$ |
-| **Side Controls** | Two rectangular pill buttons at 2 and 4 o'clock | Rotating crown at 3 o'clock, flush button at 2 o'clock |
-| **Strap Mount** | Standard 20 mm sculpted lugs | Lugless internal slide-and-lock band mechanism |
-| **Primary Material** | Matte Armor Aluminum | Polished Stainless Steel & 3D Glass |
+| Feature | Samsung Galaxy Watch5 (44 mm) | Samsung Galaxy Watch5 (40 mm) | Google Pixel Watch (Gen 1, 41 mm) |
+| :--- | :--- | :--- | :--- |
+| **Overall Size** | Large ($44.4 \times 43.3 \times 9.8\text{ mm}$) | Compact ($40.4 \times 39.3 \times 9.8\text{ mm}$) | Compact ($41.0 \times 41.0 \times 12.3\text{ mm}$) |
+| **Glass Top** | Flat sapphire crystal with raised lip | Flat sapphire crystal with raised lip | Continuous 3D domed Corning Gorilla Glass 5 |
+| **Bezel Feel** | Protected sports watch ($4.4\text{ mm}$ border) | Slim sports watch ($2.3\text{ mm}$ border) | Seamless glossy pebble with curved dome bezel |
+| **Active Display** | $34.6\text{ mm}$ diameter ($1.4"$) | $30.4\text{ mm}$ diameter ($1.2"$) | $33.5\text{ mm}$ calibrated diameter |
+| **Resolution** | $450 \times 450\text{ px}$ | $396 \times 396\text{ px}$ | $450 \times 450\text{ px}$ |
+| **Side Controls** | Two pill buttons at 2 and 4 o'clock | Two pill buttons at 2 and 4 o'clock | Rotating crown at 3 o'clock, flush button at 2 o'clock |
+| **Strap Mount** | Standard 20 mm sculpted lugs | Standard 20 mm sculpted lugs | Lugless internal slide-and-lock band mechanism |
+| **Primary Material** | Matte Armor Aluminum | Matte Armor Aluminum | Polished Stainless Steel & 3D Glass |

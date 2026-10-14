@@ -20,16 +20,16 @@ export const PIXEL_WATCH_1_SPEC: DeviceSpec = {
     'Google Support Hardware Specifications (41 mm diameter, 12.3 mm height, 36g)',
     'iFixit Hardware Teardown (Custom 3D Corning Gorilla Glass 5, AMOLED)'
   ],
-  notes: 'First-generation 2022 model. Distinct continuous 3D domed pebble glass curving seamlessly into polished stainless steel bucket. Proportional sleek curved bezel beneath glass. Rotating crown at 3H, flush button at 2H. Lugless band attachment.'
+  notes: 'First-generation 2022 model. Distinct continuous 3D domed pebble glass curving seamlessly into polished stainless steel bucket. 100% solid watertight CAD chassis with zero see-through holes. Rotating crown at 3H, flush button at 2H. Lugless band attachment.'
 };
 
 /**
  * Builds high-fidelity procedural 3D model of Google Pixel Watch 1st gen (41 mm).
- * Features:
+ * 100% solid watertight CAD volume:
  * - Continuous 3D domed Corning Gorilla Glass 5 pebble
- * - Proportional 33.5 mm active display plateau
- * - Curvature-matched downward bezel substrate
- * - Mirror-polished stainless steel bottom bowl
+ * - Proportional 33.5 mm active display
+ * - Solid sealed black substrate floor under glass (zero see-through voids)
+ * - Closed watertight mirror-polished stainless steel bottom bucket
  * - Tactile fluted digital crown at 3H and flush side key at 2H
  */
 export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelResult {
@@ -42,8 +42,15 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   const apexY = 1.3;
   const equatorY = -1.4;
 
-  // 1. ACTIVE DISPLAY MESH
-  // Sits flat at the apex plateau of the dome
+  // 1. SOLID CHASSIS TOP SUBSTRATE (Seals the interior completely so it can NEVER be see-through)
+  const chassisSealGeom = new THREE.CircleGeometry(caseRadius, 96);
+  chassisSealGeom.rotateX(-Math.PI / 2);
+  const chassisSealMesh = new THREE.Mesh(chassisSealGeom, materials.bezelSubstrate);
+  chassisSealMesh.position.set(0, equatorY + 0.1, 0);
+  group.add(chassisSealMesh);
+
+  // 2. ACTIVE DISPLAY MESH
+  // Sits flat at the apex plateau of the dome at Y = apexY - 0.04
   const displayGeometry = new THREE.CircleGeometry(screenRadius, 96);
   displayGeometry.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeometry, materials.displayEmpty.clone());
@@ -52,20 +59,22 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   displayMesh.receiveShadow = false;
   group.add(displayMesh);
 
-  // 2. CURVED BEZEL SUBSTRATE (Glossy black OLED border flowing down with dome)
+  // 3. CURVED SOLID BEZEL SUBSTRATE (Glossy black OLED border flowing down to equator)
   const bezelPoints: THREE.Vector2[] = [];
   const bezelSteps = 24;
   for (let i = 0; i <= bezelSteps; i++) {
     const t = i / bezelSteps;
-    const r = screenRadius + t * (caseRadius - 0.15 - screenRadius);
+    const r = screenRadius + t * (caseRadius - 0.1 - screenRadius);
     const y = (apexY - 0.05) - Math.pow(t, 1.8) * (apexY - equatorY - 0.05);
     bezelPoints.push(new THREE.Vector2(r, y));
   }
+  // Connect to inner radius
+  bezelPoints.push(new THREE.Vector2(screenRadius, equatorY + 0.1));
   const bezelGeometry = new THREE.LatheGeometry(bezelPoints, 96);
   const bezelMesh = new THREE.Mesh(bezelGeometry, materials.bezelSubstrate);
   group.add(bezelMesh);
 
-  // 3. CONTINUOUS 3D DOMED PEBBLE GLASS
+  // 4. CONTINUOUS 3D DOMED PEBBLE GLASS
   // Custom 3D Corning Gorilla Glass 5 that rolls seamlessly down past the equator
   const domePoints: THREE.Vector2[] = [];
   const domeSteps = 36;
@@ -86,18 +95,20 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   glassMesh.receiveShadow = false;
   group.add(glassMesh);
 
-  // 4. POLISHED STAINLESS STEEL BOTTOM BOWL
+  // 5. WATERTIGHT POLISHED STAINLESS STEEL BOTTOM BOWL (Fully closed at r = 0)
   const bowlPoints: THREE.Vector2[] = [];
   const bowlSteps = 24;
-  const sensorDomeBaseY = -totalHeight + 2.5;
+  const sensorDomeBaseY = -totalHeight + 1.2;
 
+  // From equator (r = caseRadius, y = equatorY) curving down to center (r = 0)
   for (let i = 0; i <= bowlSteps; i++) {
     const t = i / bowlSteps;
-    const r = caseRadius * Math.cos(t * Math.PI * 0.35);
+    const r = caseRadius * Math.cos(t * Math.PI * 0.42);
     const y = equatorY - (t * (Math.abs(sensorDomeBaseY - equatorY)));
-    bowlPoints.push(new THREE.Vector2(Math.max(12.0, r), y));
+    bowlPoints.push(new THREE.Vector2(Math.max(0.001, r), y));
   }
-  bowlPoints.push(new THREE.Vector2(12.0, sensorDomeBaseY));
+  // Close completely at center axis
+  bowlPoints.push(new THREE.Vector2(0.001, sensorDomeBaseY));
 
   const bowlGeometry = new THREE.LatheGeometry(bowlPoints, 96);
   const bowlMesh = new THREE.Mesh(bowlGeometry, materials.caseStainlessSteel);
@@ -105,7 +116,7 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   bowlMesh.receiveShadow = true;
   group.add(bowlMesh);
 
-  // 5. REAR SENSOR DOME
+  // 6. REAR SENSOR DOME
   const sensorGeom = new THREE.SphereGeometry(12.0, 48, 20, 0, Math.PI * 2, 0, Math.PI * 0.35);
   sensorGeom.rotateX(Math.PI);
   const sensorMesh = new THREE.Mesh(sensorGeom, materials.sensorCeramic);
@@ -116,10 +127,10 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   const sensorWindowGeom = new THREE.CircleGeometry(3.5, 32);
   sensorWindowGeom.rotateX(Math.PI / 2);
   const sensorWindowMesh = new THREE.Mesh(sensorWindowGeom, materials.bezelSubstrate);
-  sensorWindowMesh.position.set(0, -totalHeight + 0.1, 0);
+  sensorWindowMesh.position.set(0, -totalHeight + 0.05, 0);
   group.add(sensorWindowMesh);
 
-  // 6. ROTATING DIGITAL CROWN (3 o'clock, +X at Z = 0)
+  // 7. ROTATING DIGITAL CROWN (3 o'clock, +X at Z = 0)
   const crownRadius = 2.3;
   const crownLength = 1.6;
   const crownGeom = new THREE.CylinderGeometry(crownRadius, crownRadius, crownLength, 32);
@@ -136,7 +147,7 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   crownCapMesh.position.set(caseRadius + crownLength - 0.2, equatorY + 0.2, 0);
   group.add(crownCapMesh);
 
-  // 7. FLUSH SIDE BUTTON (2 o'clock, +X at Z = -7.0 mm)
+  // 8. FLUSH SIDE BUTTON (2 o'clock, +X at Z = -7.0 mm)
   const buttonAngle = -0.38;
   const btnX = Math.cos(buttonAngle) * caseRadius;
   const btnZ = Math.sin(buttonAngle) * caseRadius;
@@ -146,7 +157,7 @@ export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelRes
   sideBtnMesh.rotation.y = -buttonAngle;
   group.add(sideBtnMesh);
 
-  // 8. LUGLESS BAND ATTACHMENT & STRAP (Curving naturally)
+  // 9. LUGLESS BAND ATTACHMENT & STRAP (Curving naturally)
   function createLuglessStrap(isNorth: boolean) {
     const sign = isNorth ? -1 : 1;
     const strapWidth = 19.5;

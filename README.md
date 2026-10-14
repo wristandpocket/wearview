@@ -10,16 +10,19 @@ WearView helps smartwatch developers inspect how game and interactive app screen
 
 - **Device-Specific 3D Geometry:**
   - **Samsung Galaxy Watch5 (44 mm):** Accurate squircle aluminum body ($44.4 \times 43.3 \times 9.8\text{ mm}$), flat sapphire crystal with protective raised aluminum rim, dual pill buttons, and 20 mm lugs.
-  - **Google Pixel Watch (1st gen, 41 mm, 2022):** Signature continuous 3D domed Corning Gorilla Glass 5 pebble profile, polished stainless steel bucket, rotating digital crown at 3 o'clock, flush button at 2 o'clock, and lugless strap channels.
+  - **Samsung Galaxy Watch5 (40 mm):** Compact aluminum chassis ($40.4 \times 39.3 \times 9.8\text{ mm}$), $1.2"$ active AMOLED ($30.4\text{ mm}$ diameter, $396 \times 396\text{ px}$), slim $2.3\text{ mm}$ touch-bezel border, micro-chamfered protective rim, and sculpted lugs.
+  - **Google Pixel Watch (1st gen, 41 mm, 2022):** Signature continuous 3D domed Corning Gorilla Glass 5 pebble profile, solid sealed substrate floor (zero inside-out void), closed watertight polished stainless steel bucket, rotating digital crown at 3 o'clock, flush button at 2 o'clock, and lugless strap channels.
 - **Accurate Display Mapping & Aspect Fit:**
   - Textures are clipped strictly to the active circular display surface without bleeding onto bezels or outer cases.
   - Centered aspect-ratio preserving `contain` fit for non-square screenshots.
-  - Correct Three.js `SRGBColorSpace` handling and emissive color fidelity.
-- **Interactive WebGL Controls:**
-  - Orbit rotation, smooth damping, bounded zoom limits, and one-click camera view reset.
+  - Native WebP, PNG, JPG, and JPEG support.
+  - Correct Three.js `SRGBColorSpace` handling and emissive color fidelity with zero glass bleaching.
+- **Interactive WebGL Controls & Macro-to-Life Zoom:**
+  - Orbit rotation, smooth damping, bounded pitch clamp ($0.1 \le \theta \le 0.58\pi$), and one-click camera view reset.
+  - Extended camera zoom ($15 - 450\text{ mm}$) allowing macro pixel inspection up to real-life size distance comparison.
 - **3 Dynamic Lighting Presets:**
-  - **Studio:** Balanced key/fill lighting with neutral reflections for crisp UI inspection.
-  - **Sunlight:** High-intensity warm directional light with specular highlights and contact shadows.
+  - **Studio:** Clean pure white studio environment (`#ffffff`) with dynamic HDR reflection mapping (`RoomEnvironment`) for realistic metallic sheen on Armor Aluminum and polished steel.
+  - **Sunlight:** High-intensity warm directional light ($3.4$) with crisp specular glint and contact shadows.
   - **Night:** Low-ambient atmosphere with cool cyan/violet rim accents while maintaining screen readability.
 - **Contextual Wrist View:**
   - Switch between isolated **Watch view** and **On wrist** view to judge device bulk and silhouette on an anatomical reference.
@@ -28,10 +31,13 @@ WearView helps smartwatch developers inspect how game and interactive app screen
 
 ---
 
-## Current Scope & Limitations
+## Current Scope & Hardware Accuracy
 
-- **MVP Devices:** Samsung Galaxy Watch5 (44 mm) and Google Pixel Watch (1st gen, 41 mm). Additional devices are planned for future releases.
-- **Monitor Scale Calibration:** True physical 1:1 on-screen monitor calibration (holding a physical reference card or ruler to the screen) is a post-MVP roadmap item. Internal scene units are strictly scaled ($1\text{ unit} = 1\text{ mm}$).
+- **Supported Devices:**
+  1. Samsung Galaxy Watch5 · 44 mm ($450 \times 450\text{ px}$, $34.6\text{ mm}$ display)
+  2. Samsung Galaxy Watch5 · 40 mm ($396 \times 396\text{ px}$, $30.4\text{ mm}$ display)
+  3. Google Pixel Watch · 1st gen · 41 mm ($450 \times 450\text{ px}$, $33.5\text{ mm}$ calibrated display)
+- **Physical Scale:** Internal 3D scene units are strictly scaled ($1\text{ unit} = 1\text{ mm}$). Camera distances ($15 - 450\text{ mm}$) allow matching real-world wrist proportions. Full monitor PPI calibration is a post-MVP roadmap item.
 
 ---
 
@@ -61,15 +67,15 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 # Type check TypeScript in strict mode
 npm run typecheck
 
-# Run Vitest unit tests (14 tests across image fit, validation, and device profiles)
+# Run Vitest unit tests (16 tests across image fit, validation, and device profiles)
 npm run test
 ```
 
-### Production Build
+### Production Build & Deployment
 ```bash
 npm run build
 ```
-The compiled static assets are output to `dist/`.
+The compiled static assets are output to `dist/`. The project includes an automated GitHub Actions deployment workflow (`.github/workflows/deploy.yml`) for publishing to GitHub Pages on `https://github.com/wristandpocket/wearview`.
 
 ---
 
