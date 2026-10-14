@@ -25,7 +25,6 @@ wearview/
 │   │   ├── types.ts         # DeviceSpec and DeviceModelResult interfaces
 │   │   ├── materials.ts     # PBR materials factory (aluminum, stainless steel, glass, strap)
 │   │   ├── galaxyWatch5.ts  # Samsung Galaxy Watch5 44 mm procedural geometry
-│   │   ├── galaxyWatch5_40mm.ts # Samsung Galaxy Watch5 40 mm procedural geometry
 │   │   ├── pixelWatch1.ts   # Google Pixel Watch 1st gen 41 mm procedural geometry
 │   │   └── index.ts         # Device catalogue registry & model factory dispatch
 │   ├── textures/            # Image validation, aspect-fit math, and texture loader
@@ -38,10 +37,10 @@ wearview/
 │   ├── viewer/              # Three.js scene, camera, lighting, and render loop
 │   │   └── ThreeViewer.ts   # WebGL renderer lifecycle, lights, shadow receiver, controls
 │   ├── components/          # React UI components
-│   │   ├── Header.tsx       # Brand, local-first indicator, device selector, reset camera
+│   │   ├── Header.tsx       # Brand, local-first indicator, 2-device selector, reset camera
 │   │   ├── ControlsBar.tsx  # Watch/Wrist toggle, Studio/Sunlight/Night, test pattern trigger
 │   │   ├── ScreenshotUploader.tsx # Drag-and-drop file picker, image metadata, replace/remove
-│   │   ├── DeviceSpecDrawer.tsx   # Verified physical specs and visual approximation notes
+│   │   ├── DeviceSpecDrawer.tsx   # Minimal hardware specs summary
 │   │   └── ViewportOverlay.tsx    # HUD badges, navigation cues, WebGL error fallback
 │   ├── styles/              # Design tokens and responsive dark studio CSS
 │   │   └── theme.css
@@ -67,29 +66,41 @@ wearview/
 ### Camera & Orbit Controls
 - **Default Framing:** Camera at $(12, 62, 32)$ looking at target $(0, -2, 0)$. This provides an elevated $3/4$ perspective showing the face, raised rim / domed glass, case profile, and side controls simultaneously.
 - **Constraints:**
-  - `minPolarAngle = 0.1` rad, `maxPolarAngle = 0.58 \pi` rad: Prevents camera from tumbling below the floor plane.
-  - `minDistance = 15` mm, `maxDistance = 450` mm: Extended zoom allows close-up macro pixel inspection down to 15 mm, and zooming out to 450 mm to compare with real-life physical scale on wrist at arm's length.
+  - `minPolarAngle = 0.05` rad, `maxPolarAngle = 0.49 * Math.PI` rad: Clamps camera elevation above the horizontal plane, preventing tumbling below the floor or inside the wrist.
+  - `minDistance = 28` mm, `maxDistance = 450` mm: Clamped min distance prevents clipping inside the watch interior, while max distance allows evaluating physical scale on the wrist at arm's length.
 
 ---
 
-## 4. Screenshot Mapping & Circular Display Masking
+## 4. Screenshot Mapping, Display Optics & Layering
 
 ### The Active Display Layer
-A common flaw in generic mockup tools is stretching rectangular textures across the entire watch front. WearView isolates the display:
+A common flaw in generic mockup tools is stretching rectangular textures across the entire watch front. WearView isolates the active display:
 1. **Geometric Screen Mask:** The display surface is a dedicated `CircleGeometry` sized to the exact physical active diameter of the selected device:
-   - **Galaxy Watch5 (44 mm):** $R = 17.3\text{ mm}$ ($34.6\text{ mm}$ diameter, $450 \times 450\text{ px}$, $321\text{ ppi}$).
-   - **Galaxy Watch5 (40 mm):** $R = 15.2\text{ mm}$ ($30.4\text{ mm}$ diameter, $396 \times 396\text{ px}$, $330\text{ ppi}$).
-   - **Pixel Watch (1st gen, 41 mm):** $R = 16.75\text{ mm}$ ($33.5\text{ mm}$ calibrated diameter, $450 \times 450\text{ px}$).
+   - **Samsung Galaxy Watch5 (44 mm):** $R = 17.3\text{ mm}$ ($34.6\text{ mm}$ diameter, $450 \times 450\text{ px}$, $321\text{ ppi}$).
+   - **Google Pixel Watch (1st gen, 41 mm):** $R = 16.75\text{ mm}$ ($33.5\text{ mm}$ calibrated diameter, $450 \times 450\text{ px}$, $320\text{ ppi}$).
 2. **Aspect Preservation (`contain` Fit):**
    - If an uploaded screenshot is square ($1:1$), it maps $1:1$ into the circular UV boundary.
    - If non-square (e.g. landscape or portrait), `calculateContainFit` centers the image on a neutral black background ($#000000$) without stretching.
    - Native WebP, PNG, JPG, and JPEG formats supported.
 3. **Color Space & Emissive Fidelity:**
    - Textures are tagged with `THREE.SRGBColorSpace`.
-   - The screen mesh uses `MeshBasicMaterial` with `toneMapped: true`. This ensures the developer's game UI colors match their source values without being washed out by scene lights.
-4. **Front Glass Crystal:**
-   - Positioned cleanly above the screen plane with `clearcoat: 1.0`, `roughness: 0.03`, and subtle `opacity: 0.06` with `depthWrite: false`.
-   - Zero transmission bleaching: preserves rich author contrast on white studio background.
+   - The screen mesh uses `MeshBasicMaterial` with `toneMapped: false`. This ensures the developer's game UI colors match their exact source RGB values without being washed out in Sunlight mode or dimmed to black in Night mode.
+4. **Front Glass Crystal & Optical Clarity:**
+   - Subtle Fresnel response: `clearcoat: 1.0`, `roughness: 0.03`, `metalness: 0`, and low opacity ($0.05 - 0.07$) with `transparent: true`, `depthWrite: false`.
+   - Zero transmission bleaching: avoids WebGL transmission blur and maintains rich author contrast across all lighting presets.
+
+### Calibrated Vertical Layer Offsets & Z-Fighting Elimination
+To eliminate flickering and depth-buffer fighting at grazing viewing angles, deterministic vertical offsets and explicit `renderOrder` values are enforced:
+- **Galaxy Watch5 (44 mm):**
+  - Case body top: $Y = 0.00\text{ mm}$
+  - Dark touch bezel ring: $Y = 0.03\text{ mm}$ (`renderOrder = 1`)
+  - Active display mesh: $Y = 0.04\text{ mm}$ (`renderOrder = 2`)
+  - Flat sapphire glass: $Y = 0.12\text{ mm}$ (`renderOrder = 10`)
+  - Protective outer armor aluminum rim: $Y = 0.32\text{ mm}$
+- **Pixel Watch (1st gen, 41 mm):**
+  - Watertight polished stainless steel lower chassis: $Y \le 0.00\text{ mm}$
+  - Active display mesh: $Y = 1.05\text{ mm}$ (`renderOrder = 2`)
+  - Continuous 3D domed Corning Gorilla Glass 5 crystal: Super-elliptical dome profile $y(r) = 2.4 \times (1 - (r/20.5)^2)^{0.46}$, providing $y \ge 1.48\text{ mm}$ at display edge ($r = 16.75\text{ mm}$). This ensures the flat screen mesh is completely and cleanly encapsulated beneath the dome with zero clipping. `renderOrder = 10`.
 
 ---
 
@@ -100,25 +111,28 @@ WearView implements 3 distinct lighting presets via `ThreeViewer.setLightingPres
    - Clean pure white studio background (`#ffffff`).
    - Dynamic equirectangular HDR environment (`RoomEnvironment` compiled via `PMREMGenerator`) providing natural specular reflections on Armor Aluminum and polished steel.
    - Balanced key ($0xffffff, 2.2$) and fill ($0xf1f5f9, 1.4$) lights with soft contact shadow plane.
-   - Designed for crisp, unbiased screen inspection.
+   - Glass opacity: $0.05$.
 2. **Sunlight:**
    - High-intensity warm directional sun ($0xfffaed, 3.4$) casting sharp contact shadows.
    - Cool sky ambient bounce ($0x93c5fd, 0.7$).
-   - Specular glint simulating outdoor high-glare conditions.
+   - Glass opacity: $0.07$ for subtle specular glint simulating outdoor conditions.
 3. **Night:**
    - Low ambient floor ($0xf8fafc, 0.4$).
    - Stylized dual rim lights: cool cyan ($0x38bdf8, 2.2$) and violet ($0xa855f7, 1.8$).
    - Emissive screen remains bright and inspectable, demonstrating high-contrast OLED visibility.
+   - Glass opacity: $0.05$.
 
 ---
 
 ## 6. Resource Lifecycle & Memory Discipline
 
-- **Texture Disposal:** Uploading a new image or removing an image invokes `disposeUploadedTexture`:
+- **Blob URL Lifecycle:** Temporary `ObjectURL` instances created during image uploads are revoked immediately inside `img.onload` (`URL.revokeObjectURL(objectUrl)`) once pixels are decoded into client canvas memory, preventing lingering blob references.
+- **Texture Disposal:** Uploading a new image or removing an image invokes texture cleanup:
   - Calls `texture.dispose()` to free GPU VRAM.
-  - Invokes `URL.revokeObjectURL()` to release client blob URLs.
-- **Geometry Disposal:** When switching devices, `viewer.loadDevice()` unregisters the existing model and iterates through all child meshes calling `geometry.dispose()`.
-- **Canvas Resize:** Monitored via a single `ResizeObserver` on the viewport container, updating camera aspect ratio and renderer pixel dimensions without tearing.
+  - When switching devices (`Galaxy Watch5` ↔ `Pixel Watch`), the previous device's geometries and instance materials are cleanly disposed, while the active display texture is retained and re-applied to the new device's screen mesh.
+- **Viewer Cleanup:** On component unmount:
+  - Disposes environment maps, renderer, render target, materials, and geometries.
+  - Cleans up `ResizeObserver` and cancels animation frame loops to eliminate React StrictMode duplicate instances.
 
 ---
 

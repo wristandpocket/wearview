@@ -3,12 +3,10 @@ import { DEVICE_LIST, DEFAULT_DEVICE_ID, getDeviceSpec, buildDevice } from './in
 import { createWatchMaterials } from './materials';
 
 describe('Device Catalogue & Profiles', () => {
-  it('includes three distinct devices', () => {
-    expect(DEVICE_LIST).toHaveLength(3);
+  it('strictly enforces two distinct devices for MVP', () => {
+    expect(DEVICE_LIST).toHaveLength(2);
     const ids = DEVICE_LIST.map((d) => d.id);
-    expect(ids).toContain('galaxy-watch-5-44mm');
-    expect(ids).toContain('galaxy-watch-5-40mm');
-    expect(ids).toContain('pixel-watch-1-41mm');
+    expect(ids).toEqual(['galaxy-watch-5-44mm', 'pixel-watch-1-41mm']);
   });
 
   it('sets Samsung Galaxy Watch5 44 mm as default device', () => {
@@ -23,16 +21,6 @@ describe('Device Catalogue & Profiles', () => {
     expect(gw5.resolutionPx).toEqual({ width: 450, height: 450 });
     expect(gw5.glassType).toBe('flat-sapphire-rim');
     expect(gw5.confirmedSources.length).toBeGreaterThan(0);
-  });
-
-  it('Galaxy Watch5 40 mm has verified specs and proportions', () => {
-    const gw5_40 = getDeviceSpec('galaxy-watch-5-40mm');
-    expect(gw5_40.name).toBe('Samsung Galaxy Watch5 (40 mm)');
-    expect(gw5_40.caseDiameterMm).toBeCloseTo(40.4, 1);
-    expect(gw5_40.displayDiameterMm).toBeCloseTo(30.4, 1);
-    expect(gw5_40.resolutionPx).toEqual({ width: 396, height: 396 });
-    expect(gw5_40.glassType).toBe('flat-sapphire-rim');
-    expect(gw5_40.confirmedSources.length).toBeGreaterThan(0);
   });
 
   it('Pixel Watch 1st gen 41 mm has verified specs and proportions', () => {
@@ -54,12 +42,6 @@ describe('Device Catalogue & Profiles', () => {
     expect(gw5Model.displayMesh).toBeDefined();
     expect(gw5Model.glassMesh).toBeDefined();
     expect(gw5Model.spec.id).toBe('galaxy-watch-5-44mm');
-
-    const gw5_40Model = buildDevice('galaxy-watch-5-40mm', materials);
-    expect(gw5_40Model.group).toBeDefined();
-    expect(gw5_40Model.displayMesh).toBeDefined();
-    expect(gw5_40Model.glassMesh).toBeDefined();
-    expect(gw5_40Model.spec.id).toBe('galaxy-watch-5-40mm');
 
     const pw1Model = buildDevice('pixel-watch-1-41mm', materials);
     expect(pw1Model.group).toBeDefined();

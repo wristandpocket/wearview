@@ -45,7 +45,7 @@
 - [x] Implement Lighting Presets:
   - **Studio:** Balanced directional key/fill lights + neutral ambient environment for pure screen inspection.
   - **Sunlight:** Warm high-intensity directional light casting soft contact shadows and crisp specular highlights.
-  - **Night:** Low ambient with cool rim/accent lighting, subtle glass specular reflections, preserving screen readability.
+  - **Night:** Low-ambient atmosphere with cool rim/accent lighting, subtle glass specular reflections, preserving screen readability.
 - [x] Fine-tune physically based materials (PBR):
   - Proper metalness/roughness for watch metals vs. glossy glass.
   - Subtle Fresnel reflection on screen glass to preserve screenshot legibility.
@@ -68,3 +68,19 @@
 ## Phase 4: Document and Report (Completed)
 - [x] Deliver complete `README.md`, `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/QA_CHECKLIST.md`, and `docs/ROADMAP.md`.
 - [x] Provide final verification report and next priority tasks.
+
+---
+
+## Phase 5: Post-MVP Audit & Stabilization (Completed)
+- [x] **Enforce 2-Device Scope:** Removed Galaxy Watch5 40 mm from active UI selector, types (`DeviceId`), device catalogue exports, and unit tests. Catalogue strictly contains Galaxy Watch5 44 mm and Pixel Watch (1st gen, 41 mm).
+- [x] **UI De-bloating (KISS):** Replaced multi-card drawer with a compact, minimal hardware specs summary; removed blocking UI.
+- [x] **Startup & Asset Hygiene:** Removed auto-loading of WebP image; app initializes in a clean, informative empty state; test pattern loaded via explicit button; immediate `URL.revokeObjectURL(objectUrl)` on image decode to eliminate blob memory leaks.
+- [x] **3D Display Optics:** Configured emissive OLED display (`MeshBasicMaterial`, `toneMapped: false`, `sRGBColorSpace`) for full readability in Night mode without pitch-black dimming, and Sunlight without color washout.
+- [x] **Glass Layer Optics:** Reduced glass opacity ($0.05 - 0.07$), set `roughness: 0.03`, `metalness: 0`, `clearcoat: 1.0`, `depthWrite: false` to eliminate transmission bleaching and maintain author contrast.
+- [x] **Z-Fighting & Clipping Elimination:**
+  - Galaxy Watch5: Calibrated spatial separation ($Y_{\text{case}}=0$, $Y_{\text{bezel}}=0.03$, $Y_{\text{display}}=0.04$, $Y_{\text{glass}}=0.12$, $Y_{\text{rim}}=0.32$) with explicit `renderOrder` (1, 2, 10).
+  - Pixel Watch: Modeled continuous super-elliptical dome profile ($y \ge 1.48$ mm at screen perimeter) with display flat at $Y = 1.05$ mm, fully encapsulating screen inside the glass with zero clipping. Added watertight polished steel underbody bowl, digital crown at 3 o'clock, and flush key at 2 o'clock.
+- [x] **Wrist Alignment:** Calibrated wrist mesh center ($Y = -27.2$ mm) so dorsal skin sits flush ($Y \approx -10.66$ mm) under caseback and sensors without clipping or hovering.
+- [x] **Camera Clamping:** Set OrbitControls `minDistance = 28` mm, `maxDistance = 450` mm, `maxPolarAngle = 0.49 * Math.PI` rad.
+- [x] **GPU Memory Management:** Explicit `.dispose()` on textures, geometries, and instance materials during device switching, while preserving the active display texture. Disposed PMREM and RoomEnvironment generators.
+- [x] **Comprehensive Verification:** Passed strict TypeScript check, 15/15 Vitest tests, Vite production build, and headless CDP browser runtime checks across all flows.
