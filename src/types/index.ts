@@ -1,4 +1,4 @@
-export type DeviceId = 'galaxy-watch-5-44mm' | 'galaxy-watch-5-40mm' | 'pixel-watch-1-41mm';
+export type DeviceId = 'galaxy-watch-5-44mm' | 'pixel-watch-1-41mm';
 
 export type LightingPreset = 'studio' | 'sunlight' | 'night';
 

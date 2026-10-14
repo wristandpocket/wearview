@@ -45,15 +45,6 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             type="button"
-            className={`device-select-btn ${selectedDeviceId === 'galaxy-watch-5-40mm' ? 'active' : ''}`}
-            onClick={() => onSelectDevice('galaxy-watch-5-40mm')}
-            role="radio"
-            aria-checked={selectedDeviceId === 'galaxy-watch-5-40mm'}
-          >
-            Galaxy Watch5 · 40 mm
-          </button>
-          <button
-            type="button"
             className={`device-select-btn ${selectedDeviceId === 'pixel-watch-1-41mm' ? 'active' : ''}`}
             onClick={() => onSelectDevice('pixel-watch-1-41mm')}
             role="radio"
