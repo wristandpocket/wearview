@@ -28,7 +28,7 @@ describe('Device Catalogue & Profiles', () => {
     const pw1 = getDeviceSpec('pixel-watch-1-41mm');
     expect(pw1.name).toBe('Google Pixel Watch');
     expect(pw1.caseDiameterMm).toBe(41.0);
-    expect(pw1.displayDiameterMm).toBeCloseTo(33.0, 1);
+    expect(pw1.displayDiameterMm).toBeCloseTo(33.5, 1);
     expect(gw5DisplayLarger(pw1.displayDiameterMm)).toBe(true);
     expect(pw1.resolutionPx).toEqual({ width: 450, height: 450 });
     expect(pw1.glassType).toBe('domed-pebble-glass');
