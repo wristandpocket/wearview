@@ -115,22 +115,15 @@ export const App: React.FC = () => {
     }
   }, [handleImageSelected]);
 
-  // Handle camera reset
-  const handleResetCamera = useCallback(() => {
-    if (viewerInstanceRef.current) {
-      viewerInstanceRef.current.resetCamera();
-    }
-  }, []);
-
-  // Load default Cyberpunk Wear OS screenshot on mount
+  // Auto-load default Cyberpunk screenshot on initial mount
   useEffect(() => {
     let isCancelled = false;
 
     async function loadDefaultScreenshot() {
       try {
-        const resp = await fetch('/cyberpunk3d-screen2-full.webp');
-        if (!resp.ok) return;
-        const blob = await resp.blob();
+        const response = await fetch('./cyberpunk3d-screen2-full.webp');
+        if (!response.ok) return;
+        const blob = await response.blob();
         if (isCancelled) return;
         const defaultFile = new File([blob], 'cyberpunk3d-screen2-full.webp', {
           type: 'image/webp'
@@ -147,6 +140,13 @@ export const App: React.FC = () => {
       isCancelled = true;
     };
   }, [handleImageSelected]);
+
+  // Handle camera reset
+  const handleResetCamera = useCallback(() => {
+    if (viewerInstanceRef.current) {
+      viewerInstanceRef.current.resetCamera();
+    }
+  }, []);
 
   const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
 
