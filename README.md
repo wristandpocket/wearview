@@ -86,5 +86,6 @@ Detailed project documentation is available in the `docs/` directory:
 - [Device Research](docs/DEVICE_RESEARCH.md) — Exact specifications, manufacturer citations, and visual observations.
 - [Architecture](docs/ARCHITECTURE.md) — 3D scene lifecycle, coordinate systems, and Wrist & Pocket integration seams.
 - [QA Verification Checklist](docs/QA_CHECKLIST.md) — Detailed acceptance criteria and test outcomes.
+- [Deployment & Cloud Infrastructure](docs/DEPLOYMENT.md) — Setup guide for GitHub Pages on `wristandpocket` and custom domain `wearview.sivochka.com`.
 - [Roadmap](docs/ROADMAP.md) — Future physical-scale calibration, additional devices, and developer tooling.
 - [Agent Operating Guidelines](AGENTS.md) — Development rules and verification protocol for AI agents.
