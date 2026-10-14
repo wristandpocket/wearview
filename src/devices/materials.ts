@@ -60,7 +60,6 @@ export function createWatchMaterials(): WatchMaterials {
   });
 
   // Active display material (pure emissive display representation)
-  // Active display material (pure emissive display representation)
   // When texture is applied, this displays exact RGB values without distortion
   const displayEmpty = new THREE.MeshBasicMaterial({
     color: 0x090b10,
@@ -71,7 +70,7 @@ export function createWatchMaterials(): WatchMaterials {
   const glassSapphire = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.06,
+    opacity: 0.05,
     roughness: 0.03,
     metalness: 0.0,
     ior: 1.77,
@@ -84,7 +83,7 @@ export function createWatchMaterials(): WatchMaterials {
   const glassDomedPebble = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.06,
+    opacity: 0.05,
     roughness: 0.03,
     metalness: 0.0,
     ior: 1.52,

@@ -26,6 +26,9 @@ export async function loadScreenshotTexture(file: File): Promise<UploadedImageIn
     const img = new Image();
 
     img.onload = () => {
+      // Immediately revoke temporary object URL once image has decoded into memory
+      URL.revokeObjectURL(objectUrl);
+
       try {
         const sourceWidth = img.naturalWidth;
         const sourceHeight = img.naturalHeight;
@@ -62,14 +65,13 @@ export async function loadScreenshotTexture(file: File): Promise<UploadedImageIn
 
         resolve({
           file,
-          objectUrl,
+          objectUrl: '',
           width: sourceWidth,
           height: sourceHeight,
           aspectRatio,
           texture
         });
       } catch (err) {
-        URL.revokeObjectURL(objectUrl);
         reject(err instanceof Error ? err : new TextureLoadingError('Failed to process image texture.'));
       }
     };

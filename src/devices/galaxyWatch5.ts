@@ -59,31 +59,36 @@ export function buildGalaxyWatch5Model(materials: WatchMaterials): DeviceModelRe
   caseMesh.receiveShadow = true;
   group.add(caseMesh);
 
-  // 2. INNER SLIM BEZEL RING (Glossy OLED touch-bezel border at Y = 0.015)
+  // 2. INNER SLIM BEZEL RING (Glossy OLED touch-bezel border at Y = 0.03)
   const bezelGeometry = new THREE.RingGeometry(screenRadius, bezelOuterRadius, 96);
   bezelGeometry.rotateX(-Math.PI / 2);
   const bezelMesh = new THREE.Mesh(bezelGeometry, materials.bezelTexturedRing);
-  bezelMesh.position.set(0, 0.015, 0);
+  bezelMesh.position.set(0, 0.03, 0);
+  bezelMesh.renderOrder = 1;
   group.add(bezelMesh);
 
-  // 3. ACTIVE DISPLAY MESH (Sits at Y = 0.02, perfectly visible, crystal clear)
+  // 3. ACTIVE DISPLAY MESH (Sits at Y = 0.04, perfectly visible, emissive OLED)
   const displayGeometry = new THREE.CircleGeometry(screenRadius, 96);
   displayGeometry.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeometry, materials.displayEmpty.clone());
   displayMesh.name = 'displayMesh';
-  displayMesh.position.set(0, 0.02, 0);
+  displayMesh.position.set(0, 0.04, 0);
+  displayMesh.renderOrder = 2;
   displayMesh.receiveShadow = false;
   group.add(displayMesh);
 
-  // 4. FLAT SAPPHIRE CRYSTAL DISC (At Y = 0.04)
+  // 4. FLAT SAPPHIRE CRYSTAL DISC (At Y = 0.12, clean clearance over display)
   const glassGeometry = new THREE.CircleGeometry(bezelOuterRadius, 96);
   glassGeometry.rotateX(-Math.PI / 2);
-  const glassMesh = new THREE.Mesh(glassGeometry, materials.glassSapphire.clone());
+  const glassMesh = new THREE.Mesh(glassGeometry, materials.glassSapphire);
   glassMesh.name = 'glassMesh';
-  glassMesh.position.set(0, 0.04, 0);
+  glassMesh.position.set(0, 0.12, 0);
+  glassMesh.renderOrder = 10;
+  glassMesh.castShadow = false;
+  glassMesh.receiveShadow = false;
   group.add(glassMesh);
 
-  // 5. MICRO-CHAMFERED PROTECTIVE ALUMINUM RIM (Lip raised 0.28 mm above glass)
+  // 5. MICRO-CHAMFERED PROTECTIVE ALUMINUM RIM (Lip raised 0.20 mm above glass)
   const rimShape = new THREE.Shape();
   rimShape.absarc(0, 0, rimOuterRadius, 0, Math.PI * 2, false);
   const rimHole = new THREE.Path();
@@ -91,7 +96,7 @@ export function buildGalaxyWatch5Model(materials: WatchMaterials): DeviceModelRe
   rimShape.holes.push(rimHole);
 
   const rimExtrude = new THREE.ExtrudeGeometry(rimShape, {
-    depth: 0.28,
+    depth: 0.32,
     bevelEnabled: true,
     bevelSegments: 2,
     bevelSize: 0.06,
@@ -99,7 +104,7 @@ export function buildGalaxyWatch5Model(materials: WatchMaterials): DeviceModelRe
   });
   rimExtrude.rotateX(Math.PI / 2);
   const rimMesh = new THREE.Mesh(rimExtrude, materials.caseAluminum);
-  rimMesh.position.set(0, 0.26, 0);
+  rimMesh.position.set(0, 0.32, 0);
   rimMesh.castShadow = true;
   group.add(rimMesh);
 
