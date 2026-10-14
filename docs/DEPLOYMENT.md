@@ -1,61 +1,52 @@
-# WearView — Deployment & Hosting Guide
+# WearView — Deployment & Studio Cloud Hosting Guide
 
-This guide describes how WearView is deployed to the cloud alongside your other pet projects under **`sivochka.com/wearview/`**.
-
----
-
-## 1. Hosting Architecture: How Pet Projects Work on `sivochka.com`
-
-All your pet projects (such as `lego-catalog`, `3d-club-studio`, and `OGCruncher`) follow the native GitHub Pages user architecture:
-
-1. **User Apex Site:** Your user site `https://github.com/Figarist/figarist.github.io` holds the custom domain `sivochka.com`.
-2. **Project Subpaths:** Any repository created under your user account (`https://github.com/Figarist/<repo-name>`) with GitHub Pages enabled is automatically served at:
-   👉 **`https://sivochka.com/<repo-name>/`**
-3. **No DNS / CNAME Overhead:**
-   - **No CNAME records in Namecheap** are needed for individual projects.
-   - **No "Custom domain" setting in GitHub repository settings** is needed (the custom domain field in repository settings must remain empty).
-   - GitHub Pages natively mounts the repository at `https://sivochka.com/<repo-name>/` with full automated SSL encryption.
+WearView is hosted on the official **Wrist & Pocket** studio infrastructure under the organization's verified domain:
+👉 **`https://wristandpocket.dev/wearview/`**
 
 ---
 
-## 2. Deploying to `https://github.com/Figarist/wearview`
+## 1. Studio Infrastructure Architecture
 
-### Step A: Repository Creation / Transfer
-Either:
-- **Option 1 (Transfer):** In `https://github.com/wristandpocket/wearview/settings`, scroll to the bottom (*Danger Zone*), click **Transfer ownership**, and set the new owner to **`Figarist`**.
-- **Option 2 (Create directly):** Create a new repository at [https://github.com/new](https://github.com/new) with owner **`Figarist`** and name **`wearview`**.
+- **Organization:** [wristandpocket](https://github.com/wristandpocket)
+- **Repository:** `https://github.com/wristandpocket/wearview`
+- **Studio Apex Site:** `https://github.com/wristandpocket/wristandpocket.github.io` (`https://wristandpocket.dev`)
+- **Published Application URL:** **`https://wristandpocket.dev/wearview/`**
 
-### Step B: Push Code
-From your local directory:
-```bash
-# Set origin to your user repository
-git remote set-url origin https://github.com/Figarist/wearview.git
+### Why this architecture is optimal for studio branding:
+1. **Studio Promotion:** WearView serves as a flagship 3D developer utility directly under the `wristandpocket.dev` brand.
+2. **Native Routing:** Because the organization owns `wristandpocket.dev`, any repository with GitHub Pages enabled under `wristandpocket` is automatically mounted at:
+   👉 **`https://wristandpocket.dev/<repo-name>/`**
+3. **Zero DNS Overhead:** No custom CNAME records or DNS provider edits are required. The entire subdomain/path routing is handled natively by GitHub Pages.
 
-# Push master branch
-git push -u origin master
-```
+---
 
-### Step C: Enable GitHub Pages in Repository Settings
-1. Go to **Settings > Pages** in `https://github.com/Figarist/wearview/settings/pages`.
-2. Under **Build and deployment > Source**, select: **GitHub Actions**.
-3. Ensure the **Custom domain** input is **EMPTY** (do NOT put `sivochka.com` or `wearview.sivochka.com` there).
-4. GitHub Pages will automatically display the published URL:
-   👉 **`https://sivochka.com/wearview/`**
+## 2. GitHub Pages Settings
+
+In `https://github.com/wristandpocket/wearview/settings/pages`:
+
+1. **Source:** `GitHub Actions`
+2. **Custom domain:** **EMPTY** (Leave blank, or click **Remove** if anything was entered).
+   *(Leaving it blank allows GitHub Pages to use the organization's default verified domain: `wristandpocket.dev/wearview/`).*
+3. **Enforce HTTPS:** Enabled.
 
 ---
 
 ## 3. Automated CI/CD Workflow (`.github/workflows/deploy.yml`)
 
-The repository includes a GitHub Actions workflow that triggers automatically on every push to `master`:
-1. Checks out repository.
-2. Installs dependencies (`npm ci`).
-3. Runs strict TypeScript type check (`npm run typecheck`).
-4. Executes unit tests (`npm run test`).
-5. Builds the production bundle (`npm run build`) with relative asset paths (`base: './'`).
-6. Deploys the `dist/` directory directly to GitHub Pages.
+Every push to `master` triggers the GitHub Actions pipeline:
+1. `npm ci` — Installs clean dependencies.
+2. `npm run typecheck` — Strict TypeScript validation.
+3. `npm run test` — Executes all Vitest unit tests (16 tests).
+4. `npm run build` — Compiles production bundle with relative asset paths (`base: './'`).
+5. `actions/deploy-pages` — Deploys static bundle to GitHub Pages.
 
 ---
 
-## 4. Namecheap DNS Cleanup
+## 4. Local Git Remote Verification
 
-Since project repositories under `Figarist` are served automatically at `sivochka.com/wearview/`, the `wearview` CNAME record in Namecheap is not needed and can be safely deleted.
+Ensure the local repository is tracking the studio repository:
+```bash
+git remote -v
+# origin  https://github.com/wristandpocket/wearview.git (fetch)
+# origin  https://github.com/wristandpocket/wearview.git (push)
+```
