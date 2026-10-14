@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { DeviceId, LightingPreset, ViewMode } from '../types';
 import { createWatchMaterials, type WatchMaterials } from '../devices/materials';
 import { buildDevice, DEFAULT_DEVICE_ID } from '../devices';
@@ -116,11 +117,17 @@ export class ThreeViewer {
   private initScene(): void {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xffffff);
+
+    // Dynamic studio HDR environment map for physically accurate metal and glass specular reflections
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    pmremGenerator.compileEquirectangularShader();
+    const roomEnv = new RoomEnvironment();
+    this.scene.environment = pmremGenerator.fromScene(roomEnv).texture;
   }
 
   private initCameraAndControls(): void {
     const aspect = this.container.clientWidth / (this.container.clientHeight || 1);
-    this.camera = new THREE.PerspectiveCamera(38, aspect, 1, 500);
+    this.camera = new THREE.PerspectiveCamera(38, aspect, 1, 600);
     this.camera.position.copy(this.defaultCameraPosition);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -132,9 +139,9 @@ export class ThreeViewer {
     this.controls.minPolarAngle = 0.1;
     this.controls.maxPolarAngle = Math.PI * 0.58;
 
-    // Zoom limits
-    this.controls.minDistance = 25;
-    this.controls.maxDistance = 140;
+    // Expanded zoom limits: close inspection (15 mm) to full real-life scale comparison (450 mm)
+    this.controls.minDistance = 15;
+    this.controls.maxDistance = 450;
 
     this.controls.update();
   }
@@ -225,21 +232,21 @@ export class ThreeViewer {
     // Dynamic background and glass specular response tuning
     if (preset === 'studio') {
       this.scene.background = new THREE.Color(0xffffff);
-      this.materials.glassSapphire.opacity = 0.15;
-      this.materials.glassDomedPebble.opacity = 0.18;
-      this.materials.glassSapphire.roughness = 0.06;
+      this.materials.glassSapphire.opacity = 0.06;
+      this.materials.glassDomedPebble.opacity = 0.06;
+      this.materials.glassSapphire.roughness = 0.03;
       this.renderer.toneMappingExposure = 1.0;
     } else if (preset === 'sunlight') {
       this.scene.background = new THREE.Color(0xfcfbf9);
-      this.materials.glassSapphire.opacity = 0.24;
-      this.materials.glassDomedPebble.opacity = 0.28;
-      this.materials.glassSapphire.roughness = 0.04;
-      this.renderer.toneMappingExposure = 1.1;
+      this.materials.glassSapphire.opacity = 0.09;
+      this.materials.glassDomedPebble.opacity = 0.09;
+      this.materials.glassSapphire.roughness = 0.02;
+      this.renderer.toneMappingExposure = 1.05;
     } else if (preset === 'night') {
       this.scene.background = new THREE.Color(0x080c16);
-      this.materials.glassSapphire.opacity = 0.16;
-      this.materials.glassDomedPebble.opacity = 0.20;
-      this.materials.glassSapphire.roughness = 0.08;
+      this.materials.glassSapphire.opacity = 0.07;
+      this.materials.glassDomedPebble.opacity = 0.07;
+      this.materials.glassSapphire.roughness = 0.05;
       this.renderer.toneMappingExposure = 0.95;
     }
   }
