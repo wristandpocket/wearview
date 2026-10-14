@@ -60,37 +60,36 @@ export function createWatchMaterials(): WatchMaterials {
   });
 
   // Active display material (pure emissive display representation)
+  // Active display material (pure emissive display representation)
   // When texture is applied, this displays exact RGB values without distortion
   const displayEmpty = new THREE.MeshBasicMaterial({
     color: 0x090b10,
-    toneMapped: true
+    toneMapped: false
   });
 
-  // Flat Sapphire glass for Galaxy Watch5 (subtle, non-occluding reflections)
+  // Flat Sapphire glass for Galaxy Watch5 (crystal clear with refined specular clearcoat)
   const glassSapphire = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.18,
-    roughness: 0.06,
-    metalness: 0.1,
-    transmission: 0.88,
-    ior: 1.77, // Sapphire refractive index
+    opacity: 0.06,
+    roughness: 0.03,
+    metalness: 0.0,
+    ior: 1.77,
     clearcoat: 1.0,
-    clearcoatRoughness: 0.05,
+    clearcoatRoughness: 0.03,
     depthWrite: false
   });
 
-  // Domed Corning Gorilla Glass 5 for Pixel Watch
+  // Domed Corning Gorilla Glass 5 for Pixel Watch (smooth curved glint, crystal clear)
   const glassDomedPebble = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: 0.24,
-    roughness: 0.04,
-    metalness: 0.08,
-    transmission: 0.85,
-    ior: 1.52, // Gorilla Glass refractive index
+    opacity: 0.06,
+    roughness: 0.03,
+    metalness: 0.0,
+    ior: 1.52,
     clearcoat: 1.0,
-    clearcoatRoughness: 0.03,
+    clearcoatRoughness: 0.02,
     depthWrite: false
   });
 
