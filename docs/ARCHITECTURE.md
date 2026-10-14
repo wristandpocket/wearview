@@ -25,6 +25,7 @@ wearview/
 │   │   ├── types.ts         # DeviceSpec and DeviceModelResult interfaces
 │   │   ├── materials.ts     # PBR materials factory (aluminum, stainless steel, glass, strap)
 │   │   ├── galaxyWatch5.ts  # Samsung Galaxy Watch5 44 mm procedural geometry
+│   │   ├── galaxyWatch5_40mm.ts # Samsung Galaxy Watch5 40 mm procedural geometry
 │   │   ├── pixelWatch1.ts   # Google Pixel Watch 1st gen 41 mm procedural geometry
 │   │   └── index.ts         # Device catalogue registry & model factory dispatch
 │   ├── textures/            # Image validation, aspect-fit math, and texture loader
@@ -64,10 +65,10 @@ wearview/
   - $+Z$: 6 o'clock (Bottom of screen / South).
 
 ### Camera & Orbit Controls
-- **Default Framing:** Camera at $(26, 44, 46)$ looking at target $(0, -3.5, 0)$. This provides a $3/4$ perspective showing the face, raised rim / domed glass, case profile, and side controls simultaneously.
+- **Default Framing:** Camera at $(12, 62, 32)$ looking at target $(0, -2, 0)$. This provides an elevated $3/4$ perspective showing the face, raised rim / domed glass, case profile, and side controls simultaneously.
 - **Constraints:**
-  - `minPolarAngle = 0.1` rad, `maxPolarAngle = 0.58 \pi` rad: Prevents camera from tumbling below the floor.
-  - `minDistance = 25` mm, `maxDistance = 140` mm: Keeps the watch usable and prevents extreme clipping or losing sight of the model.
+  - `minPolarAngle = 0.1` rad, `maxPolarAngle = 0.58 \pi` rad: Prevents camera from tumbling below the floor plane.
+  - `minDistance = 15` mm, `maxDistance = 450` mm: Extended zoom allows close-up macro pixel inspection down to 15 mm, and zooming out to 450 mm to compare with real-life physical scale on wrist at arm's length.
 
 ---
 
@@ -75,18 +76,20 @@ wearview/
 
 ### The Active Display Layer
 A common flaw in generic mockup tools is stretching rectangular textures across the entire watch front. WearView isolates the display:
-1. **Geometric Screen Mask:** The display surface is a dedicated `THREE.CircleGeometry` sized to the exact physical active diameter of the selected device:
-   - **Galaxy Watch5 (44 mm):** $R = 17.3\text{ mm}$ ($34.6\text{ mm}$ diameter, $450 \times 450\text{ px}$).
-   - **Pixel Watch (1st gen, 41 mm):** $R = 15.25\text{ mm}$ ($30.5\text{ mm}$ diameter, $450 \times 450\text{ px}$).
+1. **Geometric Screen Mask:** The display surface is a dedicated `CircleGeometry` sized to the exact physical active diameter of the selected device:
+   - **Galaxy Watch5 (44 mm):** $R = 17.3\text{ mm}$ ($34.6\text{ mm}$ diameter, $450 \times 450\text{ px}$, $321\text{ ppi}$).
+   - **Galaxy Watch5 (40 mm):** $R = 15.2\text{ mm}$ ($30.4\text{ mm}$ diameter, $396 \times 396\text{ px}$, $330\text{ ppi}$).
+   - **Pixel Watch (1st gen, 41 mm):** $R = 16.75\text{ mm}$ ($33.5\text{ mm}$ calibrated diameter, $450 \times 450\text{ px}$).
 2. **Aspect Preservation (`contain` Fit):**
    - If an uploaded screenshot is square ($1:1$), it maps $1:1$ into the circular UV boundary.
    - If non-square (e.g. landscape or portrait), `calculateContainFit` centers the image on a neutral black background ($#000000$) without stretching.
+   - Native WebP, PNG, JPG, and JPEG formats supported.
 3. **Color Space & Emissive Fidelity:**
    - Textures are tagged with `THREE.SRGBColorSpace`.
    - The screen mesh uses `MeshBasicMaterial` with `toneMapped: true`. This ensures the developer's game UI colors match their source values without being washed out by scene lights.
-4. **Glass Layer:**
-   - Sits $0.1\text{ mm}$ in front of the display.
-   - Uses `MeshPhysicalMaterial` with subtle transmission ($0.88$), low opacity ($0.18$), clearcoat ($1.0$), and `depthWrite: false` to eliminate z-fighting.
+4. **Front Glass Crystal:**
+   - Positioned cleanly above the screen plane with `clearcoat: 1.0`, `roughness: 0.03`, and subtle `opacity: 0.06` with `depthWrite: false`.
+   - Zero transmission bleaching: preserves rich author contrast on white studio background.
 
 ---
 
@@ -94,16 +97,17 @@ A common flaw in generic mockup tools is stretching rectangular textures across 
 
 WearView implements 3 distinct lighting presets via `ThreeViewer.setLightingPreset`:
 1. **Studio:**
-   - Balanced key ($0xfffcf7, 1.9$) and fill ($0xe2e8f0, 0.85$) lights with ambient illumination.
-   - Neutral studio background ($#0b0e14$).
-   - Designed for clear, unbiased screen inspection.
+   - Clean pure white studio background (`#ffffff`).
+   - Dynamic equirectangular HDR environment (`RoomEnvironment` compiled via `PMREMGenerator`) providing natural specular reflections on Armor Aluminum and polished steel.
+   - Balanced key ($0xffffff, 2.2$) and fill ($0xf1f5f9, 1.4$) lights with soft contact shadow plane.
+   - Designed for crisp, unbiased screen inspection.
 2. **Sunlight:**
-   - High-intensity warm directional sun ($0xfffaed, 3.2$) casting sharp contact shadows.
-   - Cool sky ambient bounce.
-   - Glass opacity tuned higher ($0.26 - 0.32$) with crisp specular glint to simulate outdoor playability.
+   - High-intensity warm directional sun ($0xfffaed, 3.4$) casting sharp contact shadows.
+   - Cool sky ambient bounce ($0x93c5fd, 0.7$).
+   - Specular glint simulating outdoor high-glare conditions.
 3. **Night:**
-   - Low ambient floor ($#0a0f1d, 0.25$).
-   - Stylized dual rim lights: cool cyan ($0x38bdf8$) and violet ($0xa855f7$).
+   - Low ambient floor ($0xf8fafc, 0.4$).
+   - Stylized dual rim lights: cool cyan ($0x38bdf8, 2.2$) and violet ($0xa855f7, 1.8$).
    - Emissive screen remains bright and inspectable, demonstrating high-contrast OLED visibility.
 
 ---

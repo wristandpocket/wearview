@@ -2,6 +2,7 @@ import type { DeviceId, DeviceSpec } from '../types';
 import type { DeviceEntry, DeviceModelResult } from './types';
 import type { WatchMaterials } from './materials';
 import { GALAXY_WATCH_5_SPEC, buildGalaxyWatch5Model } from './galaxyWatch5';
+import { GALAXY_WATCH_5_40MM_SPEC, buildGalaxyWatch5_40mmModel } from './galaxyWatch5_40mm';
 import { PIXEL_WATCH_1_SPEC, buildPixelWatch1Model } from './pixelWatch1';
 
 export const DEFAULT_DEVICE_ID: DeviceId = 'galaxy-watch-5-44mm';
@@ -11,6 +12,10 @@ export const DEVICE_ENTRIES: Record<DeviceId, DeviceEntry> = {
     spec: GALAXY_WATCH_5_SPEC,
     createModel: (materials: WatchMaterials) => buildGalaxyWatch5Model(materials)
   },
+  'galaxy-watch-5-40mm': {
+    spec: GALAXY_WATCH_5_40MM_SPEC,
+    createModel: (materials: WatchMaterials) => buildGalaxyWatch5_40mmModel(materials)
+  },
   'pixel-watch-1-41mm': {
     spec: PIXEL_WATCH_1_SPEC,
     createModel: (materials: WatchMaterials) => buildPixelWatch1Model(materials)
@@ -19,6 +24,7 @@ export const DEVICE_ENTRIES: Record<DeviceId, DeviceEntry> = {
 
 export const DEVICE_LIST: DeviceSpec[] = [
   GALAXY_WATCH_5_SPEC,
+  GALAXY_WATCH_5_40MM_SPEC,
   PIXEL_WATCH_1_SPEC
 ];
 
