@@ -17,11 +17,11 @@ export interface WatchMaterials {
 }
 
 export function createWatchMaterials(): WatchMaterials {
-  // Samsung Armor Aluminum (Satin Graphite)
+  // Samsung Armor Aluminum (Graphite Black anodized finish matching real watch)
   const caseAluminum = new THREE.MeshStandardMaterial({
-    color: 0x353a45,
-    metalness: 0.78,
-    roughness: 0.35
+    color: 0x22262e,
+    metalness: 0.85,
+    roughness: 0.28
   });
 
   // Pixel Watch Polished Stainless Steel (Silver finish)
@@ -108,18 +108,18 @@ export function createWatchMaterials(): WatchMaterials {
     roughness: 0.3
   });
 
-  // Dark charcoal silicone strap
+  // Dark charcoal silicone strap matching real Samsung sport band
   const strapSilicone = new THREE.MeshStandardMaterial({
-    color: 0x20242c,
-    metalness: 0.05,
-    roughness: 0.72
+    color: 0x181a20,
+    metalness: 0.04,
+    roughness: 0.75
   });
 
-  // Neutral mannequin wrist material
+  // Natural wrist skin tone matching real hardware on arm
   const wristSkin = new THREE.MeshStandardMaterial({
-    color: 0xd4d4d8, // Clean neutral studio mannequin clay
-    metalness: 0.02,
-    roughness: 0.85
+    color: 0xdeb897, // Warm natural arm tone
+    metalness: 0.0,
+    roughness: 0.72
   });
 
   return {
