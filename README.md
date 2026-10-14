@@ -2,8 +2,8 @@
 
 > **A physically-aware 3D preview tool for Wear OS game developers.**
 
-🌐 **Live Web Application:** [https://wearview.sivochka.com/](https://wearview.sivochka.com/)  
-📦 **GitHub Repository:** [wristandpocket/wearview](https://github.com/wristandpocket/wearview)
+🌐 **Live Web Application:** [https://sivochka.com/wearview/](https://sivochka.com/wearview/)  
+📦 **GitHub Repository:** [wearview](https://github.com/Figarist/wearview)
 
 WearView helps smartwatch developers inspect how game and interactive app screens will look on the active circular display of real Wear OS hardware. Rotate the watch in 3D, inspect bezel and rim clearance, test different lighting conditions, and evaluate scale context on a neutral wrist reference.
 

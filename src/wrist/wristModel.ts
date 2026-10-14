@@ -63,11 +63,11 @@ export function buildWristModel(materials: WatchMaterials): WristModelResult {
 
   geometry.computeVertexNormals();
 
-  // Position wrist so dorsal skin surface sits flush under the rear sensor (Y = -12.0 mm)
-  // With scaled vertical half-height ~ 16 mm, placing center at Y = -28.0 mm
+  // Position wrist so dorsal skin surface sits flush under the rear sensor (Y ~ -10.66 mm)
+  // Matching sensor protrusion and strap lateral curve without clipping into case chassis
   const wristMesh = new THREE.Mesh(geometry, materials.wristSkin);
   wristMesh.name = 'wristMesh';
-  wristMesh.position.set(0, -27.5, 0);
+  wristMesh.position.set(0, -27.2, 0);
   wristMesh.castShadow = true;
   wristMesh.receiveShadow = true;
   group.add(wristMesh);

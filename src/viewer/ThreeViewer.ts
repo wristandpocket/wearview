@@ -25,6 +25,8 @@ export class ThreeViewer {
   private animationFrameId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
 
+  private envTexture: THREE.Texture | null = null;
+
   // Materials & Geometry
   private materials: WatchMaterials;
   private currentDeviceId: DeviceId;
@@ -122,7 +124,10 @@ export class ThreeViewer {
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     const roomEnv = new RoomEnvironment();
-    this.scene.environment = pmremGenerator.fromScene(roomEnv).texture;
+    this.envTexture = pmremGenerator.fromScene(roomEnv).texture;
+    this.scene.environment = this.envTexture;
+    pmremGenerator.dispose();
+    roomEnv.dispose();
   }
 
   private initCameraAndControls(): void {
@@ -137,10 +142,10 @@ export class ThreeViewer {
 
     // Limit camera angles: prevent flipping underneath the ground
     this.controls.minPolarAngle = 0.1;
-    this.controls.maxPolarAngle = Math.PI * 0.58;
+    this.controls.maxPolarAngle = Math.PI * 0.49;
 
-    // Expanded zoom limits: close inspection (15 mm) to full real-life scale comparison (450 mm)
-    this.controls.minDistance = 15;
+    // Zoom limits: close inspection without clipping into watch (min 28 mm) to arm's length (450 mm)
+    this.controls.minDistance = 28;
     this.controls.maxDistance = 450;
 
     this.controls.update();
@@ -232,22 +237,26 @@ export class ThreeViewer {
     // Dynamic background and glass specular response tuning
     if (preset === 'studio') {
       this.scene.background = new THREE.Color(0xffffff);
-      this.materials.glassSapphire.opacity = 0.06;
-      this.materials.glassDomedPebble.opacity = 0.06;
+      this.materials.glassSapphire.opacity = 0.05;
+      this.materials.glassDomedPebble.opacity = 0.05;
       this.materials.glassSapphire.roughness = 0.03;
       this.renderer.toneMappingExposure = 1.0;
     } else if (preset === 'sunlight') {
       this.scene.background = new THREE.Color(0xfcfbf9);
-      this.materials.glassSapphire.opacity = 0.09;
-      this.materials.glassDomedPebble.opacity = 0.09;
+      this.materials.glassSapphire.opacity = 0.07;
+      this.materials.glassDomedPebble.opacity = 0.07;
       this.materials.glassSapphire.roughness = 0.02;
       this.renderer.toneMappingExposure = 1.05;
     } else if (preset === 'night') {
       this.scene.background = new THREE.Color(0x080c16);
-      this.materials.glassSapphire.opacity = 0.07;
-      this.materials.glassDomedPebble.opacity = 0.07;
-      this.materials.glassSapphire.roughness = 0.05;
+      this.materials.glassSapphire.opacity = 0.05;
+      this.materials.glassDomedPebble.opacity = 0.05;
+      this.materials.glassSapphire.roughness = 0.04;
       this.renderer.toneMappingExposure = 0.95;
+    }
+
+    if (this.currentDeviceModel?.glassMesh) {
+      this.currentDeviceModel.glassMesh.material.needsUpdate = true;
     }
   }
 
@@ -258,12 +267,25 @@ export class ThreeViewer {
   }
 
   public loadDevice(deviceId: DeviceId): void {
-    // Remove existing device model from scene
+    // Remove existing device model from scene and clean up its geometries & instance materials
     if (this.currentDeviceModel) {
       this.scene.remove(this.currentDeviceModel.group);
       this.currentDeviceModel.group.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
+          if (obj.material) {
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            mats.forEach((mat) => {
+              // Unbind texture map from mesh before disposing mesh material to avoid disposing user's texture
+              if (mat.map && mat.map === this.currentTexture) {
+                mat.map = null;
+              }
+              // Dispose cloned materials (like displayMesh.material)
+              if (mat !== this.materials.displayEmpty && mat !== this.materials.glassSapphire && mat !== this.materials.glassDomedPebble) {
+                mat.dispose();
+              }
+            });
+          }
         }
       });
       this.currentDeviceModel = null;
@@ -291,10 +313,12 @@ export class ThreeViewer {
     if (texture) {
       displayMesh.material.map = texture;
       displayMesh.material.color.setHex(0xffffff);
+      displayMesh.material.toneMapped = false;
       displayMesh.material.needsUpdate = true;
     } else {
       displayMesh.material.map = null;
       displayMesh.material.color.setHex(0x090b10);
+      displayMesh.material.toneMapped = false;
       displayMesh.material.needsUpdate = true;
     }
   }
@@ -350,6 +374,15 @@ export class ThreeViewer {
       this.currentDeviceModel.group.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
+          if (obj.material) {
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            mats.forEach((mat) => {
+              if (mat.map && mat.map === this.currentTexture) {
+                mat.map = null;
+              }
+              mat.dispose();
+            });
+          }
         }
       });
       this.currentDeviceModel = null;
@@ -360,6 +393,10 @@ export class ThreeViewer {
       this.wristModel.group.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
+          if (obj.material) {
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            mats.forEach((mat) => mat.dispose());
+          }
         }
       });
       this.wristModel = null;
@@ -368,6 +405,20 @@ export class ThreeViewer {
     if (this.groundShadowMesh) {
       this.scene.remove(this.groundShadowMesh);
       this.groundShadowMesh.geometry.dispose();
+      if (this.groundShadowMesh.material instanceof THREE.Material) {
+        this.groundShadowMesh.material.dispose();
+      }
+    }
+
+    // Dispose shared watch materials
+    Object.values(this.materials).forEach((mat) => {
+      mat.dispose();
+    });
+
+    // Dispose environment map
+    if (this.envTexture) {
+      this.envTexture.dispose();
+      this.envTexture = null;
     }
 
     // Dispose renderer
