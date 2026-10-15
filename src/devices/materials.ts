@@ -1,138 +1,105 @@
 import * as THREE from 'three';
 
 export interface WatchMaterials {
-  caseAluminum: THREE.MeshStandardMaterial;
-  caseStainlessSteel: THREE.MeshStandardMaterial;
-  caseMatteBlack: THREE.MeshStandardMaterial;
-  sensorCeramic: THREE.MeshStandardMaterial;
-  bezelSubstrate: THREE.MeshStandardMaterial;
-  bezelTexturedRing: THREE.MeshStandardMaterial;
+  /** Galaxy Watch5 Armor Aluminum, Graphite finish (bead-blasted, satin). */
+  caseAluminum: THREE.MeshPhysicalMaterial;
+  /** Pixel Watch polished stainless steel (Polished Silver). */
+  caseStainlessSteel: THREE.MeshPhysicalMaterial;
+  /** Rear sensor window: dark glossy glass/ceramic. */
+  sensorGlass: THREE.MeshPhysicalMaterial;
+  /** Black OLED border / inactive screen area under the cover glass. */
+  bezelBlack: THREE.MeshPhysicalMaterial;
+  /** Active display; screenshot texture goes in `map` (cloned per device). */
   displayEmpty: THREE.MeshBasicMaterial;
-  glassSapphire: THREE.MeshPhysicalMaterial;
-  glassDomedPebble: THREE.MeshPhysicalMaterial;
-  crownKnurled: THREE.MeshStandardMaterial;
-  buttonAccent: THREE.MeshStandardMaterial;
-  strapSilicone: THREE.MeshStandardMaterial;
-  wristSkin: THREE.MeshStandardMaterial;
+  /**
+   * Cover glass. Rendered additively with a black base colour so it only ADDS
+   * environment reflections (Fresnel-weighted) on top of the screen and never dims it.
+   */
+  coverGlass: THREE.MeshPhysicalMaterial;
+  crownSteel: THREE.MeshPhysicalMaterial;
+  strapSilicone: THREE.MeshPhysicalMaterial;
+  wristSkin: THREE.MeshPhysicalMaterial;
 }
 
 export function createWatchMaterials(): WatchMaterials {
-  // Samsung Armor Aluminum (Graphite Black anodized finish matching real watch)
-  const caseAluminum = new THREE.MeshStandardMaterial({
-    color: 0x22262e,
-    metalness: 0.85,
-    roughness: 0.28
+  const caseAluminum = new THREE.MeshPhysicalMaterial({
+    color: 0x3b3e44,
+    metalness: 1.0,
+    roughness: 0.38,
   });
 
-  // Pixel Watch Polished Stainless Steel (Silver finish)
-  const caseStainlessSteel = new THREE.MeshStandardMaterial({
-    color: 0xdee2e6,
-    metalness: 0.96,
-    roughness: 0.14
+  const caseStainlessSteel = new THREE.MeshPhysicalMaterial({
+    color: 0xd6d8dc,
+    metalness: 1.0,
+    roughness: 0.12,
   });
 
-  // Matte Black Accent / Inset
-  const caseMatteBlack = new THREE.MeshStandardMaterial({
-    color: 0x181a1f,
-    metalness: 0.5,
-    roughness: 0.5
+  const sensorGlass = new THREE.MeshPhysicalMaterial({
+    color: 0x0c0d10,
+    metalness: 0.0,
+    roughness: 0.15,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.05,
   });
 
-  // Rear sensor housing (dark glossy ceramic/glass)
-  const sensorCeramic = new THREE.MeshStandardMaterial({
-    color: 0x111317,
-    metalness: 0.3,
-    roughness: 0.2
+  const bezelBlack = new THREE.MeshPhysicalMaterial({
+    color: 0x010101,
+    metalness: 0.0,
+    roughness: 0.3,
+    specularIntensity: 0.5,
   });
 
-  // Deep black OLED bezel substrate
-  const bezelSubstrate = new THREE.MeshStandardMaterial({
-    color: 0x050608,
-    metalness: 0.1,
-    roughness: 0.6
-  });
-
-  // Galaxy Watch touch bezel textured ring
-  const bezelTexturedRing = new THREE.MeshStandardMaterial({
-    color: 0x14161b,
-    metalness: 0.4,
-    roughness: 0.45
-  });
-
-  // Active display material (pure emissive display representation)
-  // When texture is applied, this displays exact RGB values without distortion
   const displayEmpty = new THREE.MeshBasicMaterial({
-    color: 0x090b10,
-    toneMapped: false
+    color: 0x050608,
+    toneMapped: false,
   });
 
-  // Flat Sapphire glass for Galaxy Watch5 (crystal clear with refined specular clearcoat)
-  const glassSapphire = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff,
+  const coverGlass = new THREE.MeshPhysicalMaterial({
+    color: 0x000000,
+    metalness: 0.0,
+    roughness: 0.04,
+    ior: 1.6,
+    specularIntensity: 1.0,
+    envMapIntensity: 1.0,
     transparent: true,
-    opacity: 0.05,
-    roughness: 0.03,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+
+  const crownSteel = new THREE.MeshPhysicalMaterial({
+    color: 0xcfd2d6,
+    metalness: 1.0,
+    roughness: 0.22,
+  });
+
+  const strapSilicone = new THREE.MeshPhysicalMaterial({
+    color: 0x26282c,
     metalness: 0.0,
-    ior: 1.77,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.03,
-    depthWrite: false
+    roughness: 0.62,
+    sheen: 0.4,
+    sheenRoughness: 0.8,
+    sheenColor: new THREE.Color(0x60646c),
+    side: THREE.DoubleSide,
   });
 
-  // Domed Corning Gorilla Glass 5 for Pixel Watch (smooth curved glint, crystal clear)
-  const glassDomedPebble = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.05,
-    roughness: 0.03,
+  const wristSkin = new THREE.MeshPhysicalMaterial({
+    color: 0xc9a58a,
     metalness: 0.0,
-    ior: 1.52,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.02,
-    depthWrite: false
-  });
-
-  // Fluted/knurled crown
-  const crownKnurled = new THREE.MeshStandardMaterial({
-    color: 0xd4d8de,
-    metalness: 0.92,
-    roughness: 0.25
-  });
-
-  // Subtle button accent
-  const buttonAccent = new THREE.MeshStandardMaterial({
-    color: 0xe11d48, // Subtle red accent ring for GW5 power key
-    metalness: 0.8,
-    roughness: 0.3
-  });
-
-  // Dark charcoal silicone strap matching real Samsung sport band
-  const strapSilicone = new THREE.MeshStandardMaterial({
-    color: 0x181a20,
-    metalness: 0.04,
-    roughness: 0.75
-  });
-
-  // Natural wrist skin tone matching real hardware on arm
-  const wristSkin = new THREE.MeshStandardMaterial({
-    color: 0xdeb897, // Warm natural arm tone
-    metalness: 0.0,
-    roughness: 0.72
+    roughness: 0.68,
+    sheen: 0.35,
+    sheenRoughness: 0.6,
+    sheenColor: new THREE.Color(0xffd9c2),
   });
 
   return {
     caseAluminum,
     caseStainlessSteel,
-    caseMatteBlack,
-    sensorCeramic,
-    bezelSubstrate,
-    bezelTexturedRing,
+    sensorGlass,
+    bezelBlack,
     displayEmpty,
-    glassSapphire,
-    glassDomedPebble,
-    crownKnurled,
-    buttonAccent,
+    coverGlass,
+    crownSteel,
     strapSilicone,
-    wristSkin
+    wristSkin,
   };
 }

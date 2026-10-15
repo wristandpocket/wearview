@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DeviceId } from '../types';
+import { DEVICE_LIST } from '../devices';
 
 interface HeaderProps {
   selectedDeviceId: DeviceId;
@@ -7,15 +8,11 @@ interface HeaderProps {
   onResetCamera: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  selectedDeviceId,
-  onSelectDevice,
-  onResetCamera
-}) => {
+export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice, onResetCamera }) => {
   return (
     <header className="app-header">
       <div className="brand-section">
-        <div className="brand-logo" title="WearView 3D Preview">
+        <div className="brand-logo" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="7" />
             <polyline points="12 9 12 12 13.5 13.5" />
@@ -26,47 +23,36 @@ export const Header: React.FC<HeaderProps> = ({
           <span>WearView</span>
           <span className="brand-badge">MVP</span>
         </div>
-        <div className="privacy-pill" title="All screenshot textures and files remain strictly inside your browser memory. No backend or telemetry.">
+        <div className="privacy-pill" title="Screenshots never leave your browser. No backend, no telemetry.">
           <span className="privacy-dot"></span>
-          <span>Local-Only</span>
+          <span>Local-only</span>
         </div>
       </div>
 
-      <div className="header-actions">
-        <div className="device-select-container" role="radiogroup" aria-label="Wear OS Device Selection">
+      <div className="device-select" role="radiogroup" aria-label="Watch model">
+        {DEVICE_LIST.map((device) => (
           <button
+            key={device.id}
             type="button"
-            className={`device-select-btn ${selectedDeviceId === 'galaxy-watch-5-44mm' ? 'active' : ''}`}
-            onClick={() => onSelectDevice('galaxy-watch-5-44mm')}
+            className={`device-select-btn ${selectedDeviceId === device.id ? 'active' : ''}`}
+            onClick={() => onSelectDevice(device.id)}
             role="radio"
-            aria-checked={selectedDeviceId === 'galaxy-watch-5-44mm'}
+            aria-checked={selectedDeviceId === device.id}
+            title={device.generation}
           >
-            Galaxy Watch5 · 44 mm
+            <span className="label-long">{device.generation.replace(/ \(\d{4}\)$/, '')}</span>
+            <span className="label-short">{device.shortLabel}</span>
           </button>
-          <button
-            type="button"
-            className={`device-select-btn ${selectedDeviceId === 'pixel-watch-1-41mm' ? 'active' : ''}`}
-            onClick={() => onSelectDevice('pixel-watch-1-41mm')}
-            role="radio"
-            aria-checked={selectedDeviceId === 'pixel-watch-1-41mm'}
-          >
-            Pixel Watch · 1st gen · 41 mm
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="btn-secondary"
-          onClick={onResetCamera}
-          title="Reset camera to default three-quarter angle"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
-          <span>Reset View</span>
-        </button>
+        ))}
       </div>
+
+      <button type="button" className="btn-secondary reset-btn" onClick={onResetCamera} title="Reset camera" aria-label="Reset camera">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+        <span className="reset-label">Reset view</span>
+      </button>
     </header>
   );
 };

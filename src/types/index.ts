@@ -8,6 +8,7 @@ export interface DeviceSpec {
   id: DeviceId;
   name: string;
   generation: string;
+  shortLabel: string;
   releaseYear: number;
   caseDiameterMm: number;
   caseHeightMm: number;

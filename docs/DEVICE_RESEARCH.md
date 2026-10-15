@@ -33,14 +33,15 @@ This document records the exact physical specifications, primary manufacturer so
 - **Finish:** Matte/satin anodized aluminum with subtle anisotropic sheen; buttons match case finish.
 
 ### 4. WearView MVP Visual Approximation
-- In scene units ($1\text{ unit} = 1\text{ mm}$):
-  - Case radius: $R = 22.0\text{ mm}$ (diameter $44.0\text{ mm}$), case body depth: $9.8\text{ mm}$.
-  - Active screen radius: $R_{\text{screen}} = 17.3\text{ mm}$ (diameter $34.6\text{ mm}$).
-  - Display resolution: $450 \times 450\text{ px}$.
-  - Bezel ring: Inner radius $17.3\text{ mm}$, outer radius $21.5\text{ mm}$, subtle dark textured bezel with hour indices / touch track feel.
-  - Raised outer rim: Height $+0.4\text{ mm}$ above glass plane.
-  - Right buttons: Home button at $+25^\circ$ elevation, Back button at $-25^\circ$, length $8.5\text{ mm}$, width $2.2\text{ mm}$, protrusion $1.0\text{ mm}$.
-  - Lugs: 20 mm inner gap, extending North and South by $5.0\text{ mm}$ with downward curvature.
+Built in `src/devices/galaxyWatch5.ts` (scene units: 1 unit = 1 mm, face up, 12 o'clock = -Z).
+- Case: one lathed aluminum shell; flank peaks at r = 21.65 mm (43.3 mm, confirmed), body 9.8 mm (confirmed).
+- Active display: r = 17.3 mm (34.6 mm, confirmed), 450 × 450.
+- Black display border under the glass: r 17.3 → 19.45 mm (~2.15 mm, estimated from product photos).
+- Raised aluminum lip around the flat glass: r 19.45 → ~20.4 mm, glass sits ~0.3 mm below the lip top (estimated).
+- Rear sensor dome: ~1.6 mm below the 9.8 mm body (estimated; total ~11.4 mm).
+- Lugs: short extruded horns with a 20 mm strap gap (gap confirmed, shape estimated).
+- Keys: two flattened pill keys at ~±20° from 3 o'clock (positions estimated).
+- Strap: one-piece band swept around the shared wrist cross-section (`WRIST_SECTION`), so the same band hugs the arm in On wrist mode.
 
 ---
 
@@ -76,16 +77,13 @@ This document records the exact physical specifications, primary manufacturer so
 - **Crown & Button:** Digital crown at 3 o'clock protrudes cleanly (~1.8 mm) with fine knurled ridges; button at 2 o'clock sits almost flush.
 
 ### 4. WearView MVP Visual Approximation
-- In scene units ($1\text{ unit} = 1\text{ mm}$):
-  - Case radius: $R = 20.5\text{ mm}$ (diameter $41.0\text{ mm}$).
-  - Total depth: $12.3\text{ mm}$ (including sensor dome); main body depth $10.5\text{ mm}$.
-  - Active screen radius: $R_{\text{screen}} = 16.5\text{ mm}$ (diameter $33.0\text{ mm}$). Calibrated for natural on-screen game UI proportions while preserving the dome's edge falloff.
-  - Display resolution: $450 \times 450\text{ px}$.
-  - Glass curvature: Procedural lathed profile curving smoothly from top surface down to the equator at $R = 20.5\text{ mm}$.
-  - Bezel: Curvature-matched black OLED substrate conforming to the inner dome profile between $R = 16.5\text{ mm}$ and $R = 20.4\text{ mm}$, preventing an oversized flat border.
-  - Crown: Positioned at $0^\circ$ (3 o'clock), radius $2.4\text{ mm}$, height $1.8\text{ mm}$, knurled texture/ribbing.
-  - Flush button: Positioned at $+35^\circ$ (~2 o'clock), subtle pill contour.
-  - Band channels: Lugless direct transition at North and South.
+Built in `src/devices/pixelWatch1.ts`.
+- Polished steel body lathed below the glass, r = 20.5 mm (41 mm, confirmed).
+- Total height 12.3 mm (confirmed): dome apex at y = +2.2, sensor dome bottom at y = -10.1.
+- Domed cover glass: lathe profile rolling over the edge down to y ≈ -2 (shape estimated from photos).
+- Black glass substrate follows the dome from underneath; active display r = 16.75 mm (33.5 mm). **Note:** the display diameter here conflicts with the 30.48 mm (1.2 in) figure in the table above; it needs re-verification before the bezel width can be called accurate.
+- Fluted crown at 3 o'clock (r = 2.7 mm), flush pill key at ~2 o'clock (estimated).
+- Lugless band entering the case at 12 and 6 o'clock, wrapped around the shared wrist cross-section.
 
 ---
 

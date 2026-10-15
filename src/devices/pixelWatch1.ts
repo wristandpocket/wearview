@@ -1,192 +1,135 @@
 import * as THREE from 'three';
 import type { DeviceModelResult, DeviceSpec } from './types';
 import type { WatchMaterials } from './materials';
+import { flutedCrownGeometry, latheFromProfile, pillButtonGeometry, placeOnSide, sweepBand, wrapStrapPath } from './geometry';
 
 export const PIXEL_WATCH_1_SPEC: DeviceSpec = {
   id: 'pixel-watch-1-41mm',
   name: 'Google Pixel Watch',
   generation: 'Pixel Watch · 1st gen · 41 mm (2022)',
+  shortLabel: 'Pixel Watch 41',
   releaseYear: 2022,
   caseDiameterMm: 41.0,
   caseHeightMm: 41.0,
-  caseThicknessMm: 12.3, // confirmed official total thickness including sensor dome
-  displayDiameterMm: 33.5, // Calibrated active display diameter for proportional UI preview
+  caseThicknessMm: 12.3, // official total height including sensor dome
+  displayDiameterMm: 33.5, // Estimated active area used for preview
   resolutionPx: { width: 450, height: 450 },
-  bezelRadialWidthMm: 3.75, // Sleek, organic curved pebble border (41.0 - 33.5) / 2
+  bezelRadialWidthMm: 3.75, // (41.0 - 33.5) / 2, black glass border under the dome
   glassType: 'domed-pebble-glass',
   caseMaterialName: 'Polished Stainless Steel (Silver)',
   confirmedSources: [
     'Google Store Tech Specs (2022 Pixel Watch 1st Gen)',
-    'Google Support Hardware Specifications (41 mm diameter, 12.3 mm height, 36g)',
-    'iFixit Hardware Teardown (Custom 3D Corning Gorilla Glass 5, AMOLED)'
+    'Google Support Hardware Specifications (41 mm diameter, 12.3 mm height, 36g)'
   ],
-  notes: 'First-generation 2022 model. Distinct continuous 3D domed pebble glass curving seamlessly into polished stainless steel bucket. 100% solid watertight CAD chassis with zero see-through holes. Rotating crown at 3H, flush button at 2H. Lugless band attachment.'
+  notes: 'First-generation 2022 model. Domed 3D Gorilla Glass 5 rolling over the edge into a polished steel body, wide black glass border, fluted crown at 3 o\'clock with a flush side key above it, lugless band attachment.'
 };
 
 /**
- * Builds high-fidelity procedural 3D model of Google Pixel Watch 1st gen (41 mm).
- * 100% solid watertight CAD volume:
- * - Continuous 3D domed Corning Gorilla Glass 5 pebble
- * - Proportional 33.5 mm active display
- * - Solid sealed black substrate floor under glass (zero see-through voids)
- * - Closed watertight mirror-polished stainless steel bottom bucket
- * - Tactile fluted digital crown at 3H and flush side key at 2H
+ * Procedural Pixel Watch (1st gen, 41 mm). 1 unit = 1 mm, face up, 12 o'clock at -Z.
+ * Dome apex at y = 2.2, glass meets the steel at y ≈ -2, sensor dome bottom at y = -10.1 (12.3 mm total).
  */
 export function buildPixelWatch1Model(materials: WatchMaterials): DeviceModelResult {
   const group = new THREE.Group();
-  group.name = 'pixel-watch-1-41mm';
+  group.name = PIXEL_WATCH_1_SPEC.id;
 
-  const caseRadius = 20.5; // 41.0 mm diameter
-  const screenRadius = 16.75; // 33.5 mm active display
-  const totalHeight = 12.3; // Confirmed official total depth
-  const apexY = 2.4; // Dome peak above chassis equator
-  const equatorY = 0.0; // Chassis equator seam
-  const sensorDomeBaseY = apexY - totalHeight; // -9.9 mm
+  const screenRadius = PIXEL_WATCH_1_SPEC.displayDiameterMm / 2; // 16.75
+  const backY = -10.1;
 
-  // 1. SOLID CHASSIS INTERIOR FLOOR (Completely seals interior so watch is 100% solid)
-  const interiorFloorGeom = new THREE.CircleGeometry(caseRadius - 0.1, 96);
-  interiorFloorGeom.rotateX(-Math.PI / 2);
-  const interiorFloorMesh = new THREE.Mesh(interiorFloorGeom, materials.bezelSubstrate);
-  interiorFloorMesh.position.set(0, equatorY - 0.1, 0);
-  group.add(interiorFloorMesh);
+  // 1. Polished steel body below the glass equator
+  const bodyGeo = latheFromProfile([
+    [14.2, -9.3],
+    [17.6, -9.05],
+    [19.6, -7.9],
+    [20.4, -5.9],
+    [20.5, -3.8],
+    [20.35, -2.4],
+    [20.0, -2.0],
+    [19.6, -1.95],
+  ]);
+  const body = new THREE.Mesh(bodyGeo, materials.caseStainlessSteel);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
 
-  // 2. ACTIVE DISPLAY MESH
-  // Sits flat at Y = 1.05 mm, fully recessed inside the 3D dome (glass reaches 1.48 mm at r = 16.75 mm)
-  const displayGeometry = new THREE.CircleGeometry(screenRadius, 96);
-  displayGeometry.rotateX(-Math.PI / 2);
-  const displayMesh = new THREE.Mesh(displayGeometry, materials.displayEmpty.clone());
+  // 2. Black glass substrate that follows the dome from underneath (the wide Gen 1 border)
+  const substrateGeo = latheFromProfile([
+    [19.95, -2.05],
+    [20.05, -1.55],
+    [19.75, -0.85],
+    [19.05, -0.05],
+    [17.7, 0.55],
+    [15.5, 0.92],
+    [8, 1.0],
+    [0, 1.0],
+  ]);
+  const substrate = new THREE.Mesh(substrateGeo, materials.bezelBlack);
+  group.add(substrate);
+
+  // 3. Active display, flat, sitting under the apex of the dome
+  const displayGeo = new THREE.CircleGeometry(screenRadius, 128);
+  displayGeo.rotateX(-Math.PI / 2);
+  const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'displayMesh';
-  displayMesh.position.set(0, 1.05, 0);
-  displayMesh.renderOrder = 2;
-  displayMesh.receiveShadow = false;
+  displayMesh.position.y = 1.05;
   group.add(displayMesh);
 
-  // 3. CURVED SOLID BEZEL SUBSTRATE (Deep black OLED border curving under dome to equator)
-  const bezelPoints: THREE.Vector2[] = [];
-  const bezelSteps = 24;
-  for (let i = 0; i <= bezelSteps; i++) {
-    const t = i / bezelSteps;
-    const r = screenRadius + t * (caseRadius - 0.08 - screenRadius);
-    // Smooth falloff from Y = 1.02 down to Y = -0.06
-    const y = 1.02 - Math.pow(t, 1.6) * 1.08;
-    bezelPoints.push(new THREE.Vector2(r, y));
-  }
-  // Seal inner boundary back to center axis
-  bezelPoints.push(new THREE.Vector2(screenRadius, equatorY - 0.08));
-  const bezelGeometry = new THREE.LatheGeometry(bezelPoints, 96);
-  const bezelMesh = new THREE.Mesh(bezelGeometry, materials.bezelSubstrate);
-  bezelMesh.renderOrder = 1;
-  group.add(bezelMesh);
-
-  // 4. CONTINUOUS 3D DOMED PEBBLE GLASS
-  // Custom 3D Corning Gorilla Glass 5 that rolls seamlessly down from apex (Y = 2.4) to equator (Y = 0.0)
-  const domePoints: THREE.Vector2[] = [];
-  const domeSteps = 48;
-
-  for (let i = 0; i <= domeSteps; i++) {
-    const t = i / domeSteps;
-    const angle = t * (Math.PI / 2);
-    const r = caseRadius * Math.sin(angle);
-    // Physically verified super-elliptical dome profile
-    const normalizedR = Math.min(1.0, r / caseRadius);
-    const y = apexY * Math.pow(Math.max(0, 1 - Math.pow(normalizedR, 2)), 0.46);
-    domePoints.push(new THREE.Vector2(Math.max(0.001, r), y));
-  }
-
-  const domeGeometry = new THREE.LatheGeometry(domePoints, 96);
-  const glassMesh = new THREE.Mesh(domeGeometry, materials.glassDomedPebble);
+  // 4. Domed cover glass (pebble profile)
+  const domeGeo = latheFromProfile([
+    [20.1, -2.05],
+    [20.5, -1.35],
+    [20.35, -0.35],
+    [19.7, 0.6],
+    [18.3, 1.35],
+    [15.0, 1.88],
+    [10.0, 2.12],
+    [0, 2.2],
+  ]);
+  const glassMesh = new THREE.Mesh(domeGeo, materials.coverGlass);
   glassMesh.name = 'glassMesh';
   glassMesh.renderOrder = 10;
-  glassMesh.castShadow = false;
-  glassMesh.receiveShadow = false;
   group.add(glassMesh);
 
-  // 5. WATERTIGHT POLISHED STAINLESS STEEL BOTTOM BOWL (Fully closed at r = 0)
-  const bowlPoints: THREE.Vector2[] = [];
-  const bowlSteps = 28;
+  // 5. Rear sensor dome
+  const sensorGeo = latheFromProfile([
+    [0, backY],
+    [7.0, backY + 0.05],
+    [11.6, backY + 0.3],
+    [14.2, backY + 0.75],
+    [14.6, -9.25],
+    [14.3, -9.05],
+  ], 96, 48);
+  const sensor = new THREE.Mesh(sensorGeo, materials.sensorGlass);
+  group.add(sensor);
 
-  // From equator (r = caseRadius, y = equatorY) curving down to center (r = 0)
-  for (let i = 0; i <= bowlSteps; i++) {
-    const t = i / bowlSteps;
-    const r = caseRadius * Math.cos(t * Math.PI * 0.44);
-    const y = equatorY - Math.pow(t, 1.3) * (Math.abs(sensorDomeBaseY + 1.2 - equatorY));
-    bowlPoints.push(new THREE.Vector2(Math.max(0.001, r), y));
-  }
-  // Close completely at center axis
-  bowlPoints.push(new THREE.Vector2(0.001, sensorDomeBaseY + 1.2));
+  // 6. Fluted crown at 3 o'clock
+  const crownLength = 2.4;
+  const crown = new THREE.Mesh(flutedCrownGeometry(2.7, crownLength, 30, 0.14), materials.crownSteel);
+  crown.position.set(20.1 + crownLength / 2, -4.3, 0);
+  crown.castShadow = true;
+  group.add(crown);
+  const capGeo = new THREE.SphereGeometry(2.6, 32, 12, 0, Math.PI * 2, 0, Math.PI * 0.22);
+  capGeo.rotateZ(-Math.PI / 2);
+  const cap = new THREE.Mesh(capGeo, materials.caseStainlessSteel);
+  cap.position.set(20.1 + crownLength - 2.0, -4.3, 0);
+  group.add(cap);
 
-  const bowlGeometry = new THREE.LatheGeometry(bowlPoints, 96);
-  const bowlMesh = new THREE.Mesh(bowlGeometry, materials.caseStainlessSteel);
-  bowlMesh.castShadow = true;
-  bowlMesh.receiveShadow = true;
-  group.add(bowlMesh);
+  // 7. Flush side key above the crown (~2 o'clock)
+  const key = new THREE.Mesh(pillButtonGeometry(5.0, 1.6, 0.6), materials.caseStainlessSteel);
+  placeOnSide(key, 20.35, 0.42, -4.3);
+  group.add(key);
 
-  // 6. REAR SENSOR DOME
-  const sensorGeom = new THREE.CylinderGeometry(13.5, 14.5, 1.2, 64);
-  const sensorMesh = new THREE.Mesh(sensorGeom, materials.sensorCeramic);
-  sensorMesh.position.set(0, sensorDomeBaseY + 0.6, 0);
-  group.add(sensorMesh);
-
-  // Optical sensor window
-  const sensorWindowGeom = new THREE.CircleGeometry(4.2, 32);
-  sensorWindowGeom.rotateX(Math.PI / 2);
-  const sensorWindowMesh = new THREE.Mesh(sensorWindowGeom, materials.bezelSubstrate);
-  sensorWindowMesh.position.set(0, sensorDomeBaseY - 0.02, 0);
-  group.add(sensorWindowMesh);
-
-  // 7. ROTATING DIGITAL CROWN (3 o'clock, +X at Z = 0)
-  const crownRadius = 2.4;
-  const crownLength = 1.7;
-  const crownGeom = new THREE.CylinderGeometry(crownRadius, crownRadius, crownLength, 32);
-  crownGeom.rotateZ(Math.PI / 2);
-  const crownMesh = new THREE.Mesh(crownGeom, materials.crownKnurled);
-  crownMesh.position.set(caseRadius + crownLength / 2 - 0.25, equatorY - 0.3, 0);
-  crownMesh.castShadow = true;
-  group.add(crownMesh);
-
-  // Fluted cap on crown end
-  const crownCapGeom = new THREE.SphereGeometry(crownRadius * 0.95, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.3);
-  crownCapGeom.rotateZ(-Math.PI / 2);
-  const crownCapMesh = new THREE.Mesh(crownCapGeom, materials.caseStainlessSteel);
-  crownCapMesh.position.set(caseRadius + crownLength - 0.25, equatorY - 0.3, 0);
-  group.add(crownCapMesh);
-
-  // 8. FLUSH SIDE BUTTON (2 o'clock, +X at Z = -7.0 mm, above crown)
-  const buttonAngle = -0.38;
-  const btnX = Math.cos(buttonAngle) * caseRadius;
-  const btnZ = Math.sin(buttonAngle) * caseRadius;
-  const sideBtnGeom = new THREE.BoxGeometry(0.7, 1.4, 4.2);
-  const sideBtnMesh = new THREE.Mesh(sideBtnGeom, materials.caseStainlessSteel);
-  sideBtnMesh.position.set(btnX - 0.1, equatorY + 0.1, btnZ);
-  sideBtnMesh.rotation.y = -buttonAngle;
-  group.add(sideBtnMesh);
-
-  // 9. LUGLESS BAND ATTACHMENT & STRAP (Curving naturally)
-  function createLuglessStrap(isNorth: boolean) {
-    const sign = isNorth ? -1 : 1;
-    const strapWidth = 19.5;
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, equatorY - 1.2, sign * (caseRadius - 0.8)),
-      new THREE.Vector3(0, -4.5, sign * (caseRadius + 2.5)),
-      new THREE.Vector3(0, -10.0, sign * (caseRadius + 6.0)),
-      new THREE.Vector3(0, -18.5, sign * (caseRadius + 5.0)),
-      new THREE.Vector3(0, -25.5, sign * (caseRadius + 2.0))
-    ]);
-
-    const strapGeom = new THREE.TubeGeometry(curve, 32, 1.4, 16, false);
-    strapGeom.scale(strapWidth / 2.8, 1, 1);
-    const strapMesh = new THREE.Mesh(strapGeom, materials.strapSilicone);
-    strapMesh.castShadow = true;
-    strapMesh.receiveShadow = true;
-    group.add(strapMesh);
-  }
-  createLuglessStrap(true);  // North (12H)
-  createLuglessStrap(false); // South (6H)
+  // 8. Lugless band: enters slots in the case at 12 and 6 o'clock
+  const strapGeo = sweepBand(wrapStrapPath(18.4, -5.6, backY, 2.4), 19.0, 2.4);
+  const strap = new THREE.Mesh(strapGeo, materials.strapSilicone);
+  strap.castShadow = true;
+  strap.receiveShadow = true;
+  group.add(strap);
 
   return {
     group,
     displayMesh,
     glassMesh,
+    backY,
     spec: PIXEL_WATCH_1_SPEC
   };
 }
