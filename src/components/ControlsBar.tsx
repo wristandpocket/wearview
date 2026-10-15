@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import type { LightingPreset, ViewMode } from '../types';
 
 export type CameraPreset = 'front' | 'tilt' | 'side';
@@ -16,10 +16,11 @@ interface ControlsBarProps {
   onExportPng?: () => void;
 }
 
-const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }> = [
+const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; title: string; icon: React.ReactNode }> = [
   {
     id: 'watch',
     label: 'Watch',
+    title: 'Watch view [W]',
     icon: (
       <>
         <circle cx="12" cy="12" r="7" />
@@ -30,6 +31,7 @@ const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }
   {
     id: 'wrist',
     label: 'On wrist',
+    title: 'On wrist view [W]',
     icon: (
       <>
         <path d="M2 9h6l2-2h4l2 2h6" />
@@ -41,9 +43,9 @@ const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }
 ];
 
 const CAMERA_PRESETS: Array<{ id: CameraPreset; label: string; title: string }> = [
-  { id: 'front', label: 'Front 0°', title: 'Perpendicular top-down view (0°)' },
-  { id: 'tilt', label: 'Tilt 35°', title: 'Natural wrist-glance viewing angle (35°)' },
-  { id: 'side', label: 'Side 75°', title: 'Grazing angle to inspect dome curvature & case thickness (75°)' },
+  { id: 'front', label: 'Front 0°', title: 'Perpendicular top-down view (0°) [1]' },
+  { id: 'tilt', label: 'Tilt 35°', title: 'Natural wrist-glance viewing angle (35°) [2]' },
+  { id: 'side', label: 'Side 75°', title: 'Grazing angle to inspect dome curvature & case thickness (75°) [3]' },
 ];
 
 const LIGHT_OPTIONS: Array<{ id: LightingPreset; label: string; title: string; icon: React.ReactNode }> = [
@@ -89,21 +91,6 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
   onSelectCameraAngle,
   onExportPng,
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-        return;
-      }
-      if (e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        onToggleSafeZones();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onToggleSafeZones]);
-
   return (
     <div className="controls-dock">
       <div className="segmented-bar" role="radiogroup" aria-label="View mode">
@@ -115,6 +102,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             onClick={() => onViewModeChange(opt.id)}
             role="radio"
             aria-checked={viewMode === opt.id}
+            title={opt.title}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {opt.icon}
@@ -165,7 +153,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
           className={`segmented-btn ${safeZones ? 'active accent' : ''}`}
           onClick={onToggleSafeZones}
           aria-pressed={safeZones}
-          title="Toggle Wear OS Safe Zones (80% / 90% / 100% boundary overlay) [Shortcut: S]"
+          title="Toggle Wear OS Safe Zones (80% / 90% / 100% boundary overlay) [S]"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
@@ -195,7 +183,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             type="button"
             className="segmented-btn"
             onClick={onExportPng}
-            title="Export high-resolution WebGL canvas snapshot as PNG"
+            title="Export high-resolution WebGL canvas snapshot as PNG [P]"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

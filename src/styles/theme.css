@@ -600,6 +600,52 @@ button {
 
 .link-btn:hover { color: var(--text-primary); }
 
+.preset-screens-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  width: 100%;
+}
+
+.preset-screens-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.preset-screens-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.preset-pill-btn {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.preset-pill-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.preset-pill-btn.active {
+  background-color: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .alert-error {
   padding: 0.6rem 0.8rem;
   border-radius: var(--radius-md);

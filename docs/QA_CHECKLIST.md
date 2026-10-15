@@ -8,10 +8,10 @@ This document records the actual verification results and outcomes for WearView.
 
 | Test Area | Criteria Evaluated | Total Passed | Failed | Not Tested |
 | :--- | :--- | :--- | :--- | :--- |
-| **Functional Acceptance** | 20 | 20 | 0 | 0 |
+| **Functional Acceptance** | 21 | 21 | 0 | 0 |
 | **Deep Engineering Audit & Precision Pass** | 7 | 7 | 0 | 0 |
 | **Build & Type Safety** | 3 | 3 | 0 | 0 |
-| **Unit Test Suites** | 6 local suites (41 tests) | 41 | 0 | 0 |
+| **Unit Test Suites** | 6 local suites (45 tests) | 45 | 0 | 0 |
 
 ---
 
@@ -36,9 +36,10 @@ This document records the actual verification results and outcomes for WearView.
 | 15 | **No obvious severe GPU resource leaks occur after repeatedly changing image/device/mode.** | **PASS** | Outgoing models recursively dispose all `BufferGeometry` instances and cloned `Material` instances while preserving active screenshot `Texture`. |
 | 16 | **Browser console is free of avoidable errors and warnings caused by the app.** | **PASS** | Zero syntax errors, zero React warnings, zero Three.js deprecation warnings. Watertight solid chassis geometries. |
 | 17 | **Interactive Wear OS Safe-Zone & Cardinal Overlay (Shortcut: S).** | **PASS** | Non-intrusive 3D circular wireframe overlay rendered at `renderOrder: 3` showing 100% boundary (cyan), 90% Action/Button Safe Zone (amber), and 80% Title/Text Safe Zone (emerald), plus cardinal tick marks (12h, 3h, 6h, 9h) to immediately spot bezel occlusion. Toggled via dock button or `S` key. |
-| 18 | **Quick Camera Angle Presets (Front 0°, Tilt 35°, Side 75°).** | **PASS** | Dedicated inspection presets smoothly animate (`flyToPose`) the camera to: Front (0° perpendicular), Tilt (35° natural wrist glance to verify raised bezel clearance), and Side (75° grazing angle to inspect dome curvature, case thickness, and wrist contact). |
-| 19 | **High-Resolution PNG Snapshot Export.** | **PASS** | `exportPngSnapshot()` captures current WebGL canvas to PNG (`wearview-{deviceId}-{timestamp}.png`). `preserveDrawingBuffer: true` ensures clean, non-blank frame captures. |
+| 18 | **Quick Camera Angle Presets (Front 0°, Tilt 35°, Side 75°).** | **PASS** | Dedicated inspection presets smoothly animate (`flyToPose`) the camera to: Front (0° perpendicular, shortcut `1`), Tilt (35° natural wrist glance to verify raised bezel clearance, shortcut `2`), and Side (75° grazing angle to inspect dome curvature, case thickness, and wrist contact, shortcut `3`). |
+| 19 | **High-Resolution PNG Snapshot Export (Shortcut: P).** | **PASS** | Canonicalized in the dock controls bar with shortcut `P`. Synchronous `renderer.render()` execution directly before `toDataURL()` with `preserveDrawingBuffer: false` guarantees crisp frame capture with 60fps performance on high-DPI displays and zero browser buffer copy overhead. |
 | 20 | **Anatomical Wrist Model Proportional Polish.** | **PASS** | `WRIST_SECTION.halfWidth` set to 33.5mm (67mm breadth) with updated lofting keys in `wristModel.ts`, cleanly accommodating wide 48–52.4mm lug-to-lug watches (e.g. GW6 Classic 47mm and TicWatch Pro 5) without skin clipping or artificial overhang. |
+| 21 | **Auto-Regenerate Test Pattern & 1-Click Sample Switching.** | **PASS** | Tracking screen texture source (`sample` vs `test-pattern` vs `user`). When switching smartwatches in the dropdown while `test-pattern` is active, the pattern is automatically regenerated matching the new device's exact resolution, diameter, and PPI. 1-click pills allow toggling between Cyberpunk 3D and QA Pattern. |
 
 ---
 
@@ -51,14 +52,14 @@ This document records the actual verification results and outcomes for WearView.
 2. **Vitest Unit Tests:**
    - Command: `npm.cmd test -- --run`
    - Exit Code: `0`
-   - Outcome: All 6 test suites passed (41 tests):
+   - Outcome: All 6 test suites passed (45 tests):
      - `src/textures/validator.test.ts` (9 tests: format validation, size checks, resolution/square checks)
      - `src/textures/imageFit.test.ts` (4 tests: contain fit calculations)
-     - `src/textures/testPattern.test.ts` (3 tests: testPattern options, safe zone badges, degree markings)
+     - `src/textures/testPattern.test.ts` (7 tests: testPattern options, device switching regeneration, safe zone badges, degree markings, handleGlobalKeyDown shortcuts)
      - `src/calibration/calibration.test.ts` (3 tests: physical calibration storage and math)
      - `src/devices/geometry.test.ts` (10 tests: procedural profiles, lathe, knurled bezel, wrist dimensions, wrap path for 52.4mm lugs)
      - `src/devices/devices.test.ts` (12 tests: all 11 devices, 1:1 mm math, named meshes, legacy aliases, normalizeDeviceId, archetype-aware screen-to-body ratios, vertical separation >= 0.08mm, render orders, and dynamic wrist fit)
 3. **Production Build:**
    - Command: `npm.cmd run build`
    - Exit Code: `0`
-   - Outcome: Vite production build generated `dist/` bundle cleanly in 2.60s.
+   - Outcome: Vite production build generated `dist/` bundle cleanly in 2.28s.

@@ -1,11 +1,15 @@
 import React, { useRef, useState } from 'react';
 import type { UploadedImageInfo } from '../types';
 
+export type TextureSource = 'sample' | 'test-pattern' | 'user' | null;
+
 interface ScreenshotUploaderProps {
   uploadedImage: UploadedImageInfo | null;
   onImageSelected: (file: File) => void;
   onImageRemoved: () => void;
   onLoadTestPattern: () => void;
+  onLoadSampleGame?: () => void;
+  activeSource?: TextureSource;
   errorMessage: string | null;
   resolutionWarning?: string | null;
   onClearError: () => void;
@@ -27,6 +31,8 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
   onImageSelected,
   onImageRemoved,
   onLoadTestPattern,
+  onLoadSampleGame,
+  activeSource,
   errorMessage,
   resolutionWarning,
   onClearError
@@ -122,9 +128,29 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
         </div>
       )}
 
-      <button type="button" className="link-btn" onClick={onLoadTestPattern}>
-        Load test pattern (edges, centre, orientation)
-      </button>
+      <div className="preset-screens-row">
+        <span className="preset-screens-label">Quick samples:</span>
+        <div className="preset-screens-pills">
+          {onLoadSampleGame && (
+            <button
+              type="button"
+              className={`preset-pill-btn ${activeSource === 'sample' ? 'active' : ''}`}
+              onClick={onLoadSampleGame}
+              title="Load Cyberpunk 3D game screen sample"
+            >
+              Cyberpunk 3D
+            </button>
+          )}
+          <button
+            type="button"
+            className={`preset-pill-btn ${activeSource === 'test-pattern' ? 'active' : ''}`}
+            onClick={onLoadTestPattern}
+            title="Load hardware-accurate QA test pattern (resolution, safe zones, degree ticks)"
+          >
+            QA Test Pattern
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

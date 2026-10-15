@@ -161,7 +161,7 @@ export class ThreeViewer {
       antialias: true,
       alpha: true,
       powerPreference: 'high-performance',
-      preserveDrawingBuffer: true,
+      preserveDrawingBuffer: false,
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setClearColor(0x000000, 0);
@@ -385,6 +385,8 @@ export class ThreeViewer {
   }
 
   public exportPngSnapshot(filename?: string): void {
+    // Explicit synchronous render right before reading dataURL guarantees a fresh,
+    // crisp frame capture with preserveDrawingBuffer: false (avoiding browser buffer copy overhead during normal interaction).
     this.renderer.render(this.scene, this.camera);
     const dataUrl = this.renderer.domElement.toDataURL('image/png');
     const a = document.createElement('a');
@@ -394,7 +396,15 @@ export class ThreeViewer {
     a.href = dataUrl;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    setTimeout(() => {
+      if (a.parentNode) {
+        a.parentNode.removeChild(a);
+      }
+    }, 100);
+  }
+
+  public captureSnapshot(filename?: string): void {
+    this.exportPngSnapshot(filename);
   }
 
   // ---------------------------------------------------------------- internals

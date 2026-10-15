@@ -9,9 +9,10 @@ import { createTestPatternFile } from './textures/testPattern';
 import { checkScreenshotResolution } from './textures/validator';
 import { Header } from './components/Header';
 import { ControlsBar } from './components/ControlsBar';
-import { ScreenshotUploader } from './components/ScreenshotUploader';
+import { ScreenshotUploader, type TextureSource } from './components/ScreenshotUploader';
 import { DeviceSpecDrawer } from './components/DeviceSpecDrawer';
 import { ViewportOverlay } from './components/ViewportOverlay';
+import { handleGlobalKeyDown } from './utils/keyboard';
 import './styles/theme.css';
 
 const DEVICE_STORAGE_KEY = 'wearview.device';
@@ -31,6 +32,7 @@ export const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('watch');
   const [lightingPreset, setLightingPreset] = useState<LightingPreset>('studio');
   const [uploadedImage, setUploadedImage] = useState<UploadedImageInfo | null>(null);
+  const [textureSource, setTextureSource] = useState<TextureSource>('sample');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [webglError, setWebglError] = useState<string | null>(null);
   const [pxPerMm, setPxPerMm] = useState<number | null>(null); // non-null = real-size mode on
@@ -64,7 +66,93 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Update device model
+  // Handle generalized image loading
+  const loadTokenRef = useRef(0);
+  const handleLoadImage = useCallback(async (file: File, source: TextureSource = 'user') => {
+    setErrorMessage(null);
+    const token = ++loadTokenRef.current;
+    try {
+      const info = await loadScreenshotTexture(file);
+      if (token !== loadTokenRef.current) {
+        disposeUploadedTexture(info);
+        return;
+      }
+      setUploadedImage((prev) => {
+        if (prev) {
+          disposeUploadedTexture(prev);
+        }
+        return info;
+      });
+      setTextureSource(source);
+    } catch (err) {
+      if (token !== loadTokenRef.current) return;
+      const msg = err instanceof Error ? err.message : 'Failed to load image file.';
+      setErrorMessage(msg);
+    }
+  }, []);
+
+  // Handle user-dropped or picked file
+  const handleImageSelected = useCallback((file: File) => {
+    handleLoadImage(file, 'user');
+  }, [handleLoadImage]);
+
+  // Handle image removal
+  const handleImageRemoved = useCallback(() => {
+    loadTokenRef.current++;
+    setUploadedImage((prev) => {
+      if (prev) {
+        disposeUploadedTexture(prev);
+      }
+      return null;
+    });
+    setTextureSource(null);
+    setErrorMessage(null);
+  }, []);
+
+  const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
+
+  // Handle QA test pattern loading matching active device screen resolution and physical metadata
+  const handleLoadTestPattern = useCallback(async () => {
+    setErrorMessage(null);
+    try {
+      const testFile = await createTestPatternFile({
+        size: currentDeviceSpec.resolutionPx.width,
+        widthPx: currentDeviceSpec.resolutionPx.width,
+        heightPx: currentDeviceSpec.resolutionPx.height,
+        displayDiameterMm: currentDeviceSpec.activeDisplayDiameterMm,
+        ppi: currentDeviceSpec.ppi,
+        deviceName: currentDeviceSpec.shortLabel,
+      });
+      await handleLoadImage(testFile, 'test-pattern');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate test pattern.';
+      setErrorMessage(msg);
+    }
+  }, [currentDeviceSpec, handleLoadImage]);
+
+  // Handle Sample Game (Cyberpunk 3D) loading
+  const handleLoadSampleGame = useCallback(async () => {
+    setErrorMessage(null);
+    try {
+      const response = await fetch('./cyberpunk3d-screen2-full.webp');
+      if (!response.ok) throw new Error('Could not fetch sample game image.');
+      const blob = await response.blob();
+      const defaultFile = new File([blob], 'cyberpunk3d-screen2-full.webp', {
+        type: 'image/webp'
+      });
+      await handleLoadImage(defaultFile, 'sample');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load sample game.';
+      setErrorMessage(msg);
+    }
+  }, [handleLoadImage]);
+
+  // Auto-load default Cyberpunk screenshot on initial mount
+  useEffect(() => {
+    handleLoadSampleGame();
+  }, [handleLoadSampleGame]);
+
+  // Update device model and auto-regenerate test pattern if active
   useEffect(() => {
     if (viewerInstanceRef.current) {
       viewerInstanceRef.current.loadDevice(selectedDeviceId);
@@ -74,7 +162,22 @@ export const App: React.FC = () => {
     } catch {
       // ignore unavailable storage
     }
-  }, [selectedDeviceId]);
+
+    // Auto-regenerate test pattern for new watch dimensions
+    if (textureSource === 'test-pattern') {
+      const spec = getDeviceSpec(selectedDeviceId);
+      createTestPatternFile({
+        size: spec.resolutionPx.width,
+        widthPx: spec.resolutionPx.width,
+        heightPx: spec.resolutionPx.height,
+        displayDiameterMm: spec.activeDisplayDiameterMm,
+        ppi: spec.ppi,
+        deviceName: spec.shortLabel,
+      })
+        .then((file) => handleLoadImage(file, 'test-pattern'))
+        .catch((err) => console.warn('Failed to auto-regenerate test pattern:', err));
+    }
+  }, [selectedDeviceId, textureSource, handleLoadImage]);
 
   // Real-size (1:1) mode
   useEffect(() => {
@@ -135,91 +238,6 @@ export const App: React.FC = () => {
     }
   }, [uploadedImage]);
 
-  // Handle image upload
-  const loadTokenRef = useRef(0);
-  const handleImageSelected = useCallback(async (file: File) => {
-    setErrorMessage(null);
-    const token = ++loadTokenRef.current;
-    try {
-      const info = await loadScreenshotTexture(file);
-      // A newer pick started while this one was decoding: drop this result
-      if (token !== loadTokenRef.current) {
-        disposeUploadedTexture(info);
-        return;
-      }
-      setUploadedImage((prev) => {
-        // Clean up previous texture
-        if (prev) {
-          disposeUploadedTexture(prev);
-        }
-        return info;
-      });
-    } catch (err) {
-      if (token !== loadTokenRef.current) return;
-      const msg = err instanceof Error ? err.message : 'Failed to load image file.';
-      setErrorMessage(msg);
-    }
-  }, []);
-
-  // Handle image removal
-  const handleImageRemoved = useCallback(() => {
-    loadTokenRef.current++;
-    setUploadedImage((prev) => {
-      if (prev) {
-        disposeUploadedTexture(prev);
-      }
-      return null;
-    });
-    setErrorMessage(null);
-  }, []);
-
-  const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
-
-  // Handle QA test pattern loading matching active device screen resolution and physical metadata
-  const handleLoadTestPattern = useCallback(async () => {
-    setErrorMessage(null);
-    try {
-      const testFile = await createTestPatternFile({
-        size: currentDeviceSpec.resolutionPx.width,
-        widthPx: currentDeviceSpec.resolutionPx.width,
-        heightPx: currentDeviceSpec.resolutionPx.height,
-        displayDiameterMm: currentDeviceSpec.activeDisplayDiameterMm,
-        ppi: currentDeviceSpec.ppi,
-        deviceName: currentDeviceSpec.shortLabel,
-      });
-      await handleImageSelected(testFile);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to generate test pattern.';
-      setErrorMessage(msg);
-    }
-  }, [currentDeviceSpec, handleImageSelected]);
-
-  // Auto-load default Cyberpunk screenshot on initial mount
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadDefaultScreenshot() {
-      try {
-        const response = await fetch('./cyberpunk3d-screen2-full.webp');
-        if (!response.ok) return;
-        const blob = await response.blob();
-        if (isCancelled) return;
-        const defaultFile = new File([blob], 'cyberpunk3d-screen2-full.webp', {
-          type: 'image/webp'
-        });
-        await handleImageSelected(defaultFile);
-      } catch (err) {
-        console.warn('Could not load default screenshot:', err);
-      }
-    }
-
-    loadDefaultScreenshot();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [handleImageSelected]);
-
   // Handle camera reset
   const handleResetCamera = useCallback(() => {
     if (viewerInstanceRef.current) {
@@ -253,6 +271,21 @@ export const App: React.FC = () => {
     setSelectedDeviceId(normalizeDeviceId(id));
   }, []);
 
+  // Centralized keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      handleGlobalKeyDown(e, {
+        exportPng: handleExportPng,
+        toggleSafeZones: handleToggleSafeZones,
+        resetCamera: handleResetCamera,
+        toggleViewMode: () => setViewMode((m) => (m === 'watch' ? 'wrist' : 'watch')),
+        setCameraAngle: handleCameraAngle,
+      });
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleExportPng, handleToggleSafeZones, handleResetCamera, handleCameraAngle]);
+
   const resolutionWarning = uploadedImage
     ? checkScreenshotResolution(uploadedImage.width, uploadedImage.height, currentDeviceSpec.resolutionPx).warning
     : null;
@@ -263,7 +296,6 @@ export const App: React.FC = () => {
         selectedDeviceId={selectedDeviceId}
         onSelectDevice={handleSelectDevice}
         onResetCamera={handleResetCamera}
-        onExportPng={handleExportPng}
       />
 
       <main className="app-workspace">
@@ -305,6 +337,8 @@ export const App: React.FC = () => {
               onImageSelected={handleImageSelected}
               onImageRemoved={handleImageRemoved}
               onLoadTestPattern={handleLoadTestPattern}
+              onLoadSampleGame={handleLoadSampleGame}
+              activeSource={textureSource}
               errorMessage={errorMessage}
               resolutionWarning={resolutionWarning}
               onClearError={() => setErrorMessage(null)}
