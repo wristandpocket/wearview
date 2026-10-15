@@ -101,16 +101,18 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   const backY = -10.1;
   const scaleRatio = R / 20.5;
 
-  // 1. Case bottom housing (polished steel or matte aluminum) below the glass equator
+  const displayY = 1.10;
+
+  // 1. Lower metal housing (polished steel or matte aluminum) below the glass equator (y = +0.2 mm)
   const bodyPoints: Array<[number, number]> = [
-    [14.2 * scaleRatio, -9.3],
-    [17.6 * scaleRatio, -9.05],
-    [19.6 * scaleRatio, -7.9],
-    [20.4 * scaleRatio, -5.9],
-    [R, -3.8],
-    [R - 0.15 * scaleRatio, -2.4],
-    [R - 0.5 * scaleRatio, -2.0],
-    [R - 0.9 * scaleRatio, -1.95],
+    [14.2 * scaleRatio, -9.25],
+    [16.8 * scaleRatio, -9.0],
+    [18.6 * scaleRatio, -7.8],
+    [19.8 * scaleRatio, -5.8],
+    [R * 0.985, -3.8],
+    [R * 0.998, -1.8],
+    [R, 0.0],
+    [R, 0.2],
   ];
   const bodyGeo = latheFromProfile(bodyPoints);
   const bodyMat = spec.caseMaterialName.includes('Aluminum') ? materials.caseAluminum : materials.caseStainlessSteel;
@@ -120,16 +122,14 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   caseMesh.receiveShadow = true;
   group.add(caseMesh);
 
-  // 2. Black glass substrate following the dome underside from outer perimeter to screen edge
+  // 2. Black glass substrate following dome underside starting directly at equator (R, 0.15)
   const substratePoints: Array<[number, number]> = [
-    [R - 0.55 * scaleRatio, -2.05],
-    [R - 0.45 * scaleRatio, -1.55],
-    [R - 0.75 * scaleRatio, -0.85],
-    [R - 1.45 * scaleRatio, -0.05],
-    [R * 0.86, 0.55],
-    [screenRadius + 0.3, 0.95],
-    [screenRadius, 1.0],
-    [0, 1.0],
+    [R, 0.15],
+    [R * 0.96, 0.45],
+    [R * 0.90, 0.70],
+    [screenRadius + 0.3, displayY - 0.15],
+    [screenRadius, displayY - 0.15],
+    [0, displayY - 0.15],
   ];
   const substrateGeo = latheFromProfile(substratePoints);
   const bezelMesh = new THREE.Mesh(substrateGeo, materials.bezelBlack);
@@ -142,21 +142,20 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = 1.10;
+  displayMesh.position.y = displayY;
   displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
-  // 4. Domed cover glass spanning full case diameter
-  const domePoints: Array<[number, number]> = [
-    [R - 0.4 * scaleRatio, -2.05],
-    [R, -1.35],
-    [R - 0.15 * scaleRatio, -0.35],
-    [R - 0.8 * scaleRatio, 0.6],
-    [R * 0.89, 1.35],
-    [R * 0.73, 1.88],
-    [R * 0.49, 2.12],
-    [0, 2.2],
-  ];
+  // 4. Domed cover glass: seamless 3D pebble starting directly at equator (R, 0.2) to apex (0, 2.2)
+  const domePoints: Array<[number, number]> = [];
+  const domeSteps = 24;
+  for (let i = 0; i <= domeSteps; i++) {
+    const t = i / domeSteps;
+    const angle = (t * Math.PI) / 2;
+    const r = R * Math.cos(angle);
+    const y = 0.2 + 2.0 * Math.sin(angle);
+    domePoints.push([Math.max(0, r), y]);
+  }
   const domeGeo = latheFromProfile(domePoints);
   const glassMesh = new THREE.Mesh(domeGeo, materials.coverGlass);
   glassMesh.name = 'glass';
@@ -180,22 +179,38 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   sensorMesh.name = 'sensor';
   group.add(sensorMesh);
 
-  // 6. Tactile rotating crown at 3 o'clock (+X)
+  // 6. Tactile rotating crown at 3 o'clock (+X): recessed neck, knurled wheel, rounded bevel
   const crownRadius = (spec.id === 'pixel-watch-3-45' ? 2.4 : 2.2);
   const crownLength = (spec.id === 'pixel-watch-3-45' ? 2.0 : 1.8);
-  const crownGeo = flutedCrownGeometry(crownRadius, crownLength, 28, 0.12);
-  const crownMesh = new THREE.Mesh(crownGeo, materials.crownSteel);
-  crownMesh.name = 'crown';
-  crownMesh.position.set(R - 0.4 + crownLength / 2, -4.3, 0);
-  crownMesh.castShadow = true;
-  group.add(crownMesh);
+  const crownGroup = new THREE.Group();
+  crownGroup.name = 'crown';
 
-  const capRadius = crownRadius * 0.95;
-  const capGeo = new THREE.SphereGeometry(capRadius, 32, 12, 0, Math.PI * 2, 0, Math.PI * 0.22);
+  // Recessed neck
+  const neckRadius = crownRadius * 0.58;
+  const neckLen = 0.45;
+  const neckGeo = new THREE.CylinderGeometry(neckRadius, neckRadius, neckLen, 24);
+  neckGeo.rotateZ(Math.PI / 2);
+  const neckMesh = new THREE.Mesh(neckGeo, materials.crownSteel);
+  neckMesh.position.set(R - 0.2 + neckLen / 2, -4.3, 0);
+  neckMesh.castShadow = true;
+  crownGroup.add(neckMesh);
+
+  // Knurled wheel
+  const wheelLen = crownLength - neckLen;
+  const wheelGeo = flutedCrownGeometry(crownRadius, wheelLen, 28, 0.10);
+  const wheelMesh = new THREE.Mesh(wheelGeo, materials.crownSteel);
+  wheelMesh.position.set(R - 0.2 + neckLen + wheelLen / 2, -4.3, 0);
+  wheelMesh.castShadow = true;
+  crownGroup.add(wheelMesh);
+
+  // Rounded outer bevel cap
+  const capRadius = crownRadius * 0.96;
+  const capGeo = new THREE.SphereGeometry(capRadius, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.25);
   capGeo.rotateZ(-Math.PI / 2);
-  const cap = new THREE.Mesh(capGeo, bodyMat);
-  cap.position.set(R - 0.4 + crownLength - 1.5, -4.3, 0);
-  group.add(cap);
+  const capMesh = new THREE.Mesh(capGeo, materials.crownSteel);
+  capMesh.position.set(R - 0.2 + crownLength - 0.8, -4.3, 0);
+  crownGroup.add(capMesh);
+  group.add(crownGroup);
 
   // 7. Flush side button above crown at 2 o'clock
   const buttonMesh = new THREE.Mesh(pillButtonGeometry(4.8 * scaleRatio, 1.5, 0.5), bodyMat);

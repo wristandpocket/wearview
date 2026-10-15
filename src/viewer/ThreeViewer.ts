@@ -86,6 +86,32 @@ const DEFAULT_FOV = 30;
 /** Narrow lens in real-size mode keeps perspective distortion of the 10 mm-deep watch under ~1%. */
 const REAL_SIZE_FOV = 8;
 
+export function computeRealSizeCameraDistance(heightCss: number, vFovDeg: number, pxPerMm: number): number {
+  const vFov = THREE.MathUtils.degToRad(vFovDeg);
+  return heightCss / (2 * Math.tan(vFov / 2) * pxPerMm);
+}
+
+export function computeCameraPresetPose(
+  target: THREE.Vector3,
+  angle: 'front' | 'tilt' | 'side',
+  distance: number
+): { position: THREE.Vector3; target: THREE.Vector3; dir: THREE.Vector3 } {
+  let dir: THREE.Vector3;
+  if (angle === 'front') {
+    dir = new THREE.Vector3(0, 1, 0.0001).normalize();
+  } else if (angle === 'tilt') {
+    const rad = (35 * Math.PI) / 180;
+    dir = new THREE.Vector3(0, Math.cos(rad), Math.sin(rad)).normalize();
+  } else {
+    const elev = ((90 - 75) * Math.PI) / 180;
+    const horiz = Math.cos(elev);
+    const azimuth = (28 * Math.PI) / 180;
+    dir = new THREE.Vector3(horiz * Math.sin(azimuth), Math.sin(elev), horiz * Math.cos(azimuth)).normalize();
+  }
+  const position = target.clone().addScaledVector(dir, distance);
+  return { position, target: target.clone(), dir };
+}
+
 export class ThreeViewer {
   private container: HTMLElement;
   private renderer!: THREE.WebGLRenderer;
@@ -213,7 +239,7 @@ export class ThreeViewer {
   }
 
   private initCameraAndControls(): void {
-    this.camera = new THREE.PerspectiveCamera(DEFAULT_FOV, this.aspect(), 1, 20000);
+    this.camera = new THREE.PerspectiveCamera(DEFAULT_FOV, this.aspect(), 5.0, 1200.0);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -284,7 +310,7 @@ export class ThreeViewer {
 
     const screenRadius = this.currentDeviceModel.spec.activeDisplayDiameterMm / 2;
     const displayY = this.currentDeviceModel.displayMesh.position.y;
-    this.safeZoneGroup = this.buildSafeZoneOverlay(screenRadius, displayY);
+    this.safeZoneGroup = ThreeViewer.buildSafeZoneOverlay(screenRadius, displayY);
     this.safeZoneGroup.visible = this.safeZonesEnabled;
     this.scene.add(this.safeZoneGroup);
 
@@ -316,11 +342,14 @@ export class ThreeViewer {
     this.realScale = pxPerMm;
     const real = pxPerMm !== null;
     this.camera.fov = real ? REAL_SIZE_FOV : DEFAULT_FOV;
+    this.camera.near = 5.0;
+    this.camera.far = 1200.0;
     this.camera.updateProjectionMatrix();
     this.controls.enableZoom = !real;
     this.controls.enablePan = !real;
-    this.controls.minDistance = real ? 0 : 40;
-    this.controls.maxDistance = real ? Infinity : 520;
+    const realDist = real ? this.realSizeDistance() : 0;
+    this.controls.minDistance = real ? realDist : 40;
+    this.controls.maxDistance = real ? realDist : 520;
     this.groundShadowMesh.visible = !real;
     this.userMovedCamera = false;
     if (real || wasReal) this.jumpToHome();
@@ -361,27 +390,24 @@ export class ThreeViewer {
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
     const fov = Math.min(vFov, hFov);
     const defaultRadius = 38;
-    const distance =
-      this.realScale !== null
-        ? this.realSizeDistance()
-        : THREE.MathUtils.clamp(defaultRadius / Math.sin(fov / 2), this.controls.minDistance, this.controls.maxDistance);
+    const isReal = this.realScale !== null;
+    const distance = isReal
+      ? this.realSizeDistance()
+      : THREE.MathUtils.clamp(defaultRadius / Math.sin(fov / 2), this.controls.minDistance, this.controls.maxDistance);
 
-    let dir: THREE.Vector3;
-    if (angle === 'front') {
-      dir = new THREE.Vector3(0, 1, 0.0001).normalize();
-    } else if (angle === 'tilt') {
-      const rad = (35 * Math.PI) / 180;
-      dir = new THREE.Vector3(0, Math.cos(rad), Math.sin(rad)).normalize();
-    } else {
-      const elev = ((90 - 75) * Math.PI) / 180;
-      const horiz = Math.cos(elev);
-      const azimuth = (28 * Math.PI) / 180;
-      dir = new THREE.Vector3(horiz * Math.sin(azimuth), Math.sin(elev), horiz * Math.cos(azimuth)).normalize();
+    if (isReal) {
+      // In 1:1 real size mode, lock zoom distance strictly to calibrated scale while allowing preset angle
+      this.controls.minDistance = distance;
+      this.controls.maxDistance = distance;
     }
 
-    const position = target.clone().addScaledVector(dir, distance);
+    const { position } = computeCameraPresetPose(target, angle, distance);
     this.userMovedCamera = true;
     this.flyToPose(position, target);
+  }
+
+  public setCameraPreset(angle: 'front' | 'tilt' | 'side'): void {
+    this.setCameraAngle(angle);
   }
 
   public exportPngSnapshot(filename?: string): void {
@@ -491,8 +517,7 @@ export class ThreeViewer {
   /** Camera distance at which the display plane is drawn at `realScale` CSS px per mm. */
   private realSizeDistance(): number {
     const heightCss = Math.max(1, this.container.clientHeight);
-    const vFov = THREE.MathUtils.degToRad(this.camera.fov);
-    return heightCss / (2 * Math.tan(vFov / 2) * (this.realScale ?? 1));
+    return computeRealSizeCameraDistance(heightCss, this.camera.fov, this.realScale ?? 1);
   }
 
   private displayPlaneTarget(): THREE.Vector3 {
@@ -572,8 +597,11 @@ export class ThreeViewer {
       this.fly = null;
       const target = this.displayPlaneTarget();
       const dir = this.camera.position.clone().sub(this.controls.target).normalize();
+      const realDist = this.realSizeDistance();
+      this.controls.minDistance = realDist;
+      this.controls.maxDistance = realDist;
       this.controls.target.copy(target);
-      this.camera.position.copy(target).addScaledVector(dir, this.realSizeDistance());
+      this.camera.position.copy(target).addScaledVector(dir, realDist);
       this.controls.update();
     } else if (!this.userMovedCamera && !this.fly) {
       // Keep the watch framed while the user hasn't taken over the camera
@@ -625,63 +653,116 @@ export class ThreeViewer {
     });
   }
 
-  private buildSafeZoneOverlay(screenRadius: number, displayY: number): THREE.Group {
+  public static buildSafeZoneOverlay(screenRadius: number, displayY: number): THREE.Group {
     const group = new THREE.Group();
     group.name = 'safeZonesOverlay';
-    // Position slightly above the display mesh (0.04mm) to avoid z-fighting while staying below glass
-    group.position.set(0, displayY + 0.04, 0);
+    // Position at displayY + 0.08 mm with renderOrder: 5 (above displayMesh, below coverGlass)
+    group.position.set(0, displayY + 0.08, 0);
 
-    const createCircle = (radius: number, color: number, opacity: number) => {
-      const points: THREE.Vector3[] = [];
-      const segments = 96;
-      for (let i = 0; i <= segments; i++) {
-        const theta = (i / segments) * Math.PI * 2;
-        points.push(new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius));
-      }
-      const geom = new THREE.BufferGeometry().setFromPoints(points);
-      const mat = new THREE.LineBasicMaterial({
+    const createContrastRing = (
+      radius: number,
+      thickness: number,
+      color: number,
+      opacity: number,
+      backingThickness = 0.38
+    ) => {
+      const ringGroup = new THREE.Group();
+
+      // Thin dark backing ring underneath for guaranteed contrast over bright screenshots
+      const backingGeo = new THREE.RingGeometry(radius - backingThickness / 2, radius + backingThickness / 2, 128);
+      backingGeo.rotateX(-Math.PI / 2);
+      const backingMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.55,
+        depthTest: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const backingMesh = new THREE.Mesh(backingGeo, backingMat);
+      backingMesh.renderOrder = 5;
+      ringGroup.add(backingMesh);
+
+      // High-visibility colored foreground ring
+      const foreGeo = new THREE.RingGeometry(radius - thickness / 2, radius + thickness / 2, 128);
+      foreGeo.rotateX(-Math.PI / 2);
+      const foreMat = new THREE.MeshBasicMaterial({
         color,
         transparent: true,
         opacity,
         depthTest: true,
         depthWrite: false,
+        side: THREE.DoubleSide,
       });
-      const line = new THREE.LineLoop(geom, mat);
-      line.renderOrder = 3;
-      return line;
+      const foreMesh = new THREE.Mesh(foreGeo, foreMat);
+      foreMesh.renderOrder = 5;
+      ringGroup.add(foreMesh);
+
+      return ringGroup;
     };
 
-    // 100% active display boundary (cyan)
-    group.add(createCircle(screenRadius, 0x38bdf8, 0.7));
+    // 100% active display boundary (outer screen rim reference)
+    group.add(createContrastRing(screenRadius, 0.16, 0x38bdf8, 0.75, 0.32));
 
-    // 90% Action / Button Safe Zone (amber)
-    group.add(createCircle(screenRadius * 0.9, 0xf59e0b, 0.85));
+    // 90% Action Safe ring in high-visibility cyan (#00f0ff, thickness: 0.22 mm)
+    group.add(createContrastRing(screenRadius * 0.9, 0.22, 0x00f0ff, 0.95, 0.38));
 
-    // 80% Title / Text Safe Zone (emerald)
-    group.add(createCircle(screenRadius * 0.8, 0x10b981, 0.75));
+    // 80% Text Safe ring in vibrant amber (#ffb800, thickness: 0.18 mm)
+    group.add(createContrastRing(screenRadius * 0.8, 0.18, 0xffb800, 0.95, 0.38));
 
-    // Cardinal tick marks at 12h, 3h, 6h, 9h
-    const cardinalPoints: THREE.Vector3[] = [
-      new THREE.Vector3(0, 0, -screenRadius * 0.72),
-      new THREE.Vector3(0, 0, -screenRadius * 1.0),
-      new THREE.Vector3(0, 0, screenRadius * 0.72),
-      new THREE.Vector3(0, 0, screenRadius * 1.0),
-      new THREE.Vector3(-screenRadius * 0.72, 0, 0),
-      new THREE.Vector3(-screenRadius * 1.0, 0, 0),
-      new THREE.Vector3(screenRadius * 0.72, 0, 0),
-      new THREE.Vector3(screenRadius * 1.0, 0, 0),
-    ];
-    const cardinalGeom = new THREE.BufferGeometry().setFromPoints(cardinalPoints);
-    const cardinalMat = new THREE.LineBasicMaterial({
-      color: 0xf59e0b,
-      transparent: true,
-      opacity: 0.8,
-      depthTest: true,
-      depthWrite: false,
-    });
-    const cardinalLines = new THREE.LineSegments(cardinalGeom, cardinalMat);
-    cardinalLines.renderOrder = 3;
-    group.add(cardinalLines);
+    // Cardinal degree ticks (0°, 90°, 180°, 270°) and 15° minor ticks around the perimeter
+    const ticksGroup = new THREE.Group();
+    const tickSteps = 24; // 360 / 15 = 24 ticks around the perimeter
+    for (let i = 0; i < tickSteps; i++) {
+      const angle = (i * Math.PI * 2) / tickSteps; // 0, 15, 30, ...
+      const isCardinal = i % 6 === 0; // 0°, 90°, 180°, 270°
+
+      const length = isCardinal ? 1.6 : 0.75;
+      const width = isCardinal ? 0.22 : 0.14;
+      const backingWidth = width + 0.16;
+      const backingLength = length + 0.16;
+      const color = isCardinal ? 0xffb800 : 0x00f0ff;
+      const opacity = isCardinal ? 0.95 : 0.75;
+
+      const radialDist = screenRadius - length / 2;
+      const posX = radialDist * Math.sin(angle);
+      const posZ = -radialDist * Math.cos(angle);
+
+      // Dark backing segment
+      const backGeo = new THREE.PlaneGeometry(backingWidth, backingLength);
+      backGeo.rotateX(-Math.PI / 2);
+      const backMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.55,
+        depthTest: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const backMesh = new THREE.Mesh(backGeo, backMat);
+      backMesh.position.set(posX, 0, posZ);
+      backMesh.rotation.y = -angle;
+      backMesh.renderOrder = 5;
+      ticksGroup.add(backMesh);
+
+      // Crisp colored tick segment
+      const foreGeo = new THREE.PlaneGeometry(width, length);
+      foreGeo.rotateX(-Math.PI / 2);
+      const foreMat = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        depthTest: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const foreMesh = new THREE.Mesh(foreGeo, foreMat);
+      foreMesh.position.set(posX, 0, posZ);
+      foreMesh.rotation.y = -angle;
+      foreMesh.renderOrder = 5;
+      ticksGroup.add(foreMesh);
+    }
+    group.add(ticksGroup);
 
     return group;
   }
@@ -748,6 +829,8 @@ export class ThreeViewer {
     }
   }
 }
+
+export const buildSafeZoneOverlay = ThreeViewer.buildSafeZoneOverlay;
 
 // ---------------------------------------------------------------- environment scenes for reflections
 

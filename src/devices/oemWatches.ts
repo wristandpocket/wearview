@@ -82,23 +82,26 @@ export function buildOnePlusWatch2Model(materials: WatchMaterials): DeviceModelR
   const screenRadius = spec.activeDisplayDiameterMm / 2; // 18.16 mm
   const D = spec.caseThicknessMm; // 12.1 mm
   const backY = -(D + 1.5);
-  const glassY = 0.0;
+  const displayY = 0.0;
+  const glassY = displayY + 0.20;
 
   // 1. Asymmetric sculpted chassis with right-side flare
+  // Terminate solid case body top surface at y <= displayY - 0.35 mm
   const caseGeo = asymmetricCaseGeometry(baseR, 2.8, D - 1.0, 0.7);
   const caseMesh = new THREE.Mesh(caseGeo, materials.caseStainlessSteel);
   caseMesh.name = 'case';
+  caseMesh.position.y = displayY - 0.35;
   caseMesh.castShadow = true;
   caseMesh.receiveShadow = true;
   group.add(caseMesh);
 
   // 2. Bezel ring with tachymeter / index styling
   const bezelOuterR = baseR - 0.5;
-  const borderGeo = new THREE.RingGeometry(screenRadius, bezelOuterR, 96);
+  const borderGeo = new THREE.CircleGeometry(bezelOuterR, 128);
   borderGeo.rotateX(-Math.PI / 2);
   const border = new THREE.Mesh(borderGeo, materials.bezelTachymeter);
   border.name = 'bezel';
-  border.position.y = glassY - 0.18;
+  border.position.y = displayY - 0.15;
   border.renderOrder = 1;
   group.add(border);
 
@@ -107,7 +110,7 @@ export function buildOnePlusWatch2Model(materials: WatchMaterials): DeviceModelR
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.09;
+  displayMesh.position.y = displayY;
   displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
@@ -211,7 +214,8 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
   const screenRadius = spec.activeDisplayDiameterMm / 2; // 18.16 mm
   const D = spec.caseThicknessMm; // 12.2 mm
   const backY = -(D + 1.5);
-  const glassY = -0.6;
+  const displayY = -0.65;
+  const glassY = -0.45;
 
   // 1. Tactical aluminum chassis
   const caseGeo = latheFromProfile([
@@ -223,7 +227,7 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
     [R - 0.6, -0.6],
     [R - 1.0, 0.0],
     [R - 4.5, 0.0],
-    [R - 4.5, -0.8],
+    [R - 4.5, -1.05],
   ]);
   const caseMesh = new THREE.Mesh(caseGeo, materials.caseAluminum);
   caseMesh.name = 'case';
@@ -244,11 +248,11 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
   group.add(bezelMesh);
 
   // 3. Inner dark bezel ring
-  const borderGeo = new THREE.RingGeometry(screenRadius, bezelInnerR + 0.1, 96);
+  const borderGeo = new THREE.CircleGeometry(bezelInnerR + 0.1, 128);
   borderGeo.rotateX(-Math.PI / 2);
   const border = new THREE.Mesh(borderGeo, materials.bezelBlack);
-  border.name = 'bezel';
-  border.position.y = glassY - 0.18;
+  border.name = 'bezelSubstrate';
+  border.position.y = displayY - 0.15;
   border.renderOrder = 1;
   group.add(border);
 
@@ -257,7 +261,7 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.09;
+  displayMesh.position.y = displayY;
   displayMesh.renderOrder = 2;
   group.add(displayMesh);
 

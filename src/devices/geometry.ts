@@ -149,11 +149,16 @@ export function wrapStrapPath(attachZ: number, attachY: number, watchBackY: numb
   const pts: THREE.Vector3[] = [];
 
   pts.push(new THREE.Vector3(0, attachY, -attachZ));
-  pts.push(new THREE.Vector3(0, attachY - 1.6, -attachZ - 3.2));
 
-  // Find where the wrap begins: first angle whose |z| exceeds the attachment reach
-  const startTheta = 0.95;
-  const steps = 40;
+  // Compute exact start angle where superellipse |z| reaches the lug attachment position
+  const ratio = Math.min(0.999, Math.pow(attachZ / a, exponent / 2));
+  const startTheta = Math.asin(ratio);
+  const startPt = superellipsePoint(-startTheta, a, b, exponent, cy);
+
+  // Immediately upon exiting the lug, bend downward hugging the wrist without horizontal flaring overhang
+  pts.push(new THREE.Vector3(0, (attachY + startPt.y) / 2, -attachZ));
+
+  const steps = 48;
   for (let i = 0; i <= steps; i++) {
     // Sweep from -startTheta through PI (bottom) to +startTheta on the other side
     const theta = -startTheta - (i / steps) * (2 * Math.PI - 2 * startTheta);
@@ -161,7 +166,8 @@ export function wrapStrapPath(attachZ: number, attachY: number, watchBackY: numb
     pts.push(new THREE.Vector3(0, v.y, v.x));
   }
 
-  pts.push(new THREE.Vector3(0, attachY - 1.6, attachZ + 3.2));
+  const endPt = superellipsePoint(startTheta, a, b, exponent, cy);
+  pts.push(new THREE.Vector3(0, (attachY + endPt.y) / 2, attachZ));
   pts.push(new THREE.Vector3(0, attachY, attachZ));
   return pts;
 }
@@ -277,7 +283,9 @@ export function squircleCaseGeometry(
     curveSegments: 24,
   });
   geo.rotateX(-Math.PI / 2);
-  geo.translate(0, -(depth - b * 2) - b, 0);
+  geo.computeBoundingBox();
+  // Align solid case body top cap exactly to Y = 0
+  geo.translate(0, -geo.boundingBox!.max.y, 0);
   geo.computeVertexNormals();
   return geo;
 }
@@ -312,7 +320,9 @@ export function asymmetricCaseGeometry(
     curveSegments: 24,
   });
   geo.rotateX(-Math.PI / 2);
-  geo.translate(0, -(depth - b * 2) - b, 0);
+  geo.computeBoundingBox();
+  // Align solid case body top cap exactly to Y = 0
+  geo.translate(0, -geo.boundingBox!.max.y, 0);
   geo.computeVertexNormals();
   return geo;
 }

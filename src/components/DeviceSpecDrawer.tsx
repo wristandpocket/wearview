@@ -36,7 +36,12 @@ export const DeviceSpecDrawer: React.FC<DeviceSpecDrawerProps> = ({ spec }) => {
     },
     {
       label: 'Bezel border',
-      value: `${spec.bezelRadialWidthMm} mm (${screenToBodyRatio.toFixed(1)}% screen-to-body)`,
+      value: `${spec.bezelRadialWidthMm} mm`,
+      mono: true,
+    },
+    {
+      label: 'Screen-to-body',
+      value: `${screenToBodyRatio.toFixed(1)}%`,
       mono: true,
     },
     {
@@ -68,7 +73,7 @@ export const DeviceSpecDrawer: React.FC<DeviceSpecDrawerProps> = ({ spec }) => {
         {rows.map((row) => (
           <div className="spec-row" key={row.label}>
             <dt>{row.label}</dt>
-            <dd className={`${row.mono ? 'mono' : ''} ${row.estimated ? 'estimated' : ''}`}>{row.value}</dd>
+            <dd className={`spec-value ${row.mono ? 'mono' : ''} ${row.estimated ? 'estimated' : ''}`}>{row.value}</dd>
           </div>
         ))}
       </dl>
