@@ -64,3 +64,16 @@ This document records the actual verification results and outcomes for WearView.
    - Command: `npm.cmd run build`
    - Exit Code: `0`
    - Outcome: Vite production build generated `dist/` bundle cleanly in 2.28s.
+
+## Production audit — 2026-10-15
+
+| Check | Result |
+|---|---|
+| `npm.cmd run typecheck` | PASS (0 errors) |
+| `npm.cmd run test` | PASS (187/187) |
+| `npm.cmd run build` | PASS (three/react split into vendor chunks, no size warning) |
+| Dev server loads, no console errors | PASS (built-in browser) |
+| Global shortcuts ignored while calibration dialog is open | PASS (`W` did not switch view mode) |
+| Calibration dialog closes on Escape | PASS |
+| No-WebGL path shows error overlay instead of crashing | Code fix only — NOT verified in a browser with WebGL disabled |
+| PNG export via `toBlob` | Code fix only — download not verified manually |

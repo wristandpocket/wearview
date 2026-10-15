@@ -27,12 +27,14 @@ export const CalibrationDialog: React.FC<CalibrationDialogProps> = ({ initialPxP
   useEffect(() => {
     const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', onResize);
+    const opener = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus();
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('resize', onResize);
       document.body.style.overflow = prevOverflow;
+      opener?.focus?.();
     };
   }, []);
 
@@ -50,7 +52,21 @@ export const CalibrationDialog: React.FC<CalibrationDialogProps> = ({ initialPxP
   }, [scaleBy]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === 'Tab') {
+      // Keep focus inside the modal
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button, input');
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === dialogRef.current)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
     } else if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'BUTTON') {

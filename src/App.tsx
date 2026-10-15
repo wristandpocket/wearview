@@ -57,6 +57,10 @@ export const App: React.FC = () => {
       }
     });
 
+    if (!viewer.ready) {
+      viewer.dispose();
+      return;
+    }
     viewerInstanceRef.current = viewer;
     if (import.meta.env.DEV) (window as unknown as { __wearview?: ThreeViewer }).__wearview = viewer;
 
@@ -153,7 +157,11 @@ export const App: React.FC = () => {
   }, [handleLoadSampleGame]);
 
   // Update device model and auto-regenerate test pattern if active
+  const lastDeviceRef = useRef<DeviceId | null>(null);
   useEffect(() => {
+    const deviceChanged = lastDeviceRef.current !== selectedDeviceId;
+    lastDeviceRef.current = selectedDeviceId;
+    if (!deviceChanged) return;
     if (viewerInstanceRef.current) {
       viewerInstanceRef.current.loadDevice(selectedDeviceId);
     }
@@ -271,8 +279,9 @@ export const App: React.FC = () => {
     setSelectedDeviceId(normalizeDeviceId(id));
   }, []);
 
-  // Centralized keyboard shortcuts
+  // Centralized keyboard shortcuts (disabled while the calibration dialog is open)
   useEffect(() => {
+    if (calibrating) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       handleGlobalKeyDown(e, {
         exportPng: handleExportPng,
@@ -284,7 +293,7 @@ export const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleExportPng, handleToggleSafeZones, handleResetCamera, handleCameraAngle]);
+  }, [calibrating, handleExportPng, handleToggleSafeZones, handleResetCamera, handleCameraAngle]);
 
   const resolutionWarning = uploadedImage
     ? checkScreenshotResolution(uploadedImage.width, uploadedImage.height, currentDeviceSpec.resolutionPx).warning

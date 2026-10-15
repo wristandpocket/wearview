@@ -21,7 +21,6 @@ export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice
         </div>
         <div className="brand-title">
           <span>WearView</span>
-          <span className="brand-badge">MVP</span>
         </div>
         <div className="privacy-pill" title="Screenshots never leave your browser. No backend, no telemetry.">
           <span className="privacy-dot"></span>
