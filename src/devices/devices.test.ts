@@ -12,6 +12,11 @@ import {
 } from './index';
 import { createWatchMaterials } from './materials';
 import { buildWristModel } from '../wrist/wristModel';
+import {
+  buildSafeZoneOverlay,
+  computeRealSizeCameraDistance,
+  computeCameraPresetPose,
+} from '../viewer/ThreeViewer';
 
 describe('Device Catalogue & Profiles', () => {
   it('lists all 11 registered top Wear OS devices grouped logically', () => {
@@ -216,5 +221,101 @@ describe('Device Catalogue & Profiles', () => {
     expect(ticwatch.archetype).toBe('rugged-tactical');
     expect(ticwatch.caseDiameterMm).toBe(50.1);
     expect(ticwatch.lugWidthMm).toBe(24.0);
+  });
+
+  it('for every device model, screen world Y is strictly greater than any central case body top surface Y coordinate (screenY > caseDialFloorY)', () => {
+    const materials = createWatchMaterials();
+    for (const spec of DEVICE_LIST) {
+      const model = buildDevice(spec.id, materials);
+      const screen = model.displayMesh;
+      const caseMesh = model.group.getObjectByName('case') as THREE.Mesh;
+      expect(caseMesh, `${spec.id} missing case mesh`).toBeDefined();
+
+      screen.updateWorldMatrix(true, false);
+      caseMesh.updateWorldMatrix(true, false);
+
+      const screenWorld = new THREE.Vector3();
+      screen.getWorldPosition(screenWorld);
+
+      const pos = caseMesh.geometry.attributes.position;
+      const v = new THREE.Vector3();
+      let maxCaseYInsideDial = -Infinity;
+      const dialRadius = spec.activeDisplayDiameterMm / 2 - 0.2;
+
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i);
+        v.applyMatrix4(caseMesh.matrixWorld);
+        const r = Math.hypot(v.x, v.z);
+        if (r <= dialRadius) {
+          if (v.y > maxCaseYInsideDial) {
+            maxCaseYInsideDial = v.y;
+          }
+        }
+      }
+
+      // If the case geometry has solid vertices inside the central dial,
+      // it must terminate at y <= screenY - 0.35 mm (strictly below screen, preventing occlusion)
+      if (maxCaseYInsideDial > -Infinity) {
+        expect(screenWorld.y, `${spec.id}: screen must be higher than case body top inside dial`).toBeGreaterThan(
+          maxCaseYInsideDial
+        );
+        expect(
+          screenWorld.y - maxCaseYInsideDial,
+          `${spec.id}: vertical clearance between screen and case body`
+        ).toBeGreaterThanOrEqual(0.30);
+      }
+    }
+  });
+
+  it('buildSafeZoneOverlay generates crisp RingGeometry and PlaneGeometry meshes at displayY + 0.08mm with renderOrder 5', () => {
+    const screenRadius = 18.0;
+    const displayY = 0.5;
+    const overlay = buildSafeZoneOverlay(screenRadius, displayY);
+
+    expect(overlay.position.y).toBeCloseTo(displayY + 0.08, 0.001);
+
+    const rings: THREE.Mesh[] = [];
+    const ticks: THREE.Mesh[] = [];
+
+    overlay.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        expect(child.renderOrder).toBe(5);
+        const mat = child.material as THREE.MeshBasicMaterial;
+        expect(mat.depthWrite).toBe(false);
+        if (child.geometry instanceof THREE.RingGeometry) {
+          rings.push(child);
+        } else if (child.geometry instanceof THREE.PlaneGeometry) {
+          ticks.push(child);
+        }
+      }
+    });
+
+    // Ring pairs (backing + foreground) for 100%, 90%, 80%
+    expect(rings.length).toBeGreaterThanOrEqual(6);
+    // 24 ticks with backing + foreground planes
+    expect(ticks.length).toBeGreaterThanOrEqual(48);
+  });
+
+  it('camera preset angles strictly preserve calibrated 1:1 camera distance to displayPlaneTarget', () => {
+    const target = new THREE.Vector3(0, 0, 0);
+    const heightCss = 800;
+    const vFovDeg = 8;
+    const pxPerMm = 3.78; // 96 DPI calibrated
+
+    const calibratedDist = computeRealSizeCameraDistance(heightCss, vFovDeg, pxPerMm);
+    expect(calibratedDist).toBeGreaterThan(100);
+
+    const front = computeCameraPresetPose(target, 'front', calibratedDist);
+    const tilt = computeCameraPresetPose(target, 'tilt', calibratedDist);
+    const side = computeCameraPresetPose(target, 'side', calibratedDist);
+
+    expect(front.position.distanceTo(target)).toBeCloseTo(calibratedDist, 0.01);
+    expect(tilt.position.distanceTo(target)).toBeCloseTo(calibratedDist, 0.01);
+    expect(side.position.distanceTo(target)).toBeCloseTo(calibratedDist, 0.01);
+
+    // Directions must reflect their respective preset angles
+    expect(front.dir.y).toBeCloseTo(1.0, 0.01);
+    expect(tilt.dir.y).toBeCloseTo(Math.cos((35 * Math.PI) / 180), 0.01);
+    expect(side.dir.y).toBeCloseTo(Math.sin(((90 - 75) * Math.PI) / 180), 0.01);
   });
 });

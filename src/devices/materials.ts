@@ -55,6 +55,9 @@ export function createWatchMaterials(): WatchMaterials {
   const displayEmpty = new THREE.MeshBasicMaterial({
     color: 0x050608,
     toneMapped: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
   });
 
   const coverGlass = new THREE.MeshPhysicalMaterial({
@@ -71,8 +74,8 @@ export function createWatchMaterials(): WatchMaterials {
 
   const crownSteel = new THREE.MeshPhysicalMaterial({
     color: 0xcfd2d6,
-    metalness: 1.0,
-    roughness: 0.22,
+    metalness: 0.75,
+    roughness: 0.28,
   });
 
   const strapSilicone = new THREE.MeshPhysicalMaterial({
@@ -86,12 +89,10 @@ export function createWatchMaterials(): WatchMaterials {
   });
 
   const wristSkin = new THREE.MeshPhysicalMaterial({
-    color: 0xc9a58a,
+    color: 0x93877e,
     metalness: 0.0,
-    roughness: 0.68,
-    sheen: 0.35,
-    sheenRoughness: 0.6,
-    sheenColor: new THREE.Color(0xffd9c2),
+    roughness: 0.88,
+    specularIntensity: 0.2,
   });
 
   const caseTitanium = new THREE.MeshPhysicalMaterial({

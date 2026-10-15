@@ -216,7 +216,8 @@ export function buildGalaxyFlatWatch(
   const s = D / 9.8;
   const k = C / 21.65;
   const screenRadius = spec.activeDisplayDiameterMm / 2;
-  const glassY = -0.32;
+  const displayY = -0.20;
+  const glassY = 0.00;
   const backY = -(D + 1.6);
 
   // 1. Aluminum body shell
@@ -246,7 +247,7 @@ export function buildGalaxyFlatWatch(
   borderGeo.rotateX(-Math.PI / 2);
   const border = new THREE.Mesh(borderGeo, materials.bezelBlack);
   border.name = 'bezel';
-  border.position.y = glassY - 0.20;
+  border.position.y = displayY - 0.15;
   border.renderOrder = 1;
   group.add(border);
 
@@ -255,7 +256,7 @@ export function buildGalaxyFlatWatch(
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.10;
+  displayMesh.position.y = displayY;
   displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
@@ -356,7 +357,8 @@ export function buildGalaxyClassicWatch(
   const R = spec.caseDiameterMm / 2;
   const D = spec.caseThicknessMm;
   const screenRadius = spec.activeDisplayDiameterMm / 2;
-  const glassY = -0.7; // sunken glass plane
+  const displayY = -0.65;
+  const glassY = -0.45; // sunken glass plane (displayY + 0.20 mm)
   const backY = -(D + 1.6);
 
   // 1. Polished stainless steel case body
@@ -369,7 +371,7 @@ export function buildGalaxyClassicWatch(
     [R - 0.4, -0.8],
     [R - 0.6, 0.0],
     [R - bezelWidthMm, 0.0],
-    [R - bezelWidthMm, -0.9],
+    [R - bezelWidthMm, -1.05],
   ]);
   const caseMesh = new THREE.Mesh(caseGeo, materials.caseStainlessSteel);
   caseMesh.name = 'case';
@@ -390,10 +392,11 @@ export function buildGalaxyClassicWatch(
   group.add(bezelMesh);
 
   // 3. Inner dark bezel ring beneath glass
-  const innerRingGeo = new THREE.RingGeometry(screenRadius, bezelInnerR + 0.2, 96);
+  const innerRingGeo = new THREE.CircleGeometry(bezelInnerR + 0.2, 128);
   innerRingGeo.rotateX(-Math.PI / 2);
   const innerRing = new THREE.Mesh(innerRingGeo, materials.bezelBlack);
-  innerRing.position.y = glassY - 0.18;
+  innerRing.name = 'bezelSubstrate';
+  innerRing.position.y = displayY - 0.15;
   innerRing.renderOrder = 1;
   group.add(innerRing);
 
@@ -402,7 +405,7 @@ export function buildGalaxyClassicWatch(
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.09;
+  displayMesh.position.y = displayY;
   displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
@@ -498,12 +501,15 @@ export function buildGalaxyUltraWatch(materials: WatchMaterials, spec: DeviceSpe
   const screenRadius = spec.activeDisplayDiameterMm / 2; // 18.67 mm
   const bezelOuterR = 43.8 / 2; // 21.9 mm
   const backY = -(D + 1.6);
-  const glassY = 0.05;
+  const displayY = 0.0;
+  const glassY = displayY + 0.20;
 
   // 1. Cushion titanium frame (47.4 x 47.4 mm with ~14mm corner radius)
+  // Terminate solid case body top surface at y <= displayY - 0.35 mm to prevent screen occlusion
   const cushionGeo = squircleCaseGeometry(spec.caseDiameterMm, spec.caseHeightMm, D - 1.2, 14.0, 0.9);
   const caseMesh = new THREE.Mesh(cushionGeo, materials.caseTitanium);
   caseMesh.name = 'case';
+  caseMesh.position.y = displayY - 0.35;
   caseMesh.castShadow = true;
   caseMesh.receiveShadow = true;
   group.add(caseMesh);
@@ -513,16 +519,17 @@ export function buildGalaxyUltraWatch(materials: WatchMaterials, spec: DeviceSpe
   const bezelGeo = knurledBezelGeometry(screenRadius, bezelOuterR, bezelHeight, 36, 0.2);
   const bezelMesh = new THREE.Mesh(bezelGeo, materials.caseTitanium);
   bezelMesh.name = 'bezel';
-  bezelMesh.position.y = 0.0;
+  bezelMesh.position.y = displayY - 0.35;
   bezelMesh.renderOrder = 1;
   bezelMesh.castShadow = true;
   group.add(bezelMesh);
 
-  // 3. Inner dark bezel ring
-  const borderGeo = new THREE.RingGeometry(screenRadius, bezelOuterR - 0.4, 96);
+  // 3. Dark bezel substrate disk beneath screen
+  const borderGeo = new THREE.CircleGeometry(bezelOuterR - 0.4, 128);
   borderGeo.rotateX(-Math.PI / 2);
   const border = new THREE.Mesh(borderGeo, materials.bezelBlack);
-  border.position.y = glassY - 0.18;
+  border.name = 'bezelSubstrate';
+  border.position.y = displayY - 0.15;
   border.renderOrder = 1;
   group.add(border);
 
@@ -531,7 +538,7 @@ export function buildGalaxyUltraWatch(materials: WatchMaterials, spec: DeviceSpe
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.09;
+  displayMesh.position.y = displayY;
   displayMesh.renderOrder = 2;
   group.add(displayMesh);
 

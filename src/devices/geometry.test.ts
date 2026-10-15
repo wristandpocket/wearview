@@ -83,4 +83,27 @@ describe('procedural watch geometry generators', () => {
     const pill = pillButtonGeometry(6.0, 2.0, 1.0);
     expect(pill.attributes.position).toBeDefined();
   });
+
+  it('wrapStrapPath immediately upon exiting lugs bends downward without outward bat-wing overhang', () => {
+    for (const [label, attachZ, attachY, backY, thickness] of [
+      ['Galaxy Watch Ultra', 22.8, -5.2, -13.7, 2.8],
+      ['Pixel Watch', 18.4, -5.6, -10.1, 2.4],
+      ['OnePlus Watch 2', 22.9, -5.0, -13.6, 2.6],
+    ] as const) {
+      const path = wrapStrapPath(attachZ, attachY, backY, thickness);
+      // Immediately exiting lug at point 0, point 1 must not flare outward beyond attachZ
+      expect(Math.abs(path[1].z), `${label} 12h lug flared outward`).toBeLessThanOrEqual(attachZ + 0.01);
+      expect(Math.abs(path[path.length - 2].z), `${label} 6h lug flared outward`).toBeLessThanOrEqual(attachZ + 0.01);
+    }
+  });
+
+  it('squircleCaseGeometry and asymmetricCaseGeometry top surfaces terminate at Y <= 0', () => {
+    const squircle = squircleCaseGeometry(47.4, 47.4, 11.0, 14.0);
+    squircle.computeBoundingBox();
+    expect(squircle.boundingBox!.max.y).toBeCloseTo(0.0, 0.01);
+
+    const asym = asymmetricCaseGeometry(23.3, 2.8, 11.0);
+    asym.computeBoundingBox();
+    expect(asym.boundingBox!.max.y).toBeCloseTo(0.0, 0.01);
+  });
 });

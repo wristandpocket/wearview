@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice
         </div>
       </div>
 
-      <div className="device-dropdown-wrapper">
+      <div className="device-dropdown-wrapper device-select">
         <label htmlFor="device-selector" className="device-dropdown-label">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="7" />

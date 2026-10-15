@@ -16,19 +16,18 @@ interface SectionKey {
   dy: number; // vertical centre offset
 }
 
-// Simple neutral reference arm: forearm → wrist (matches WRIST_SECTION at x = 0) → back of hand
+// Sculpted studio mannequin segment: 130 mm total length centered around the watch (x = 0)
 const KEYS: SectionKey[] = [
-  { x: -200, a: 39, b: 27, dy: 1 },
-  { x: -70, a: 36, b: 24.5, dy: 0.5 },
+  { x: -70, a: 37, b: 25, dy: 0.8 },
+  { x: -35, a: 35.5, b: 23, dy: 0.4 },
   { x: 0, a: WRIST_SECTION.halfWidth, b: WRIST_SECTION.halfHeight, dy: 0 },
-  { x: 38, a: 36, b: 16, dy: 3.5 },
-  { x: 75, a: 42, b: 13, dy: 6 },
-  { x: 130, a: 41, b: 10.5, dy: 5.5 },
+  { x: 30, a: 35, b: 18, dy: 1.5 },
+  { x: 60, a: 37, b: 14, dy: 2.5 },
 ];
-const X_START = -200;
-const X_END = 130;
-const CAP_START = 28;
-const CAP_END = 24;
+const X_START = -70;
+const X_END = 60;
+const CAP_START = 18;
+const CAP_END = 18;
 
 function smooth(t: number): number {
   return t * t * (3 - 2 * t);
