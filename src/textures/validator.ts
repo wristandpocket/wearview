@@ -53,3 +53,39 @@ export function validateScreenshotFile(file: File): ValidationResult {
 
   return { valid: true };
 }
+
+export interface ResolutionCheckResult {
+  isSquare: boolean;
+  matchesNative: boolean;
+  aspectRatio: number;
+  warning?: string;
+}
+
+/**
+ * Validates whether an image's resolution matches the target watch screen dimensions.
+ * Returns non-blocking advisory feedback if the screenshot is non-square or has
+ * a different pixel resolution than the watch hardware.
+ */
+export function checkScreenshotResolution(
+  width: number,
+  height: number,
+  expectedResolution: { width: number; height: number }
+): ResolutionCheckResult {
+  const isSquare = width === height;
+  const matchesNative = width === expectedResolution.width && height === expectedResolution.height;
+  const aspectRatio = width / (height || 1);
+
+  let warning: string | undefined;
+  if (!isSquare) {
+    warning = `Non-square image (${width}×${height}). Wear OS displays are circular or square and non-square screenshots may be stretched or clipped.`;
+  } else if (!matchesNative) {
+    warning = `Image resolution (${width}×${height}) differs from device native resolution (${expectedResolution.width}×${expectedResolution.height}). Texture will be resampled by GPU.`;
+  }
+
+  return {
+    isSquare,
+    matchesNative,
+    aspectRatio,
+    warning,
+  };
+}

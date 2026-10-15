@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DeviceId } from '../types';
-import { DEVICE_GROUPS } from '../devices';
+import { DEVICE_GROUPS, normalizeDeviceId } from '../devices';
 
 interface HeaderProps {
   selectedDeviceId: DeviceId;
@@ -41,8 +41,8 @@ export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice
         <select
           id="device-selector"
           className="device-dropdown-select"
-          value={selectedDeviceId}
-          onChange={(e) => onSelectDevice(e.target.value as DeviceId)}
+          value={normalizeDeviceId(selectedDeviceId)}
+          onChange={(e) => onSelectDevice(normalizeDeviceId(e.target.value))}
           aria-label="Select smartwatch device"
         >
           {DEVICE_GROUPS.map((group) => (

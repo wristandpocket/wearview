@@ -609,6 +609,16 @@ button {
   font-size: 0.75rem;
 }
 
+.alert-warning {
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-md);
+  background-color: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
 .spec-table {
   display: flex;
   flex-direction: column;
