@@ -1,12 +1,17 @@
 import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
 import {
   DEVICE_LIST,
   DEVICE_GROUPS,
   DEFAULT_DEVICE_ID,
   getDeviceSpec,
   buildDevice,
+  normalizeDeviceId,
+  calculateFrontalBodyArea,
+  calculateScreenToBodyRatio,
 } from './index';
 import { createWatchMaterials } from './materials';
+import { buildWristModel } from '../wrist/wristModel';
 
 describe('Device Catalogue & Profiles', () => {
   it('lists all 11 registered top Wear OS devices grouped logically', () => {
@@ -116,6 +121,76 @@ describe('Device Catalogue & Profiles', () => {
 
     const gw6_44Alias = getDeviceSpec('galaxy-watch-6-44mm');
     expect(gw6_44Alias).toBeDefined();
+  });
+
+  it('normalizes legacy device IDs to canonical IDs and unknown IDs to default', () => {
+    expect(normalizeDeviceId('galaxy-watch-5-44mm')).toBe('galaxy-watch-7-44');
+    expect(normalizeDeviceId('galaxy-watch-5-40mm')).toBe('galaxy-watch-5-40');
+    expect(normalizeDeviceId('galaxy-watch-6-44mm')).toBe('galaxy-watch-7-44');
+    expect(normalizeDeviceId('pixel-watch-1-41mm')).toBe('pixel-watch-41');
+    expect(normalizeDeviceId('pixel-watch-3-45')).toBe('pixel-watch-3-45');
+    expect(normalizeDeviceId('unknown-device-xyz')).toBe(DEFAULT_DEVICE_ID);
+  });
+
+  it('computes archetype-aware screen-to-body ratios', () => {
+    const ultra = getDeviceSpec('galaxy-watch-ultra-47');
+    const ultraArea = calculateFrontalBodyArea(ultra);
+    const ultraRatio = calculateScreenToBodyRatio(ultra);
+    // Cushion squircle area is ~2078 mm^2 vs circular 1764 mm^2
+    expect(ultraArea).toBeGreaterThan(Math.PI * Math.pow(ultra.caseDiameterMm / 2, 2));
+    expect(ultraRatio).toBeGreaterThan(50);
+    expect(ultraRatio).toBeLessThan(55);
+
+    const gw7_44 = getDeviceSpec('galaxy-watch-7-44');
+    const gw7Ratio = calculateScreenToBodyRatio(gw7_44);
+    // Minimalist circular watch has high coverage (~70.7%)
+    expect(gw7Ratio).toBeGreaterThan(68);
+    expect(gw7Ratio).toBeLessThan(73);
+
+    const oneplus = getDeviceSpec('oneplus-watch-2-46');
+    const oneplusArea = calculateFrontalBodyArea(oneplus);
+    expect(oneplusArea).toBeGreaterThan(Math.PI * Math.pow(oneplus.caseHeightMm / 2, 2));
+  });
+
+  it('every device model has >= 0.08mm vertical separation and ordered render layers', () => {
+    const materials = createWatchMaterials();
+    for (const spec of DEVICE_LIST) {
+      const model = buildDevice(spec.id, materials);
+      const screen = model.displayMesh;
+      const glass = model.glassMesh;
+      const bezel = model.group.getObjectByName('bezel') as THREE.Mesh | undefined;
+
+      expect(glass.renderOrder).toBe(10);
+      expect(screen.renderOrder).toBe(2);
+      if (bezel) {
+        expect(bezel.renderOrder).toBe(1);
+      }
+
+      screen.updateWorldMatrix(true, false);
+      glass.updateWorldMatrix(true, false);
+      const screenWorld = new THREE.Vector3();
+      screen.getWorldPosition(screenWorld);
+
+      if (spec.archetype === 'domed-pebble') {
+        // Domed glass reaches apex at y = 2.2mm, screen is at y = 1.10mm
+        expect(screenWorld.y).toBeGreaterThanOrEqual(1.08);
+      } else {
+        const glassWorld = new THREE.Vector3();
+        glass.getWorldPosition(glassWorld);
+        expect(glassWorld.y - screenWorld.y).toBeGreaterThanOrEqual(0.08);
+      }
+    }
+  });
+
+  it('wristModel fitToWatch dynamically offsets based on watchBackY', () => {
+    const materials = createWatchMaterials();
+    const wrist = buildWristModel(materials);
+    wrist.fitToWatch(-10.1); // Pixel Watch (thin back)
+    const pwWristY = wrist.group.position.y;
+    wrist.fitToWatch(-13.7); // Galaxy Watch Ultra / TicWatch (deep back)
+    const ultraWristY = wrist.group.position.y;
+    expect(pwWristY).toBeGreaterThan(ultraWristY);
+    expect(pwWristY - ultraWristY).toBeCloseTo(3.6, 1);
   });
 
   it('Galaxy Watch Ultra 47mm has squircle-cushion-ultra archetype with titanium body and orange button', () => {

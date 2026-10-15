@@ -113,18 +113,83 @@ export const DEVICE_ENTRIES: Record<DeviceId, DeviceEntry> = {
   'pixel-watch-1-41mm': { spec: PIXEL_WATCH_1_SPEC, createModel: buildPixelWatch1Model },
 };
 
-export function getDeviceSpec(id: DeviceId): DeviceSpec {
-  const entry = DEVICE_ENTRIES[id];
-  if (!entry) {
-    throw new Error(`Device profile with id "${id}" not found.`);
+export const LEGACY_TO_CANONICAL_DEVICE_ID: Record<string, DeviceId> = {
+  'galaxy-watch-5-44mm': 'galaxy-watch-7-44',
+  'galaxy-watch-5-40mm': 'galaxy-watch-5-40',
+  'galaxy-watch-6-44mm': 'galaxy-watch-7-44',
+  'pixel-watch-1-41mm': 'pixel-watch-41',
+};
+
+export function normalizeDeviceId(id: string): DeviceId {
+  if (id in LEGACY_TO_CANONICAL_DEVICE_ID) {
+    return LEGACY_TO_CANONICAL_DEVICE_ID[id];
   }
-  return entry.spec;
+  if (id in DEVICE_ENTRIES) {
+    return id as DeviceId;
+  }
+  return DEFAULT_DEVICE_ID;
 }
 
-export function buildDevice(id: DeviceId, materials: WatchMaterials): DeviceModelResult {
-  const entry = DEVICE_ENTRIES[id];
+export function getDeviceSpec(id: DeviceId | string): DeviceSpec {
+  const entry = DEVICE_ENTRIES[id as DeviceId];
+  if (entry) {
+    return entry.spec;
+  }
+  const canonicalId = normalizeDeviceId(id);
+  const canonicalEntry = DEVICE_ENTRIES[canonicalId];
+  if (canonicalEntry) {
+    return canonicalEntry.spec;
+  }
+  throw new Error(`Device profile with id "${id}" not found.`);
+}
+
+export const getDeviceById = getDeviceSpec;
+
+export function buildDevice(id: DeviceId | string, materials: WatchMaterials): DeviceModelResult {
+  const entry = DEVICE_ENTRIES[id as DeviceId] ?? DEVICE_ENTRIES[normalizeDeviceId(id)];
   if (!entry) {
     throw new Error(`Unsupported device model "${id}".`);
   }
   return entry.createModel(materials);
 }
+
+/**
+ * Calculates frontal case body area (mm²) taking into account unique archetypal silhouettes.
+ */
+export function calculateFrontalBodyArea(spec: DeviceSpec): number {
+  const W = spec.caseDiameterMm;
+  const H = spec.caseHeightMm;
+  switch (spec.archetype) {
+    case 'squircle-cushion-ultra': {
+      // Rounded rectangle area: W * H - (4 - PI) * r^2 where corner radius r ≈ 14mm
+      const r = Math.min(14, W / 2, H / 2);
+      return W * H - (4 - Math.PI) * r * r;
+    }
+    case 'asymmetric-chrono': {
+      // Base circle area from vertical diameter + right-side ergonomic flank bulge
+      const baseR = H / 2;
+      const baseArea = Math.PI * baseR * baseR;
+      const bulgeWidth = Math.max(0, W - H);
+      // Half-ellipse bulge over height H
+      const bulgeArea = 0.5 * Math.PI * baseR * (bulgeWidth > 0 ? bulgeWidth : 2.8);
+      return baseArea + bulgeArea;
+    }
+    case 'rugged-tactical':
+    case 'classic-rotating-bezel':
+    case 'flat-minimalist':
+    case 'domed-pebble':
+    default:
+      return Math.PI * (W / 2) * (H / 2);
+  }
+}
+
+/**
+ * Calculates accurate physical screen-to-body percentage coverage.
+ */
+export function calculateScreenToBodyRatio(spec: DeviceSpec): number {
+  const screenArea = Math.PI * Math.pow(spec.activeDisplayDiameterMm / 2, 2);
+  const bodyArea = calculateFrontalBodyArea(spec);
+  if (bodyArea <= 0) return 0;
+  return Math.min(100, Math.max(0, (screenArea / bodyArea) * 100));
+}
+

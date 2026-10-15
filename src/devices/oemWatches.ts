@@ -98,7 +98,8 @@ export function buildOnePlusWatch2Model(materials: WatchMaterials): DeviceModelR
   borderGeo.rotateX(-Math.PI / 2);
   const border = new THREE.Mesh(borderGeo, materials.bezelTachymeter);
   border.name = 'bezel';
-  border.position.y = glassY - 0.06;
+  border.position.y = glassY - 0.18;
+  border.renderOrder = 1;
   group.add(border);
 
   // 3. Active circular OLED display mesh
@@ -106,7 +107,8 @@ export function buildOnePlusWatch2Model(materials: WatchMaterials): DeviceModelR
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.02;
+  displayMesh.position.y = glassY - 0.09;
+  displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
   // 4. Flat 2.5D sapphire cover glass
@@ -237,6 +239,7 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
   const bezelMesh = new THREE.Mesh(bezelGeo, materials.caseAluminum);
   bezelMesh.name = 'bezel';
   bezelMesh.position.y = 0.0;
+  bezelMesh.renderOrder = 1;
   bezelMesh.castShadow = true;
   group.add(bezelMesh);
 
@@ -244,7 +247,9 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
   const borderGeo = new THREE.RingGeometry(screenRadius, bezelInnerR + 0.1, 96);
   borderGeo.rotateX(-Math.PI / 2);
   const border = new THREE.Mesh(borderGeo, materials.bezelBlack);
-  border.position.y = glassY - 0.05;
+  border.name = 'bezel';
+  border.position.y = glassY - 0.18;
+  border.renderOrder = 1;
   group.add(border);
 
   // 4. Active circular OLED display mesh
@@ -252,7 +257,8 @@ export function buildTicWatchPro5Model(materials: WatchMaterials): DeviceModelRe
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = glassY - 0.02;
+  displayMesh.position.y = glassY - 0.09;
+  displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
   // 5. Sunken sapphire cover glass

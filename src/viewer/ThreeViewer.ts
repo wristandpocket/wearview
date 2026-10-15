@@ -412,8 +412,12 @@ export class ThreeViewer {
   }
 
   private displayPlaneTarget(): THREE.Vector3 {
-    const y = this.currentDeviceModel?.displayMesh.position.y ?? 0;
-    return new THREE.Vector3(0, y, 0);
+    const target = new THREE.Vector3(0, 0, 0);
+    if (this.currentDeviceModel?.displayMesh) {
+      this.currentDeviceModel.displayMesh.updateWorldMatrix(true, false);
+      this.currentDeviceModel.displayMesh.getWorldPosition(target);
+    }
+    return target;
   }
 
   private homePose(mode: ViewMode): { position: THREE.Vector3; target: THREE.Vector3 } {
@@ -510,14 +514,21 @@ export class ThreeViewer {
   private disposeDeviceModel(model: DeviceModelResult): void {
     const shared = new Set<THREE.Material>(Object.values(this.materials));
     model.group.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return;
-      obj.geometry.dispose();
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      for (const mat of mats) {
-        if (shared.has(mat)) continue;
-        // Never dispose the user's screenshot texture with the per-device display material
-        if ((mat as THREE.MeshBasicMaterial).map === this.currentTexture) (mat as THREE.MeshBasicMaterial).map = null;
-        mat.dispose();
+      if ('geometry' in obj && (obj as THREE.Mesh).geometry instanceof THREE.BufferGeometry) {
+        (obj as THREE.Mesh).geometry.dispose();
+      }
+      if ('material' in obj && (obj as THREE.Mesh).material) {
+        const mats = Array.isArray((obj as THREE.Mesh).material)
+          ? ((obj as THREE.Mesh).material as THREE.Material[])
+          : [(obj as THREE.Mesh).material as THREE.Material];
+        for (const mat of mats) {
+          if (shared.has(mat)) continue;
+          // Never dispose the user's screenshot texture with the per-device display material
+          if ('map' in mat && (mat as THREE.MeshBasicMaterial).map === this.currentTexture) {
+            (mat as THREE.MeshBasicMaterial).map = null;
+          }
+          mat.dispose();
+        }
       }
     });
   }

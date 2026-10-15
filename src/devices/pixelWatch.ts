@@ -134,6 +134,7 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   const substrateGeo = latheFromProfile(substratePoints);
   const bezelMesh = new THREE.Mesh(substrateGeo, materials.bezelBlack);
   bezelMesh.name = 'bezel';
+  bezelMesh.renderOrder = 1;
   group.add(bezelMesh);
 
   // 3. Active circular OLED display mesh, precisely framed by the bezel
@@ -141,7 +142,8 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   displayGeo.rotateX(-Math.PI / 2);
   const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'screen';
-  displayMesh.position.y = 1.05;
+  displayMesh.position.y = 1.10;
+  displayMesh.renderOrder = 2;
   group.add(displayMesh);
 
   // 4. Domed cover glass spanning full case diameter

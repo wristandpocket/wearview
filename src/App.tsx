@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { DeviceId, LightingPreset, ViewMode, UploadedImageInfo } from './types';
-import { DEFAULT_DEVICE_ID, DEVICE_ENTRIES, getDeviceSpec } from './devices';
+import { DEFAULT_DEVICE_ID, getDeviceSpec, normalizeDeviceId } from './devices';
 import { guessPxPerMm, loadAnyCalibration, loadCalibration, saveCalibration } from './calibration/calibration';
 import { CalibrationDialog } from './components/CalibrationDialog';
 import { ThreeViewer } from './viewer/ThreeViewer';
 import { loadScreenshotTexture, disposeUploadedTexture } from './textures/textureLoader';
 import { createTestPatternFile } from './textures/testPattern';
+import { checkScreenshotResolution } from './textures/validator';
 import { Header } from './components/Header';
 import { ControlsBar } from './components/ControlsBar';
 import { ScreenshotUploader } from './components/ScreenshotUploader';
@@ -18,7 +19,7 @@ const DEVICE_STORAGE_KEY = 'wearview.device';
 function initialDevice(): DeviceId {
   try {
     const saved = window.localStorage.getItem(DEVICE_STORAGE_KEY);
-    if (saved && saved in DEVICE_ENTRIES) return saved as DeviceId;
+    if (saved) return normalizeDeviceId(saved);
   } catch {
     // ignore unavailable storage
   }
@@ -171,17 +172,20 @@ export const App: React.FC = () => {
     setErrorMessage(null);
   }, []);
 
-  // Handle QA test pattern loading
+  const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
+
+  // Handle QA test pattern loading matching active device screen resolution
   const handleLoadTestPattern = useCallback(async () => {
     setErrorMessage(null);
     try {
-      const testFile = await createTestPatternFile(450);
+      const targetSize = currentDeviceSpec.resolutionPx.width;
+      const testFile = await createTestPatternFile(targetSize);
       await handleImageSelected(testFile);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to generate test pattern.';
       setErrorMessage(msg);
     }
-  }, [handleImageSelected]);
+  }, [currentDeviceSpec.resolutionPx.width, handleImageSelected]);
 
   // Auto-load default Cyberpunk screenshot on initial mount
   useEffect(() => {
@@ -216,13 +220,19 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
+  const handleSelectDevice = useCallback((id: DeviceId | string) => {
+    setSelectedDeviceId(normalizeDeviceId(id));
+  }, []);
+
+  const resolutionWarning = uploadedImage
+    ? checkScreenshotResolution(uploadedImage.width, uploadedImage.height, currentDeviceSpec.resolutionPx).warning
+    : null;
 
   return (
     <div className="app-container">
       <Header
         selectedDeviceId={selectedDeviceId}
-        onSelectDevice={setSelectedDeviceId}
+        onSelectDevice={handleSelectDevice}
         onResetCamera={handleResetCamera}
       />
 
@@ -262,6 +272,7 @@ export const App: React.FC = () => {
               onImageRemoved={handleImageRemoved}
               onLoadTestPattern={handleLoadTestPattern}
               errorMessage={errorMessage}
+              resolutionWarning={resolutionWarning}
               onClearError={() => setErrorMessage(null)}
             />
           </section>

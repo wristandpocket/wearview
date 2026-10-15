@@ -7,6 +7,7 @@ interface ScreenshotUploaderProps {
   onImageRemoved: () => void;
   onLoadTestPattern: () => void;
   errorMessage: string | null;
+  resolutionWarning?: string | null;
   onClearError: () => void;
 }
 
@@ -27,6 +28,7 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
   onImageRemoved,
   onLoadTestPattern,
   errorMessage,
+  resolutionWarning,
   onClearError
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +113,12 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
       {errorMessage && (
         <div className="alert-error" role="alert">
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {resolutionWarning && (
+        <div className="alert-warning" role="status">
+          <span>{resolutionWarning}</span>
         </div>
       )}
 

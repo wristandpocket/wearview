@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateScreenshotFile, MAX_FILE_SIZE_BYTES } from './validator';
+import { validateScreenshotFile, checkScreenshotResolution, MAX_FILE_SIZE_BYTES } from './validator';
 
 describe('validateScreenshotFile', () => {
   it('accepts valid PNG file', () => {
@@ -47,5 +47,32 @@ describe('validateScreenshotFile', () => {
 
     const exeFile = new File(['data'], 'malicious.exe', { type: 'application/octet-stream' });
     expect(validateScreenshotFile(exeFile).valid).toBe(false);
+  });
+});
+
+describe('checkScreenshotResolution', () => {
+  const nativeRes = { width: 450, height: 450 };
+
+  it('returns valid matching status for exact resolution match', () => {
+    const result = checkScreenshotResolution(450, 450, nativeRes);
+    expect(result.isSquare).toBe(true);
+    expect(result.matchesNative).toBe(true);
+    expect(result.aspectRatio).toBe(1.0);
+    expect(result.warning).toBeUndefined();
+  });
+
+  it('returns non-blocking warning for square non-matching resolution', () => {
+    const result = checkScreenshotResolution(400, 400, nativeRes);
+    expect(result.isSquare).toBe(true);
+    expect(result.matchesNative).toBe(false);
+    expect(result.aspectRatio).toBe(1.0);
+    expect(result.warning).toContain('differs from device native resolution');
+  });
+
+  it('returns warning for non-square screenshot', () => {
+    const result = checkScreenshotResolution(1080, 1920, nativeRes);
+    expect(result.isSquare).toBe(false);
+    expect(result.matchesNative).toBe(false);
+    expect(result.warning).toContain('Non-square image');
   });
 });

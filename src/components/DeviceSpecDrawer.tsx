@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DeviceSpec, GlassType } from '../types';
+import { calculateScreenToBodyRatio } from '../devices';
 
 interface DeviceSpecDrawerProps {
   spec: DeviceSpec;
@@ -14,17 +15,7 @@ const GLASS_LABELS: Record<GlassType, string> = {
 };
 
 export const DeviceSpecDrawer: React.FC<DeviceSpecDrawerProps> = ({ spec }) => {
-  // Compute screen-to-body frontal area ratio
-  const screenArea = Math.PI * Math.pow(spec.activeDisplayDiameterMm / 2, 2);
-  let caseFrontalArea: number;
-  if (spec.archetype === 'squircle-cushion-ultra') {
-    // Cushion squircle area
-    caseFrontalArea = spec.caseDiameterMm * spec.caseHeightMm - (4 - Math.PI) * Math.pow(14, 2);
-  } else {
-    caseFrontalArea = Math.PI * (spec.caseDiameterMm / 2) * (spec.caseHeightMm / 2);
-  }
-  const screenToBodyRatio = Math.min(100, Math.max(0, (screenArea / caseFrontalArea) * 100));
-
+  const screenToBodyRatio = calculateScreenToBodyRatio(spec);
   const displayInches = (spec.activeDisplayDiameterMm / 25.4).toFixed(2);
 
   const rows: Array<{ label: string; value: string; estimated?: boolean; mono?: boolean }> = [
