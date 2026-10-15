@@ -93,15 +93,14 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
 }) => {
   return (
     <div className="controls-dock">
-      <div className="segmented-bar" role="radiogroup" aria-label="View mode">
+      <div className="segmented-bar" role="group" aria-label="View mode">
         {VIEW_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             type="button"
             className={`segmented-btn ${viewMode === opt.id ? 'active' : ''}`}
             onClick={() => onViewModeChange(opt.id)}
-            role="radio"
-            aria-checked={viewMode === opt.id}
+            aria-pressed={viewMode === opt.id}
             title={opt.title}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -128,15 +127,14 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
         </div>
       )}
 
-      <div className="segmented-bar" role="radiogroup" aria-label="Lighting">
+      <div className="segmented-bar" role="group" aria-label="Lighting">
         {LIGHT_OPTIONS.map((opt) => (
           <button
             key={opt.id}
             type="button"
             className={`segmented-btn ${lightingPreset === opt.id ? 'active' : ''}`}
             onClick={() => onLightingChange(opt.id)}
-            role="radio"
-            aria-checked={lightingPreset === opt.id}
+            aria-pressed={lightingPreset === opt.id}
             title={opt.title}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

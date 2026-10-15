@@ -83,6 +83,8 @@ const HOMES: Record<ViewMode, CameraHome> = {
 };
 
 const FLY_MS = 650;
+const MIN_DISTANCE = 40;
+const MAX_DISTANCE = 520;
 const DEFAULT_FOV = 30;
 /** Narrow lens in real-size mode keeps perspective distortion of the 10 mm-deep watch under ~1%. */
 const REAL_SIZE_FOV = 8;
@@ -158,6 +160,8 @@ export class ThreeViewer {
   private safeZoneMesh: THREE.Mesh | null = null;
   private safeZonesEnabled = false;
 
+  /** False when WebGL/scene initialisation failed; every public call is then a no-op. */
+  public ready = false;
   private needsRender = true;
   private userMovedCamera = false;
   private fly: {
@@ -193,6 +197,7 @@ export class ThreeViewer {
 
       this.setupResizeObserver();
       this.animate();
+      this.ready = true;
       options.onInitSuccess?.();
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to initialize 3D WebGL scene.');
@@ -283,8 +288,8 @@ export class ThreeViewer {
     this.controls.zoomSpeed = 0.9;
     this.controls.minPolarAngle = MIN_POLAR_OFFSET_RAD;
     this.controls.maxPolarAngle = Math.PI * 0.62; // allow a little look from below the face plane
-    this.controls.minDistance = 40;
-    this.controls.maxDistance = 520;
+    this.controls.minDistance = MIN_DISTANCE;
+    this.controls.maxDistance = MAX_DISTANCE;
     this.controls.screenSpacePanning = true;
     this.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     this.controls.addEventListener('start', this.onControlsStart);
@@ -375,8 +380,8 @@ export class ThreeViewer {
       if (this.realScale === null) return;
       this.realScale = null;
       // Exit realSize mode: widen distance bounds, re-enable zoom and pan
-      this.controls.minDistance = 20;
-      this.controls.maxDistance = 500;
+      this.controls.minDistance = MIN_DISTANCE;
+      this.controls.maxDistance = MAX_DISTANCE;
       this.controls.enableZoom = true;
       this.controls.enablePan = true;
       this.camera.fov = DEFAULT_FOV;
@@ -575,22 +580,24 @@ export class ThreeViewer {
   }
 
   public exportPngSnapshot(filename?: string): void {
-    // Explicit synchronous render right before reading dataURL guarantees a fresh,
-    // crisp frame capture with preserveDrawingBuffer: false (avoiding browser buffer copy overhead during normal interaction).
+    if (!this.ready) return;
+    // Render right before reading pixels: with preserveDrawingBuffer: false the buffer is only
+    // valid within the same task, so the frame is captured synchronously via toBlob's snapshot.
     this.renderer.render(this.scene, this.camera);
-    const dataUrl = this.renderer.domElement.toDataURL('image/png');
-    const a = document.createElement('a');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const id = this.currentDeviceModel?.spec.id ?? 'device';
-    a.download = filename ?? `wearview-${id}-${timestamp}.png`;
-    a.href = dataUrl;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      if (a.parentNode) {
-        a.parentNode.removeChild(a);
-      }
-    }, 100);
+    const name = filename ?? `wearview-${id}-${timestamp}.png`;
+    this.renderer.domElement.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = name;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
   }
 
   public captureSnapshot(filename?: string): void {
