@@ -36,6 +36,7 @@ export const App: React.FC = () => {
   const [pxPerMm, setPxPerMm] = useState<number | null>(null); // non-null = real-size mode on
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationNotice, setCalibrationNotice] = useState<string | null>(null);
+  const [safeZones, setSafeZones] = useState(false);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const viewerInstanceRef = useRef<ThreeViewer | null>(null);
@@ -174,18 +175,24 @@ export const App: React.FC = () => {
 
   const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
 
-  // Handle QA test pattern loading matching active device screen resolution
+  // Handle QA test pattern loading matching active device screen resolution and physical metadata
   const handleLoadTestPattern = useCallback(async () => {
     setErrorMessage(null);
     try {
-      const targetSize = currentDeviceSpec.resolutionPx.width;
-      const testFile = await createTestPatternFile(targetSize);
+      const testFile = await createTestPatternFile({
+        size: currentDeviceSpec.resolutionPx.width,
+        widthPx: currentDeviceSpec.resolutionPx.width,
+        heightPx: currentDeviceSpec.resolutionPx.height,
+        displayDiameterMm: currentDeviceSpec.activeDisplayDiameterMm,
+        ppi: currentDeviceSpec.ppi,
+        deviceName: currentDeviceSpec.shortLabel,
+      });
       await handleImageSelected(testFile);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to generate test pattern.';
       setErrorMessage(msg);
     }
-  }, [currentDeviceSpec.resolutionPx.width, handleImageSelected]);
+  }, [currentDeviceSpec, handleImageSelected]);
 
   // Auto-load default Cyberpunk screenshot on initial mount
   useEffect(() => {
@@ -220,6 +227,28 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Handle camera angle preset
+  const handleCameraAngle = useCallback((angle: 'front' | 'tilt' | 'side') => {
+    if (pxPerMm !== null && angle !== 'front') {
+      setPxPerMm(null);
+    }
+    viewerInstanceRef.current?.setCameraAngle(angle);
+  }, [pxPerMm]);
+
+  // Handle safe-zone overlay toggle
+  const handleToggleSafeZones = useCallback(() => {
+    setSafeZones((prev) => {
+      const next = !prev;
+      viewerInstanceRef.current?.setSafeZonesEnabled(next);
+      return next;
+    });
+  }, []);
+
+  // Handle high-resolution PNG snapshot export
+  const handleExportPng = useCallback(() => {
+    viewerInstanceRef.current?.exportPngSnapshot();
+  }, []);
+
   const handleSelectDevice = useCallback((id: DeviceId | string) => {
     setSelectedDeviceId(normalizeDeviceId(id));
   }, []);
@@ -234,6 +263,7 @@ export const App: React.FC = () => {
         selectedDeviceId={selectedDeviceId}
         onSelectDevice={handleSelectDevice}
         onResetCamera={handleResetCamera}
+        onExportPng={handleExportPng}
       />
 
       <main className="app-workspace">
@@ -258,6 +288,10 @@ export const App: React.FC = () => {
             onLightingChange={setLightingPreset}
             realSize={pxPerMm !== null}
             onToggleRealSize={handleToggleRealSize}
+            safeZones={safeZones}
+            onToggleSafeZones={handleToggleSafeZones}
+            onSelectCameraAngle={handleCameraAngle}
+            onExportPng={handleExportPng}
           />
         </section>
 

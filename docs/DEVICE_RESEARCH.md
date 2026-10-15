@@ -77,7 +77,7 @@ Built in `src/devices/galaxyWatch5.ts` (scene units: 1 unit = 1 mm, face up, 12 
 - **Crown & Button:** Digital crown at 3 o'clock protrudes cleanly (~1.8 mm) with fine knurled ridges; button at 2 o'clock sits almost flush.
 
 ### 4. WearView MVP Visual Approximation
-Built in `src/devices/pixelWatch1.ts`.
+Built in `src/devices/pixelWatch.ts`.
 - Polished steel body lathed below the glass, r = 20.5 mm (41 mm, confirmed).
 - Total height 12.3 mm (confirmed): dome apex at y = +2.2, sensor dome bottom at y = -10.1.
 - Domed cover glass: lathe profile rolling over the edge down to y ≈ -2 (shape estimated from photos).

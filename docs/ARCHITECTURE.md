@@ -39,8 +39,8 @@ wearview/
 │   ├── viewer/              # Three.js scene, camera, lighting, and render loop
 │   │   └── ThreeViewer.ts   # WebGL renderer lifecycle, lights, shadow receiver, controls
 │   ├── components/          # React UI components
-│   │   ├── Header.tsx       # Brand, local-first indicator, 2-device selector, reset camera
-│   │   ├── ControlsBar.tsx  # Watch/Wrist toggle, Studio/Sunlight/Night, test pattern trigger
+│   │   ├── Header.tsx       # Brand, local-only indicator, grouped 11-device selector, reset camera, snapshot
+│   │   ├── ControlsBar.tsx  # Watch/Wrist toggle, camera presets (0°/35°/75°), lighting, safe zones, 1:1 real size, export PNG
 │   │   ├── ScreenshotUploader.tsx # Drag-and-drop file picker, image metadata, replace/remove
 │   │   ├── DeviceSpecDrawer.tsx   # Minimal hardware specs summary
 │   │   └── ViewportOverlay.tsx    # HUD badges, navigation cues, WebGL error fallback

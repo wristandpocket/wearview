@@ -21,6 +21,13 @@ WearView helps smartwatch developers inspect how game and interactive app screen
 - **Glossy cover glass:** glass reflects a dedicated dark softbox environment, so the screen stays crisp and saturated while highlights sweep across it as you tilt the watch.
 - **Lighting presets:** Studio, Sunlight (strong glare on the glass) and Night.
 - **Watch / On wrist:** the same watch on a simple neutral arm; the band wraps the wrist cross-section.
+- **Wear OS Safe-Zone & Radial Ticks Overlay:** Interactive 3D wireframe overlay showing the 100% outer display border, 90% Action/Button Safe Zone, and 80% Title/Text Safe Zone, plus 15° tick marks and cardinal axes (`12h / 3h / 6h / 9h`) to test against bezel occlusion (toggle in dock or press keyboard shortcut `S`).
+- **Quick Camera Angle Presets:** Fast one-click viewing angle presets for inspection:
+  - `Front (0°)`: Straight-on perpendicular view directly over the screen face.
+  - `Tilt (35°)`: Natural wrist-glance viewing angle to verify edge button clearance on raised bezels.
+  - `Side (75°)`: Grazing angle to inspect dome curvature, case thickness (9.7mm vs 12.3mm), and wrist contact.
+- **High-Resolution PNG Snapshot Export:** 1-click snapshot export from the dock or header generating clean PNG renders (`wearview-{deviceId}-{timestamp}.png`).
+- **Hardware-Aware Procedural QA Pattern:** Built-in test pattern showing exact native resolution (e.g. `456×456 px`), physical diameter and density (`35.56 mm • 320 PPI`), and safe margin guides.
 - **Responsive:** phones (portrait and landscape), tablets, desktops and ultrawide monitors.
 - **Local-only:** images never leave the browser. No accounts, no analytics.
 

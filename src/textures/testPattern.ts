@@ -1,8 +1,38 @@
+export interface TestPatternOptions {
+  size?: number;
+  widthPx?: number;
+  heightPx?: number;
+  displayDiameterMm?: number;
+  ppi?: number;
+  deviceName?: string;
+}
+
 /**
  * Generates a local, non-copyrighted high-contrast test pattern for Wear OS QA.
- * Includes center crosshair, quadrant indicators, circular safe zones, and edge markers.
+ * Includes center crosshair, quadrant indicators, circular safe zones (100%, 90%, 80%),
+ * 15° degree tick marks, and optional physical hardware metadata.
  */
-export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
+export function generateTestPatternCanvas(
+  sizeOrOptions: number | TestPatternOptions = 450,
+  options?: TestPatternOptions
+): HTMLCanvasElement {
+  let size = 450;
+  let opts: TestPatternOptions = {};
+
+  if (typeof sizeOrOptions === 'number') {
+    size = sizeOrOptions;
+    opts = options || {};
+  } else if (sizeOrOptions && typeof sizeOrOptions === 'object') {
+    opts = sizeOrOptions;
+    size = opts.size || opts.widthPx || 450;
+  }
+
+  const width = opts.widthPx || size;
+  const height = opts.heightPx || size;
+  const diameterMm = opts.displayDiameterMm;
+  const ppi = opts.ppi;
+  const deviceName = opts.deviceName;
+
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -11,7 +41,7 @@ export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
 
   const half = size / 2;
 
-  // Background - dark slate grid
+  // 1. Background - dark slate grid
   ctx.fillStyle = '#090d16';
   ctx.fillRect(0, 0, size, size);
 
@@ -30,27 +60,23 @@ export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
     ctx.stroke();
   }
 
-  // Corner indicators (will be masked out on circular screens, confirming masking)
+  // 2. Corner indicators (will be masked out on circular screens, confirming masking)
   ctx.fillStyle = '#e11d48'; // Vivid Red
   const cornerSize = step * 1.5;
-  // Top-left
-  ctx.fillRect(0, 0, cornerSize, cornerSize);
-  // Top-right
-  ctx.fillRect(size - cornerSize, 0, cornerSize, cornerSize);
-  // Bottom-left
-  ctx.fillRect(0, size - cornerSize, cornerSize, cornerSize);
-  // Bottom-right
-  ctx.fillRect(size - cornerSize, size - cornerSize, cornerSize, cornerSize);
+  ctx.fillRect(0, 0, cornerSize, cornerSize); // Top-left
+  ctx.fillRect(size - cornerSize, 0, cornerSize, cornerSize); // Top-right
+  ctx.fillRect(0, size - cornerSize, cornerSize, cornerSize); // Bottom-left
+  ctx.fillRect(size - cornerSize, size - cornerSize, cornerSize, cornerSize); // Bottom-right
 
-  // Circular guide rings
-  // 1. 100% active display boundary
+  // 3. Circular safe zones
+  // Ring 1: 100% active display boundary
   ctx.strokeStyle = '#38bdf8'; // Sky blue
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
   ctx.arc(half, half, half - 2, 0, Math.PI * 2);
   ctx.stroke();
 
-  // 2. 90% HUD safe zone
+  // Ring 2: 90% Action / Button Safe Zone
   ctx.strokeStyle = '#fbbf24'; // Amber
   ctx.lineWidth = 1.5;
   ctx.setLineDash([6, 6]);
@@ -58,16 +84,61 @@ export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
   ctx.arc(half, half, half * 0.9, 0, Math.PI * 2);
   ctx.stroke();
 
-  // 3. 75% Text safe area
+  // Ring 3: 80% Title / Text Safe Zone
   ctx.strokeStyle = '#34d399'; // Emerald
   ctx.lineWidth = 1.5;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
-  ctx.arc(half, half, half * 0.75, 0, Math.PI * 2);
+  ctx.arc(half, half, half * 0.8, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]); // Reset dash
 
-  // Cardinal directional edge markers & labels
+  // 4. Degree tick marks every 15° around the 100% boundary
+  const rBoundary = half - 2;
+  for (let deg = 0; deg < 360; deg += 15) {
+    const rad = (deg - 90) * (Math.PI / 180); // 0° at 12 o'clock (top)
+    const isCardinal = deg % 90 === 0;
+    const isSemi = deg % 45 === 0;
+
+    let tickLen = 6;
+    if (isCardinal) {
+      tickLen = 14;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.5;
+    } else if (isSemi) {
+      tickLen = 10;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.lineWidth = 1.5;
+    } else {
+      tickLen = 6;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1;
+    }
+
+    const xOuter = half + Math.cos(rad) * rBoundary;
+    const yOuter = half + Math.sin(rad) * rBoundary;
+    const xInner = half + Math.cos(rad) * (rBoundary - tickLen);
+    const yInner = half + Math.sin(rad) * (rBoundary - tickLen);
+
+    ctx.beginPath();
+    ctx.moveTo(xOuter, yOuter);
+    ctx.lineTo(xInner, yInner);
+    ctx.stroke();
+
+    // Cardinal degree text labels (0°, 90°, 180°, 270°)
+    if (isCardinal) {
+      const textR = rBoundary - tickLen - 10;
+      const tx = half + Math.cos(rad) * textR;
+      const ty = half + Math.sin(rad) * textR;
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${deg}°`, tx, ty);
+    }
+  }
+
+  // 5. Cardinal directional edge markers & labels
   const markerThickness = 12;
   const markerSpan = step * 2;
 
@@ -88,7 +159,7 @@ export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
   ctx.fillRect(size - markerThickness, half - markerSpan / 2, markerThickness, markerSpan);
 
   // Axes lines
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(half, 15);
@@ -97,29 +168,51 @@ export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
   ctx.lineTo(size - 15, half);
   ctx.stroke();
 
-  // Center crosshair and badge
+  // Safe zone indicator badges
+  ctx.font = '9px "JetBrains Mono", monospace, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fbbf24';
+  ctx.fillText('90% ACTION SAFE', half, half - half * 0.9 + 12);
+  ctx.fillStyle = '#34d399';
+  ctx.fillText('80% TEXT SAFE', half, half - half * 0.8 + 12);
+
+  // 6. Center badge & hardware metadata
+  const badgeR = half * 0.38;
   ctx.fillStyle = '#1e293b';
   ctx.beginPath();
-  ctx.arc(half, half, half * 0.35, 0, Math.PI * 2);
+  ctx.arc(half, half, badgeR, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = '#60a5fa';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Text markings
+  // Center text markings
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = 'bold 15px "JetBrains Mono", monospace, sans-serif';
-  ctx.fillText('WEARVIEW', half, half - 18);
-
-  ctx.font = '11px "JetBrains Mono", monospace, sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('QA TEST PATTERN', half, half - 2);
+  ctx.fillText('WEARVIEW', half, half - 22);
 
   ctx.fillStyle = '#38bdf8';
   ctx.font = 'bold 12px "JetBrains Mono", monospace, sans-serif';
-  ctx.fillText(`${size}×${size} SQ`, half, half + 16);
+  ctx.fillText(`${width}×${height} px`, half, half - 4);
+
+  if (diameterMm !== undefined && ppi !== undefined) {
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '11px "JetBrains Mono", monospace, sans-serif';
+    ctx.fillText(`${diameterMm.toFixed(2)} mm • ${ppi} PPI`, half, half + 14);
+  } else {
+    ctx.font = '11px "JetBrains Mono", monospace, sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('QA TEST PATTERN', half, half + 14);
+  }
+
+  if (deviceName) {
+    ctx.fillStyle = '#a5b4fc';
+    ctx.font = '10px "JetBrains Mono", monospace, sans-serif';
+    ctx.fillText(deviceName, half, half + 30);
+  }
 
   // Edge text labels
   ctx.font = 'bold 11px sans-serif';
@@ -146,8 +239,12 @@ export function generateTestPatternCanvas(size = 450): HTMLCanvasElement {
   return canvas;
 }
 
-export async function createTestPatternFile(size = 450): Promise<File> {
-  const canvas = generateTestPatternCanvas(size);
+export async function createTestPatternFile(
+  sizeOrOptions: number | TestPatternOptions = 450,
+  options?: TestPatternOptions
+): Promise<File> {
+  const canvas = generateTestPatternCanvas(sizeOrOptions, options);
+  const size = canvas.width;
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
