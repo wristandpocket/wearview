@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { DeviceId, LightingPreset, ViewMode, UploadedImageInfo } from './types';
-import { DEVICE_ENTRIES, getDeviceSpec } from './devices';
+import { DEFAULT_DEVICE_ID, DEVICE_ENTRIES, getDeviceSpec } from './devices';
 import { guessPxPerMm, loadAnyCalibration, loadCalibration, saveCalibration } from './calibration/calibration';
 import { CalibrationDialog } from './components/CalibrationDialog';
 import { ThreeViewer } from './viewer/ThreeViewer';
@@ -22,7 +22,7 @@ function initialDevice(): DeviceId {
   } catch {
     // ignore unavailable storage
   }
-  return 'galaxy-watch-5-44mm';
+  return DEFAULT_DEVICE_ID;
 }
 
 export const App: React.FC = () => {

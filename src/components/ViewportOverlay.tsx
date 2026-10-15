@@ -35,14 +35,16 @@ export const ViewportOverlay: React.FC<ViewportOverlayProps> = ({
       <div className="spec-pill">
         <strong>{deviceSpec.name}</strong>
         <span className="spec-pill-detail">
-          {deviceSpec.displayDiameterMm} mm · <span className="spec-highlight">{deviceSpec.resolutionPx.width}×{deviceSpec.resolutionPx.height}</span>
+          {deviceSpec.activeDisplayDiameterMm} mm ({(deviceSpec.activeDisplayDiameterMm / 25.4).toFixed(2)}&quot;) ·{' '}
+          <span className="spec-highlight">{deviceSpec.resolutionPx.width}×{deviceSpec.resolutionPx.height}</span>{' '}
+          ({deviceSpec.ppi} PPI) · {deviceSpec.caseDiameterMm}×{deviceSpec.caseHeightMm} mm
         </span>
       </div>
 
       {realSize && (
         <div className="real-size-badge" role="status">
           <span className="real-size-dot" aria-hidden="true" />
-          <span>Real size 1:1 · {deviceSpec.caseDiameterMm} mm case</span>
+          <span>Real size 1:1 · {deviceSpec.caseDiameterMm} mm case · Lug {deviceSpec.lugWidthMm} mm</span>
           <button type="button" className="badge-link" onClick={onRecalibrate}>Recalibrate</button>
         </div>
       )}

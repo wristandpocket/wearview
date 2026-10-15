@@ -24,8 +24,10 @@ wearview/
 │   ├── devices/             # Device profile registry and procedural 3D model builders
 │   │   ├── types.ts         # DeviceSpec and DeviceModelResult interfaces
 │   │   ├── materials.ts     # PBR materials factory (aluminum, stainless steel, glass, strap)
-│   │   ├── galaxyWatch5.ts  # Samsung Galaxy Watch5 44 mm procedural geometry
-│   │   ├── pixelWatch1.ts   # Google Pixel Watch 1st gen 41 mm procedural geometry
+│   │   ├── geometry.ts      # Shared lathe, sweep, knurled bezel, and squircle generators
+│   │   ├── pixelWatch.ts    # Google Pixel Watch (41mm & 45mm) procedural geometry
+│   │   ├── galaxyWatch.ts   # Samsung Galaxy Watch (Modern, Classic, Ultra) procedural geometry
+│   │   ├── oemWatches.ts    # OnePlus Watch 2 & TicWatch Pro 5 procedural geometry
 │   │   └── index.ts         # Device catalogue registry & model factory dispatch
 │   ├── textures/            # Image validation, aspect-fit math, and texture loader
 │   │   ├── validator.ts     # Client-side file type and file size validation

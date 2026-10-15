@@ -11,11 +11,11 @@ WearView helps smartwatch developers inspect how game and interactive app screen
 
 ## Key Features
 
-- **Four real watches, modeled from published specs:**
-  - **Samsung Galaxy Watch5 · 44 mm** — 34.6 mm, 450 × 450 display; 44.4 × 43.3 × 9.8 mm aluminum case.
-  - **Samsung Galaxy Watch5 · 40 mm** — 30.4 mm, 396 × 396 display; 40.4 × 39.3 × 9.8 mm.
-  - **Samsung Galaxy Watch6 · 44 mm** — 37.3 mm, 480 × 480 display, thinner bezel; 44.4 × 42.8 × 9.0 mm.
-  - **Google Pixel Watch · 1st gen · 41 mm** — domed glass, polished steel, fluted crown; 41 × 12.3 mm.
+- **Top 10+ smartwatches across 4 grouped families, modeled from published specs:**
+  - **Google Pixel Watch:** Pixel Watch 1/2 (41mm), Pixel Watch 3 (41mm & 45mm) — 3D domed pebble glass, fluted crown, flush side key.
+  - **Samsung Galaxy Watch (Modern Flat):** Galaxy Watch7 (40mm & 44mm), Galaxy Watch5 (40mm) — flat sapphire crystal, slim chamfered aluminum protective rim, dual pill buttons.
+  - **Samsung Galaxy Watch (Classic & Ultra):** Galaxy Watch6 Classic (43mm & 47mm with physical 48-teeth knurled rotating bezel), Galaxy Watch Ultra (47mm cushion squircle titanium body with orange Quick Button).
+  - **OnePlus & Mobvoi:** OnePlus Watch 2 (46mm asymmetric chrono chassis), Mobvoi TicWatch Pro 5 (48mm tactical knurled bezel and guarded center crown).
 - **Real size (1:1) mode:** a one-time calibration with any bank/ID card (ISO/IEC 7810 ID-1, 85.6 × 53.98 mm) measures CSS pixels per millimetre on your screen; the watch is then drawn at its true physical size. Calibration is stored per screen + browser zoom and re-requested when either changes. Adjust with slider, buttons, mouse wheel, arrow keys or pinch.
 - **Screen on the real display surface:** the screenshot is clipped to the active circular area only, aspect ratio preserved (centered `contain` fit for non-square images), correct sRGB handling.
 - **Glossy cover glass:** glass reflects a dedicated dark softbox environment, so the screen stays crisp and saturated while highlights sweep across it as you tilt the watch.
@@ -60,7 +60,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 # Type check TypeScript in strict mode
 npm run typecheck
 
-# Run Vitest unit tests (15 tests across image fit, validation, and device profiles)
+# Run Vitest unit tests (covering 1:1 physical math, validation, calibration, and 11 device models)
 npm run test
 ```
 

@@ -200,3 +200,121 @@ export function placeOnSide(obj: THREE.Object3D, radius: number, angleFrom3: num
   obj.position.set(Math.cos(angleFrom3) * radius, y, -Math.sin(angleFrom3) * radius);
   obj.rotation.y = angleFrom3;
 }
+
+/** Raised rotating or tactical knurled bezel ring with outer fluted teeth notches and inner circular hole. */
+export function knurledBezelGeometry(
+  innerRadius: number,
+  outerRadius: number,
+  height: number,
+  notches = 48,
+  notchDepth = 0.35
+): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  const samples = notches * 4;
+  for (let i = 0; i <= samples; i++) {
+    const theta = (i / samples) * Math.PI * 2;
+    const flute = Math.cos(theta * notches);
+    const r = outerRadius - Math.max(0, flute) * notchDepth;
+    const x = Math.cos(theta) * r;
+    const z = Math.sin(theta) * r;
+    if (i === 0) shape.moveTo(x, z);
+    else shape.lineTo(x, z);
+  }
+  const hole = new THREE.Path();
+  const holeSamples = 96;
+  for (let i = 0; i <= holeSamples; i++) {
+    const theta = (i / holeSamples) * Math.PI * 2;
+    const x = Math.cos(theta) * innerRadius;
+    const z = Math.sin(theta) * innerRadius;
+    if (i === 0) hole.moveTo(x, z);
+    else hole.lineTo(x, z);
+  }
+  shape.holes.push(hole);
+
+  const bevel = Math.min(0.25, height * 0.2);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: Math.max(0.1, height - bevel * 2),
+    bevelEnabled: true,
+    bevelThickness: bevel,
+    bevelSize: 0,
+    bevelSegments: 2,
+    curveSegments: 32,
+  });
+  geo.rotateX(-Math.PI / 2);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Rounded-square cushion squircle body for Galaxy Watch Ultra. */
+export function squircleCaseGeometry(
+  width: number,
+  length: number,
+  depth: number,
+  cornerRadius: number,
+  bevel = 0.8
+): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  const hw = width / 2;
+  const hl = length / 2;
+  const cr = Math.min(cornerRadius, hw - 1, hl - 1);
+  shape.moveTo(-hw + cr, -hl);
+  shape.lineTo(hw - cr, -hl);
+  shape.quadraticCurveTo(hw, -hl, hw, -hl + cr);
+  shape.lineTo(hw, hl - cr);
+  shape.quadraticCurveTo(hw, hl, hw - cr, hl);
+  shape.lineTo(-hw + cr, hl);
+  shape.quadraticCurveTo(-hw, hl, -hw, hl - cr);
+  shape.lineTo(-hw, -hl + cr);
+  shape.quadraticCurveTo(-hw, -hl, -hw + cr, -hl);
+
+  const b = Math.min(bevel, depth * 0.25);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: Math.max(0.1, depth - b * 2),
+    bevelEnabled: true,
+    bevelThickness: b,
+    bevelSize: 0,
+    bevelSegments: 4,
+    curveSegments: 24,
+  });
+  geo.rotateX(-Math.PI / 2);
+  geo.translate(0, -(depth - b * 2) - b, 0);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Asymmetric watch chassis with ergonomic right-flank bridge flare (OnePlus Watch 2). */
+export function asymmetricCaseGeometry(
+  baseRadius: number,
+  flare: number,
+  depth: number,
+  bevel = 0.6
+): THREE.BufferGeometry {
+  const shape = new THREE.Shape();
+  const samples = 120;
+  for (let i = 0; i <= samples; i++) {
+    const theta = (i / samples) * Math.PI * 2;
+    const cosVal = Math.cos(theta);
+    const rightFlare = cosVal > 0.4 ? Math.pow((cosVal - 0.4) / 0.6, 2) * flare : 0;
+    const r = baseRadius + rightFlare;
+    const x = Math.cos(theta) * r;
+    const z = Math.sin(theta) * r;
+    if (i === 0) shape.moveTo(x, z);
+    else shape.lineTo(x, z);
+  }
+
+  const b = Math.min(bevel, depth * 0.25);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: Math.max(0.1, depth - b * 2),
+    bevelEnabled: true,
+    bevelThickness: b,
+    bevelSize: 0,
+    bevelSegments: 4,
+    curveSegments: 24,
+  });
+  geo.rotateX(-Math.PI / 2);
+  geo.translate(0, -(depth - b * 2) - b, 0);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+
