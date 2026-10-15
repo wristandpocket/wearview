@@ -413,6 +413,7 @@ export const App: React.FC = () => {
         onResetCamera={handleResetCamera}
         onShare={handleShare}
         shareStatus={shareStatus}
+        onExportPng={handleExportPng}
       />
 
       <main className="app-workspace">
@@ -480,7 +481,6 @@ export const App: React.FC = () => {
             safeZones={safeZones}
             onToggleSafeZones={handleToggleSafeZones}
             onSelectCameraAngle={handleCameraAngle}
-            onExportPng={handleExportPng}
             nativePixels={pixelMode === 'native'}
             onToggleNativePixels={handleTogglePixelMode}
             compare={compareSpec !== null}

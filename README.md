@@ -128,3 +128,5 @@ Detailed project documentation is available in the `docs/` directory:
 ## License
 
 [MIT](LICENSE)
+
+Bundled fonts (Outfit, Fira Code) are under the [SIL Open Font License 1.1](https://openfontlicense.org).
