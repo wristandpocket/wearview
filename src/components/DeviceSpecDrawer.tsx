@@ -6,54 +6,29 @@ interface DeviceSpecDrawerProps {
 }
 
 export const DeviceSpecDrawer: React.FC<DeviceSpecDrawerProps> = ({ spec }) => {
+  const rows: Array<{ label: string; value: string; estimated?: boolean; mono?: boolean }> = [
+    { label: 'Display', value: `${spec.displayDiameterMm} mm · ${spec.resolutionPx.width}×${spec.resolutionPx.height}`, mono: true },
+    { label: 'Case', value: `${spec.caseDiameterMm} × ${spec.caseHeightMm} × ${spec.caseThicknessMm} mm`, mono: true },
+    { label: 'Black border', value: `~${spec.bezelRadialWidthMm} mm`, estimated: true, mono: true },
+    { label: 'Glass', value: spec.glassType === 'flat-sapphire-rim' ? 'Flat sapphire' : '3D domed Gorilla Glass 5' },
+    { label: 'Case material', value: spec.caseMaterialName },
+  ];
+
   return (
-    <div className="device-spec-drawer">
+    <div className="spec-drawer">
       <div className="section-label">
-        <span>Hardware Specs</span>
-        <span style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>Verified</span>
+        <span>Hardware</span>
+        <span className="section-tag">~ = estimated</span>
       </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--bg-surface-elevated)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.75rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Display</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {spec.displayDiameterMm} mm ({spec.resolutionPx.width}×{spec.resolutionPx.height})
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Case</span>
-          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
-            {spec.caseDiameterMm} × {spec.caseHeightMm} × {spec.caseThicknessMm} mm
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Bezel Border</span>
-          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-amber)' }}>
-            ~{spec.bezelRadialWidthMm} mm
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Front Glass</span>
-          <span style={{ color: 'var(--text-secondary)', textAlign: 'right', maxWidth: '170px' }}>
-            {spec.glassType === 'flat-sapphire-rim' ? 'Flat Sapphire Crystal' : '3D Domed Gorilla Glass 5'}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Chassis</span>
-          <span style={{ color: 'var(--text-secondary)', textAlign: 'right', maxWidth: '170px' }}>
-            {spec.caseMaterialName}
-          </span>
-        </div>
-      </div>
-
-      <p className="hint-text" style={{ marginTop: '0.625rem', fontSize: '0.72rem' }}>
-        {spec.notes}
-      </p>
+      <dl className="spec-table">
+        {rows.map((row) => (
+          <div className="spec-row" key={row.label}>
+            <dt>{row.label}</dt>
+            <dd className={`${row.mono ? 'mono' : ''} ${row.estimated ? 'estimated' : ''}`}>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="hint-text">{spec.notes}</p>
     </div>
   );
 };
-

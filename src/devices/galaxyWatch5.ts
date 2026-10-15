@@ -1,204 +1,153 @@
 import * as THREE from 'three';
 import type { DeviceModelResult, DeviceSpec } from './types';
 import type { WatchMaterials } from './materials';
+import { latheFromProfile, pillButtonGeometry, placeOnSide, sweepBand, wrapStrapPath } from './geometry';
 
 export const GALAXY_WATCH_5_SPEC: DeviceSpec = {
   id: 'galaxy-watch-5-44mm',
   name: 'Samsung Galaxy Watch5',
   generation: 'Galaxy Watch5 · 44 mm',
+  shortLabel: 'Galaxy Watch5 44',
   releaseYear: 2022,
   caseDiameterMm: 44.4,
   caseHeightMm: 43.3,
   caseThicknessMm: 9.8,
   displayDiameterMm: 34.6, // 1.4" active display
   resolutionPx: { width: 450, height: 450 },
-  bezelRadialWidthMm: 2.3, // Measured visible dial bezel border (~2.2 - 2.5 mm)
+  bezelRadialWidthMm: 2.3, // Estimated black border between active area and metal rim
   glassType: 'flat-sapphire-rim',
-  caseMaterialName: 'Armor Aluminum (Graphite Black)',
+  caseMaterialName: 'Armor Aluminum (Graphite)',
   confirmedSources: [
     'https://www.samsung.com/uk/business/watches/galaxy-watch/galaxy-watch5-44mm-graphite-lte-sm-r915fzaaeua/',
-    'Samsung Developer Documentation (450x450 Super AMOLED, 321 ppi)',
-    'Real hardware verification against Galaxy Watch (44 mm) wrist reference'
+    'Samsung Developer Documentation (450x450 Super AMOLED, 321 ppi)'
   ],
-  notes: '44 mm case body with slim 2.3 mm bezel border, 34.6 mm active AMOLED screen, micro-chamfered protective lip, sculpted continuous lugs, dual flank rocker buttons, and flush-fit silicone strap.'
+  notes: 'Flat sapphire glass inside a slightly raised aluminum rim, ~2.2 mm black display border, integrated short lugs, two pill keys at 2 and 4 o\'clock, rounded sensor dome on the back.'
 };
 
 /**
- * Builds high-fidelity procedural 3D model of Samsung Galaxy Watch5 (44 mm).
- * 100% watertight solid CAD geometry matching real hardware photo:
- * - Active screen: R = 17.3 mm (34.6 mm diameter)
- * - Slim inner bezel ring: R = 19.4 mm (2.1 mm border)
- * - Protective aluminum lip: R = 20.0 mm (0.6 mm lip)
- * - Solid beveled case: R = 20.0 mm top, tapering to 19.2 mm base, 9.8 mm depth
+ * Procedural Galaxy Watch5 44 mm (1 unit = 1 mm, face up, 12 o'clock at -Z).
+ * Display r = 17.3 (34.6 mm), black border to r = 19.45, raised aluminum lip to r ≈ 20.4,
+ * rounded case flank peaking at r = 21.65 (43.3 mm), 9.8 mm body + ~1.7 mm sensor dome.
  */
 export function buildGalaxyWatch5Model(materials: WatchMaterials): DeviceModelResult {
   const group = new THREE.Group();
-  group.name = 'galaxy-watch-5-44mm';
+  group.name = GALAXY_WATCH_5_SPEC.id;
 
-  const screenRadius = 17.3; // 34.6 mm display
-  const bezelOuterRadius = 19.4; // Slim, realistic 2.1 mm bezel border
-  const rimOuterRadius = 20.0; // Thin 0.6 mm protective lip
-  const caseEquatorRadiusX = 21.6; // Width across button bumpers (43.2 mm)
-  const caseEquatorRadiusZ = 20.6; // Lug-to-lug base
-  const caseDepth = 9.8;
+  const screenRadius = GALAXY_WATCH_5_SPEC.displayDiameterMm / 2; // 17.3
+  const glassRadius = 19.45;
+  const glassY = -0.32;
+  const backY = -11.4;
 
-  // 1. MAIN SOLID ALUMINUM CASE CHASSIS (100% Watertight Closed Cylinder)
-  // Top face is at Y = 0.0, bottom face at Y = -9.8
-  const caseGeometry = new THREE.CylinderGeometry(
-    rimOuterRadius,
-    rimOuterRadius - 0.8,
-    caseDepth,
-    96,
-    1,
-    false // Closed watertight caps
-  );
-  caseGeometry.scale(caseEquatorRadiusX / rimOuterRadius, 1, caseEquatorRadiusZ / rimOuterRadius);
-  const caseMesh = new THREE.Mesh(caseGeometry, materials.caseAluminum);
-  caseMesh.position.set(0, -caseDepth / 2, 0);
+  // 1. Case: one lathed aluminum shell, rounded flank, raised lip around the glass
+  const caseGeo = latheFromProfile([
+    [14.8, -9.8],
+    [18.6, -9.65],
+    [20.6, -8.9],
+    [21.45, -7.4],
+    [21.65, -5.2],
+    [21.55, -3.0],
+    [21.2, -1.4],
+    [20.75, -0.45],
+    [20.3, 0.0],
+    [19.85, 0.02],
+    [19.55, -0.12],
+    [19.45, -0.6],
+    [19.4, -1.4],
+  ]);
+  const caseMesh = new THREE.Mesh(caseGeo, materials.caseAluminum);
   caseMesh.castShadow = true;
   caseMesh.receiveShadow = true;
   group.add(caseMesh);
 
-  // 2. INNER SLIM BEZEL RING (Glossy OLED touch-bezel border at Y = 0.03)
-  const bezelGeometry = new THREE.RingGeometry(screenRadius, bezelOuterRadius, 96);
-  bezelGeometry.rotateX(-Math.PI / 2);
-  const bezelMesh = new THREE.Mesh(bezelGeometry, materials.bezelTexturedRing);
-  bezelMesh.position.set(0, 0.03, 0);
-  bezelMesh.renderOrder = 1;
-  group.add(bezelMesh);
+  // 2. Black display border (inactive OLED area) right below the glass
+  const borderGeo = new THREE.CircleGeometry(glassRadius + 0.05, 128);
+  borderGeo.rotateX(-Math.PI / 2);
+  const border = new THREE.Mesh(borderGeo, materials.bezelBlack);
+  border.position.y = glassY - 0.45;
+  group.add(border);
 
-  // 3. ACTIVE DISPLAY MESH (Sits at Y = 0.04, perfectly visible, emissive OLED)
-  const displayGeometry = new THREE.CircleGeometry(screenRadius, 96);
-  displayGeometry.rotateX(-Math.PI / 2);
-  const displayMesh = new THREE.Mesh(displayGeometry, materials.displayEmpty.clone());
+  // 3. Active display
+  const displayGeo = new THREE.CircleGeometry(screenRadius, 128);
+  displayGeo.rotateX(-Math.PI / 2);
+  const displayMesh = new THREE.Mesh(displayGeo, materials.displayEmpty.clone());
   displayMesh.name = 'displayMesh';
-  displayMesh.position.set(0, 0.04, 0);
-  displayMesh.renderOrder = 2;
-  displayMesh.receiveShadow = false;
+  displayMesh.position.y = glassY - 0.4;
   group.add(displayMesh);
 
-  // 4. FLAT SAPPHIRE CRYSTAL DISC (At Y = 0.12, clean clearance over display)
-  const glassGeometry = new THREE.CircleGeometry(bezelOuterRadius, 96);
-  glassGeometry.rotateX(-Math.PI / 2);
-  const glassMesh = new THREE.Mesh(glassGeometry, materials.glassSapphire);
+  // 4. Flat sapphire cover glass (additive reflections only)
+  const glassGeo = new THREE.CircleGeometry(glassRadius, 128);
+  glassGeo.rotateX(-Math.PI / 2);
+  const glassMesh = new THREE.Mesh(glassGeo, materials.coverGlass);
   glassMesh.name = 'glassMesh';
-  glassMesh.position.set(0, 0.12, 0);
+  glassMesh.position.y = glassY;
   glassMesh.renderOrder = 10;
-  glassMesh.castShadow = false;
-  glassMesh.receiveShadow = false;
   group.add(glassMesh);
 
-  // 5. MICRO-CHAMFERED PROTECTIVE ALUMINUM RIM (Lip raised 0.20 mm above glass)
-  const rimShape = new THREE.Shape();
-  rimShape.absarc(0, 0, rimOuterRadius, 0, Math.PI * 2, false);
-  const rimHole = new THREE.Path();
-  rimHole.absarc(0, 0, bezelOuterRadius, 0, Math.PI * 2, true);
-  rimShape.holes.push(rimHole);
+  // 5. Rear BioActive sensor dome
+  const sensorGeo = latheFromProfile([
+    [0, backY],
+    [6.5, backY + 0.06],
+    [11.5, backY + 0.45],
+    [14.4, backY + 1.15],
+    [15.2, -9.8],
+    [14.9, -9.55],
+  ], 96, 48);
+  const sensor = new THREE.Mesh(sensorGeo, materials.sensorGlass);
+  group.add(sensor);
 
-  const rimExtrude = new THREE.ExtrudeGeometry(rimShape, {
-    depth: 0.32,
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.06,
-    bevelThickness: 0.06
-  });
-  rimExtrude.rotateX(Math.PI / 2);
-  const rimMesh = new THREE.Mesh(rimExtrude, materials.caseAluminum);
-  rimMesh.position.set(0, 0.32, 0);
-  rimMesh.castShadow = true;
-  group.add(rimMesh);
-
-  // 6. REAR BIOACTIVE SENSOR DOME (At Y = -9.8 to -11.6 mm)
-  const sensorDomeGeom = new THREE.CylinderGeometry(15.5, 17.0, 1.8, 64);
-  const sensorDomeMesh = new THREE.Mesh(sensorDomeGeom, materials.sensorCeramic);
-  sensorDomeMesh.position.set(0, -caseDepth - 0.9, 0);
-  group.add(sensorDomeMesh);
-
-  // Optical sensor glass window
-  const sensorWindowGeom = new THREE.CircleGeometry(5.0, 32);
-  sensorWindowGeom.rotateX(Math.PI / 2);
-  const sensorWindowMesh = new THREE.Mesh(sensorWindowGeom, materials.bezelSubstrate);
-  sensorWindowMesh.position.set(0, -caseDepth - 1.82, 0);
-  group.add(sensorWindowMesh);
-
-  // 7. INTEGRATED SCULPTED LUGS (Flowing smoothly from case flanks, matching Image 4)
-  const lugGapHalf = 10.0; // 20 mm inner strap gap
-
-  function createSculptedLugPair(isNorth: boolean) {
-    const sign = isNorth ? -1 : 1;
-    const zBase = sign * (caseEquatorRadiusZ - 1.5);
-
-    [-1, 1].forEach((side) => {
-      // Solid beveled horn connecting to case
-      const lugGeom = new THREE.BoxGeometry(2.4, 4.0, 5.5);
-      const lug = new THREE.Mesh(lugGeom, materials.caseAluminum);
-      lug.position.set(
-        side * (lugGapHalf + 1.2),
-        -3.8,
-        zBase + sign * 2.2
-      );
-      lug.rotation.x = sign * 0.22; // Natural downward rake
+  // 6. Integrated lugs: short horns at 12 and 6 o'clock, 20 mm strap gap
+  const lugThickness = 3.0;
+  const lugInner = 10.3;
+  for (const sign of [-1, 1]) {
+    const shape = new THREE.Shape();
+    const s = (z: number) => z * sign;
+    shape.moveTo(s(15), -1.8);
+    shape.lineTo(s(19.6), -1.6);
+    shape.quadraticCurveTo(s(23.2), -2.0, s(24.4), -4.2);
+    shape.quadraticCurveTo(s(25.0), -6.0, s(23.6), -7.2);
+    shape.quadraticCurveTo(s(21.5), -8.6, s(18.5), -8.9);
+    shape.lineTo(s(15), -8.9);
+    shape.closePath();
+    const lugGeo = new THREE.ExtrudeGeometry(shape, {
+      depth: lugThickness - 0.8,
+      bevelEnabled: true,
+      bevelThickness: 0.4,
+      bevelSize: 0.45,
+      bevelSegments: 4,
+      curveSegments: 16,
+    });
+    lugGeo.translate(0, 0, -(lugThickness - 0.8) / 2);
+    lugGeo.rotateY(-Math.PI / 2);
+    lugGeo.computeVertexNormals();
+    for (const side of [-1, 1]) {
+      const lug = new THREE.Mesh(lugGeo, materials.caseAluminum);
+      lug.position.x = side * (lugInner + lugThickness / 2);
       lug.castShadow = true;
       group.add(lug);
-    });
+    }
   }
-  createSculptedLugPair(true);  // North (12H)
-  createSculptedLugPair(false); // South (6H)
 
-  // 8. FLUSH-FIT SILICONE STRAP (Hugging case with zero gap, matching Image 4)
-  function createContouredStrap(isNorth: boolean) {
-    const sign = isNorth ? -1 : 1;
-    const strapWidth = 19.8;
-
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -3.5, sign * (caseEquatorRadiusZ - 1.8)), // Docks flush inside case pocket
-      new THREE.Vector3(0, -5.0, sign * (caseEquatorRadiusZ + 2.5)),
-      new THREE.Vector3(0, -10.5, sign * (caseEquatorRadiusZ + 7.0)),
-      new THREE.Vector3(0, -18.5, sign * (caseEquatorRadiusZ + 5.5)),
-      new THREE.Vector3(0, -26.0, sign * (caseEquatorRadiusZ + 2.0))
-    ]);
-
-    const strapGeom = new THREE.TubeGeometry(curve, 32, 1.4, 16, false);
-    strapGeom.scale(strapWidth / 2.8, 1, 1);
-
-    const strapMesh = new THREE.Mesh(strapGeom, materials.strapSilicone);
-    strapMesh.castShadow = true;
-    strapMesh.receiveShadow = true;
-    group.add(strapMesh);
+  // 7. Two pill keys on the right flank (Home at ~2 o'clock, Back at ~4 o'clock)
+  const keyGeo = pillButtonGeometry(6.4, 1.9, 1.1);
+  for (const angle of [0.36, -0.36]) {
+    const key = new THREE.Mesh(keyGeo, materials.caseAluminum);
+    placeOnSide(key, 21.45, angle, -4.9);
+    key.castShadow = true;
+    group.add(key);
   }
-  createContouredStrap(true);
-  createContouredStrap(false);
 
-  // 9. SLIM ERGONOMIC SIDE BUTTONS (Right flank at +X)
-  const buttonLength = 6.2;
-  const buttonHeight = 1.6;
-  const buttonDepth = 0.9;
-  const flankX = caseEquatorRadiusX - 0.1;
-
-  // Power / Home key (at 2H, Z = -6.5 mm)
-  const topBtnGeom = new THREE.BoxGeometry(buttonDepth, buttonHeight, buttonLength);
-  const topBtnMesh = new THREE.Mesh(topBtnGeom, materials.caseAluminum);
-  topBtnMesh.position.set(flankX + buttonDepth / 2, -3.2, -6.5);
-  topBtnMesh.castShadow = true;
-  group.add(topBtnMesh);
-
-  // Power key red accent stripe
-  const redStripeGeom = new THREE.BoxGeometry(0.1, buttonHeight * 0.75, buttonLength * 0.75);
-  const redStripeMesh = new THREE.Mesh(redStripeGeom, materials.buttonAccent);
-  redStripeMesh.position.set(flankX + buttonDepth - 0.05, -3.2, -6.5);
-  group.add(redStripeMesh);
-
-  // Back key (at 4H, Z = +6.5 mm)
-  const btmBtnGeom = new THREE.BoxGeometry(buttonDepth, buttonHeight, buttonLength);
-  const btmBtnMesh = new THREE.Mesh(btmBtnGeom, materials.caseAluminum);
-  btmBtnMesh.position.set(flankX + buttonDepth / 2, -3.2, 6.5);
-  btmBtnMesh.castShadow = true;
-  group.add(btmBtnMesh);
+  // 8. One-piece sport band wrapped around the shared wrist section
+  const strapGeo = sweepBand(wrapStrapPath(21.2, -5.0, backY, 2.6), 19.8, 2.6);
+  const strap = new THREE.Mesh(strapGeo, materials.strapSilicone);
+  strap.castShadow = true;
+  strap.receiveShadow = true;
+  group.add(strap);
 
   return {
     group,
     displayMesh,
     glassMesh,
+    backY,
     spec: GALAXY_WATCH_5_SPEC
   };
 }

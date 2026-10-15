@@ -75,10 +75,17 @@ export const App: React.FC = () => {
   }, [uploadedImage]);
 
   // Handle image upload
+  const loadTokenRef = useRef(0);
   const handleImageSelected = useCallback(async (file: File) => {
     setErrorMessage(null);
+    const token = ++loadTokenRef.current;
     try {
       const info = await loadScreenshotTexture(file);
+      // A newer pick started while this one was decoding: drop this result
+      if (token !== loadTokenRef.current) {
+        disposeUploadedTexture(info);
+        return;
+      }
       setUploadedImage((prev) => {
         // Clean up previous texture
         if (prev) {
@@ -87,6 +94,7 @@ export const App: React.FC = () => {
         return info;
       });
     } catch (err) {
+      if (token !== loadTokenRef.current) return;
       const msg = err instanceof Error ? err.message : 'Failed to load image file.';
       setErrorMessage(msg);
     }
@@ -94,6 +102,7 @@ export const App: React.FC = () => {
 
   // Handle image removal
   const handleImageRemoved = useCallback(() => {
+    loadTokenRef.current++;
     setUploadedImage((prev) => {
       if (prev) {
         disposeUploadedTexture(prev);
@@ -159,43 +168,40 @@ export const App: React.FC = () => {
       />
 
       <main className="app-workspace">
-        {/* 3D WebGL Viewport */}
-        <div className="viewport-container">
-          <div ref={viewportRef} className="canvas-mount" />
-
-          <ViewportOverlay
-            deviceSpec={currentDeviceSpec}
-            hasImage={uploadedImage !== null}
-            webglError={webglError}
-          />
+        <section className="stage" aria-label="3D preview">
+          <div className="viewport-container" data-lighting={lightingPreset}>
+            <div ref={viewportRef} className="canvas-mount" />
+            <ViewportOverlay
+              deviceSpec={currentDeviceSpec}
+              hasImage={uploadedImage !== null}
+              webglError={webglError}
+            />
+          </div>
 
           <ControlsBar
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             lightingPreset={lightingPreset}
             onLightingChange={setLightingPreset}
-            onLoadTestPattern={handleLoadTestPattern}
           />
-        </div>
+        </section>
 
-        {/* Right Controls / Spec Panel */}
         <aside className="sidebar-panel">
           <section className="panel-section">
             <div className="section-label">
-              <span>Game Screenshot</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--accent-emerald)' }}>Active Display</span>
+              <span>Game screenshot</span>
             </div>
-
             <ScreenshotUploader
               uploadedImage={uploadedImage}
               onImageSelected={handleImageSelected}
               onImageRemoved={handleImageRemoved}
+              onLoadTestPattern={handleLoadTestPattern}
               errorMessage={errorMessage}
               onClearError={() => setErrorMessage(null)}
             />
           </section>
 
-          <section className="panel-section" style={{ flex: 1 }}>
+          <section className="panel-section">
             <DeviceSpecDrawer spec={currentDeviceSpec} />
           </section>
         </aside>
