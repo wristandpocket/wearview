@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { DeviceId, LightingPreset, ViewMode, UploadedImageInfo } from './types';
-import { getDeviceSpec } from './devices';
+import { DEVICE_ENTRIES, getDeviceSpec } from './devices';
+import { guessPxPerMm, loadAnyCalibration, loadCalibration, saveCalibration } from './calibration/calibration';
+import { CalibrationDialog } from './components/CalibrationDialog';
 import { ThreeViewer } from './viewer/ThreeViewer';
 import { loadScreenshotTexture, disposeUploadedTexture } from './textures/textureLoader';
 import { createTestPatternFile } from './textures/testPattern';
@@ -11,13 +13,28 @@ import { DeviceSpecDrawer } from './components/DeviceSpecDrawer';
 import { ViewportOverlay } from './components/ViewportOverlay';
 import './styles/theme.css';
 
+const DEVICE_STORAGE_KEY = 'wearview.device';
+
+function initialDevice(): DeviceId {
+  try {
+    const saved = window.localStorage.getItem(DEVICE_STORAGE_KEY);
+    if (saved && saved in DEVICE_ENTRIES) return saved as DeviceId;
+  } catch {
+    // ignore unavailable storage
+  }
+  return 'galaxy-watch-5-44mm';
+}
+
 export const App: React.FC = () => {
-  const [selectedDeviceId, setSelectedDeviceId] = useState<DeviceId>('galaxy-watch-5-44mm');
+  const [selectedDeviceId, setSelectedDeviceId] = useState<DeviceId>(initialDevice);
   const [viewMode, setViewMode] = useState<ViewMode>('watch');
   const [lightingPreset, setLightingPreset] = useState<LightingPreset>('studio');
   const [uploadedImage, setUploadedImage] = useState<UploadedImageInfo | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [webglError, setWebglError] = useState<string | null>(null);
+  const [pxPerMm, setPxPerMm] = useState<number | null>(null); // non-null = real-size mode on
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibrationNotice, setCalibrationNotice] = useState<string | null>(null);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const viewerInstanceRef = useRef<ThreeViewer | null>(null);
@@ -37,6 +54,7 @@ export const App: React.FC = () => {
     });
 
     viewerInstanceRef.current = viewer;
+    if (import.meta.env.DEV) (window as unknown as { __wearview?: ThreeViewer }).__wearview = viewer;
 
     return () => {
       viewer.dispose();
@@ -49,7 +67,48 @@ export const App: React.FC = () => {
     if (viewerInstanceRef.current) {
       viewerInstanceRef.current.loadDevice(selectedDeviceId);
     }
+    try {
+      window.localStorage.setItem(DEVICE_STORAGE_KEY, selectedDeviceId);
+    } catch {
+      // ignore unavailable storage
+    }
   }, [selectedDeviceId]);
+
+  // Real-size (1:1) mode
+  useEffect(() => {
+    viewerInstanceRef.current?.setRealScale(pxPerMm);
+  }, [pxPerMm]);
+
+  // A calibration is only valid for the zoom level / monitor it was made on
+  useEffect(() => {
+    if (pxPerMm === null) return;
+    const check = () => {
+      if (loadCalibration() === null) {
+        setPxPerMm(null);
+        setCalibrationNotice('Browser zoom or screen changed — calibrate again to see real size.');
+      }
+    };
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [pxPerMm]);
+
+  const handleToggleRealSize = useCallback(() => {
+    setCalibrationNotice(null);
+    if (pxPerMm !== null) {
+      setPxPerMm(null);
+      return;
+    }
+    const stored = loadCalibration();
+    if (stored !== null) setPxPerMm(stored);
+    else setCalibrating(true);
+  }, [pxPerMm]);
+
+  const handleCalibrated = useCallback((value: number) => {
+    saveCalibration(value);
+    setCalibrating(false);
+    setCalibrationNotice(null);
+    setPxPerMm(value);
+  }, []);
 
   // Update lighting preset
   useEffect(() => {
@@ -175,6 +234,10 @@ export const App: React.FC = () => {
               deviceSpec={currentDeviceSpec}
               hasImage={uploadedImage !== null}
               webglError={webglError}
+              realSize={pxPerMm !== null}
+              notice={calibrationNotice}
+              onRecalibrate={() => setCalibrating(true)}
+              onDismissNotice={() => setCalibrationNotice(null)}
             />
           </div>
 
@@ -183,6 +246,8 @@ export const App: React.FC = () => {
             onViewModeChange={setViewMode}
             lightingPreset={lightingPreset}
             onLightingChange={setLightingPreset}
+            realSize={pxPerMm !== null}
+            onToggleRealSize={handleToggleRealSize}
           />
         </section>
 
@@ -206,6 +271,14 @@ export const App: React.FC = () => {
           </section>
         </aside>
       </main>
+
+      {calibrating && (
+        <CalibrationDialog
+          initialPxPerMm={pxPerMm ?? loadAnyCalibration() ?? guessPxPerMm()}
+          onConfirm={handleCalibrated}
+          onCancel={() => setCalibrating(false)}
+        />
+      )}
     </div>
   );
 };

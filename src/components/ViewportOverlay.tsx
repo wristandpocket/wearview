@@ -5,9 +5,21 @@ interface ViewportOverlayProps {
   deviceSpec: DeviceSpec;
   hasImage: boolean;
   webglError: string | null;
+  realSize: boolean;
+  notice: string | null;
+  onRecalibrate: () => void;
+  onDismissNotice: () => void;
 }
 
-export const ViewportOverlay: React.FC<ViewportOverlayProps> = ({ deviceSpec, hasImage, webglError }) => {
+export const ViewportOverlay: React.FC<ViewportOverlayProps> = ({
+  deviceSpec,
+  hasImage,
+  webglError,
+  realSize,
+  notice,
+  onRecalibrate,
+  onDismissNotice,
+}) => {
   if (webglError) {
     return (
       <div className="viewport-error" role="alert">
@@ -27,11 +39,26 @@ export const ViewportOverlay: React.FC<ViewportOverlayProps> = ({ deviceSpec, ha
         </span>
       </div>
 
+      {realSize && (
+        <div className="real-size-badge" role="status">
+          <span className="real-size-dot" aria-hidden="true" />
+          <span>Real size 1:1 · {deviceSpec.caseDiameterMm} mm case</span>
+          <button type="button" className="badge-link" onClick={onRecalibrate}>Recalibrate</button>
+        </div>
+      )}
+
+      {notice && !realSize && (
+        <div className="real-size-badge warning" role="status">
+          <span>{notice}</span>
+          <button type="button" className="badge-link" onClick={onDismissNotice} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
       {!hasImage && <div className="empty-hint">Add a screenshot to see it on the display</div>}
 
       <div className="viewport-nav-hint" aria-hidden="true">
-        <span className="hint-pointer">Drag to rotate · Scroll to zoom · Right-drag to pan</span>
-        <span className="hint-touch">Drag to rotate · Pinch to zoom</span>
+        <span className="hint-pointer">{realSize ? 'Drag to tilt · zoom locked at real size' : 'Drag to rotate · Scroll to zoom · Right-drag to pan'}</span>
+        <span className="hint-touch">{realSize ? 'Drag to tilt · zoom locked' : 'Drag to rotate · Pinch to zoom'}</span>
       </div>
     </>
   );

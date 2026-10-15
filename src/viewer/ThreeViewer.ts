@@ -39,7 +39,7 @@ const LIGHTING: Record<LightingPreset, LightingConfig> = {
     hemiGround: 0x444850,
     hemiIntensity: 0.35,
     envIntensity: 0.9,
-    glassReflection: 0.3,
+    glassReflection: 0.6,
     exposure: 1.0,
     shadowOpacity: 0.28,
   },
@@ -63,7 +63,7 @@ const LIGHTING: Record<LightingPreset, LightingConfig> = {
     hemiGround: 0x050608,
     hemiIntensity: 0.2,
     envIntensity: 0.55,
-    glassReflection: 0.7,
+    glassReflection: 0.8,
     exposure: 1.0,
     shadowOpacity: 0.18,
   },
@@ -82,6 +82,9 @@ const HOMES: Record<ViewMode, CameraHome> = {
 };
 
 const FLY_MS = 650;
+const DEFAULT_FOV = 30;
+/** Narrow lens in real-size mode keeps perspective distortion of the 10 mm-deep watch under ~1%. */
+const REAL_SIZE_FOV = 8;
 
 export class ThreeViewer {
   private container: HTMLElement;
@@ -93,6 +96,10 @@ export class ThreeViewer {
   private resizeObserver: ResizeObserver | null = null;
 
   private envMaps: Partial<Record<LightingPreset, THREE.Texture>> = {};
+  /** Reflection maps for the cover glass: mostly dark with crisp light shapes, so the glass reads glossy, not hazy. */
+  private glassEnvMaps: Partial<Record<LightingPreset, THREE.Texture>> = {};
+  /** CSS pixels per millimetre when real-size (1:1) mode is on. */
+  private realScale: number | null = null;
   private keyLight!: THREE.DirectionalLight;
   private hemiLight!: THREE.HemisphereLight;
   private groundShadowMesh!: THREE.Mesh<THREE.PlaneGeometry, THREE.ShadowMaterial>;
@@ -182,7 +189,13 @@ export class ThreeViewer {
 
     const night = buildNightEnvironment();
     this.envMaps.night = pmrem.fromScene(night.scene, 0.02).texture;
+    this.glassEnvMaps.night = pmrem.fromScene(night.scene, 0).texture;
     night.dispose();
+
+    const softbox = buildSoftboxEnvironment();
+    this.glassEnvMaps.studio = pmrem.fromScene(softbox.scene, 0).texture;
+    softbox.dispose();
+    this.glassEnvMaps.sunlight = this.envMaps.sunlight;
     pmrem.dispose();
 
     const shadowGeo = new THREE.PlaneGeometry(600, 600);
@@ -193,7 +206,7 @@ export class ThreeViewer {
   }
 
   private initCameraAndControls(): void {
-    this.camera = new THREE.PerspectiveCamera(30, this.aspect(), 1, 2000);
+    this.camera = new THREE.PerspectiveCamera(DEFAULT_FOV, this.aspect(), 1, 20000);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -258,6 +271,7 @@ export class ThreeViewer {
     this.wristModel?.fitToWatch(this.currentDeviceModel.backY);
     this.updateGroundPlane();
     this.applyTextureToDisplay(this.currentTexture);
+    if (this.realScale !== null) this.handleResize();
     this.requestRender();
   }
 
@@ -269,6 +283,44 @@ export class ThreeViewer {
   public resetCamera(): void {
     this.userMovedCamera = false;
     this.flyToHome();
+  }
+
+  /**
+   * Real-size (1:1) mode. `pxPerMm` is the calibrated number of CSS pixels per physical millimetre
+   * on this screen; null turns the mode off. The camera looks straight at the face and its distance
+   * is solved so the display plane is drawn at exactly that scale.
+   */
+  public setRealScale(pxPerMm: number | null): void {
+    if (pxPerMm !== null && !(pxPerMm > 0)) return;
+    const wasReal = this.realScale !== null;
+    this.realScale = pxPerMm;
+    const real = pxPerMm !== null;
+    this.camera.fov = real ? REAL_SIZE_FOV : DEFAULT_FOV;
+    this.camera.updateProjectionMatrix();
+    this.controls.enableZoom = !real;
+    this.controls.enablePan = !real;
+    this.controls.minDistance = real ? 0 : 40;
+    this.controls.maxDistance = real ? Infinity : 520;
+    this.groundShadowMesh.visible = !real;
+    this.userMovedCamera = false;
+    if (real || wasReal) this.jumpToHome();
+  }
+
+  /** QA helper: on-screen diameter of the active display in CSS px (projected from the 3D model). */
+  public measureDisplayDiameterPx(): number {
+    if (!this.currentDeviceModel) return 0;
+    const mesh = this.currentDeviceModel.displayMesh;
+    mesh.geometry.computeBoundingSphere();
+    const r = mesh.geometry.boundingSphere!.radius;
+    mesh.updateWorldMatrix(true, false);
+    const a = new THREE.Vector3(-r, 0, 0).applyMatrix4(mesh.matrixWorld).project(this.camera);
+    const b = new THREE.Vector3(r, 0, 0).applyMatrix4(mesh.matrixWorld).project(this.camera);
+    return (Math.abs(b.x - a.x) / 2) * this.container.clientWidth;
+  }
+
+  /** Whether real-size (1:1) mode is on. */
+  public get isRealSize(): boolean {
+    return this.realScale !== null;
   }
 
   // ---------------------------------------------------------------- internals
@@ -313,7 +365,13 @@ export class ThreeViewer {
     this.hemiLight.groundColor.setHex(cfg.hemiGround);
     this.hemiLight.intensity = cfg.hemiIntensity;
 
-    this.materials.coverGlass.envMapIntensity = cfg.glassReflection / Math.max(0.01, cfg.envIntensity);
+    const glassEnv = this.glassEnvMaps[preset] ?? null;
+    this.materials.coverGlass.envMap = glassEnv;
+    this.materials.coverGlass.envMapIntensity = cfg.glassReflection;
+    this.materials.coverGlass.needsUpdate = true;
+    this.materials.bezelBlack.envMap = glassEnv;
+    this.materials.bezelBlack.envMapIntensity = cfg.glassReflection * 0.6;
+    this.materials.bezelBlack.needsUpdate = true;
     this.renderer.toneMappingExposure = cfg.exposure;
     this.groundShadowMesh.material.opacity = cfg.shadowOpacity;
     this.requestRender();
@@ -343,7 +401,25 @@ export class ThreeViewer {
     this.requestRender();
   }
 
+  /** Camera distance at which the display plane is drawn at `realScale` CSS px per mm. */
+  private realSizeDistance(): number {
+    const heightCss = Math.max(1, this.container.clientHeight);
+    const vFov = THREE.MathUtils.degToRad(this.camera.fov);
+    return heightCss / (2 * Math.tan(vFov / 2) * (this.realScale ?? 1));
+  }
+
+  private displayPlaneTarget(): THREE.Vector3 {
+    const y = this.currentDeviceModel?.displayMesh.position.y ?? 0;
+    return new THREE.Vector3(0, y, 0);
+  }
+
   private homePose(mode: ViewMode): { position: THREE.Vector3; target: THREE.Vector3 } {
+    if (this.realScale !== null) {
+      // Straight down onto the face; the tiny Z offset keeps 12 o'clock at the top of the screen
+      const target = this.displayPlaneTarget();
+      const dir = new THREE.Vector3(0, 1, 1e-4).normalize();
+      return { target, position: target.clone().addScaledVector(dir, this.realSizeDistance()) };
+    }
     const home = HOMES[mode];
     const vFov = THREE.MathUtils.degToRad(this.camera.fov);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
@@ -392,8 +468,18 @@ export class ThreeViewer {
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    // Keep the watch framed while the user hasn't taken over the camera
-    if (!this.userMovedCamera && !this.fly) this.jumpToHome();
+    if (this.realScale !== null) {
+      // Scale must stay exact: keep the viewing direction, re-solve the distance
+      this.fly = null;
+      const target = this.displayPlaneTarget();
+      const dir = this.camera.position.clone().sub(this.controls.target).normalize();
+      this.controls.target.copy(target);
+      this.camera.position.copy(target).addScaledVector(dir, this.realSizeDistance());
+      this.controls.update();
+    } else if (!this.userMovedCamera && !this.fly) {
+      // Keep the watch framed while the user hasn't taken over the camera
+      this.jumpToHome();
+    }
     this.requestRender();
   }
 
@@ -459,8 +545,10 @@ export class ThreeViewer {
     }
 
     Object.values(this.materials).forEach((mat) => mat.dispose());
-    Object.values(this.envMaps).forEach((tex) => tex?.dispose());
+    const envs = new Set([...Object.values(this.envMaps), ...Object.values(this.glassEnvMaps)]);
+    envs.forEach((tex) => tex?.dispose());
     this.envMaps = {};
+    this.glassEnvMaps = {};
     this.keyLight?.shadow.map?.dispose();
 
     if (this.renderer) {
@@ -526,6 +614,22 @@ function buildSunlightEnvironment(): EnvScene {
   );
   sun.position.copy(sunDir).multiplyScalar(80);
   scene.add(sun);
+  return { scene, dispose: () => disposeScene(scene) };
+}
+
+/** Dark studio with a few hard-edged softboxes: gives glass crisp, glossy highlights instead of a grey veil. */
+function buildSoftboxEnvironment(): EnvScene {
+  const scene = new THREE.Scene();
+  scene.add(skyDome(
+    new THREE.Color(0.035, 0.037, 0.042),
+    new THREE.Color(0.05, 0.052, 0.058),
+    new THREE.Color(0.012, 0.012, 0.014)
+  ));
+  // Lights sit off to the sides so the default three-quarter view reflects mostly dark studio
+  // (a crisp, readable screen); highlights sweep across the glass as the watch is tilted.
+  scene.add(emissivePanel(new THREE.Color(1, 1, 1).multiplyScalar(4), 50, 30, new THREE.Vector3(-75, 40, 25)));
+  scene.add(emissivePanel(new THREE.Color(1, 0.98, 0.95).multiplyScalar(2.5), 14, 60, new THREE.Vector3(75, 25, -20)));
+  scene.add(emissivePanel(new THREE.Color(0.9, 0.95, 1).multiplyScalar(1.4), 90, 5, new THREE.Vector3(0, 30, 80)));
   return { scene, dispose: () => disposeScene(scene) };
 }
 

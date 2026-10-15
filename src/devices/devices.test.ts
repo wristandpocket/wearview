@@ -3,10 +3,32 @@ import { DEVICE_LIST, DEFAULT_DEVICE_ID, getDeviceSpec, buildDevice } from './in
 import { createWatchMaterials } from './materials';
 
 describe('Device Catalogue & Profiles', () => {
-  it('strictly enforces two distinct devices for MVP', () => {
-    expect(DEVICE_LIST).toHaveLength(2);
+  it('lists every registered device exactly once, in picker order', () => {
     const ids = DEVICE_LIST.map((d) => d.id);
-    expect(ids).toEqual(['galaxy-watch-5-44mm', 'pixel-watch-1-41mm']);
+    expect(ids).toEqual(['galaxy-watch-5-44mm', 'galaxy-watch-5-40mm', 'galaxy-watch-6-44mm', 'pixel-watch-1-41mm']);
+    expect(new Set(DEVICE_LIST.map((d) => d.shortLabel)).size).toBe(ids.length);
+  });
+
+  it('every device builds a model whose display fits inside the case and glass', () => {
+    const materials = createWatchMaterials();
+    for (const spec of DEVICE_LIST) {
+      const model = buildDevice(spec.id, materials);
+      model.displayMesh.geometry.computeBoundingSphere();
+      const displayR = model.displayMesh.geometry.boundingSphere!.radius;
+      expect(displayR).toBeCloseTo(spec.displayDiameterMm / 2, 1);
+      expect(displayR).toBeLessThan(spec.caseHeightMm / 2);
+      expect(model.backY).toBeLessThan(-spec.caseThicknessMm + 2.3);
+    }
+  });
+
+  it('Galaxy Watch5 40 mm and Watch6 44 mm carry their published specs', () => {
+    const gw540 = getDeviceSpec('galaxy-watch-5-40mm');
+    expect(gw540.displayDiameterMm).toBeCloseTo(30.4, 1);
+    expect(gw540.resolutionPx).toEqual({ width: 396, height: 396 });
+    const gw6 = getDeviceSpec('galaxy-watch-6-44mm');
+    expect(gw6.displayDiameterMm).toBeCloseTo(37.3, 1);
+    expect(gw6.resolutionPx).toEqual({ width: 480, height: 480 });
+    expect(gw6.caseThicknessMm).toBe(9.0);
   });
 
   it('sets Samsung Galaxy Watch5 44 mm as default device', () => {

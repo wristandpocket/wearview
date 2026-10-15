@@ -4,22 +4,19 @@ This document outlines planned enhancements, post-MVP capabilities, and future i
 
 ---
 
-## 1. Calibrated Pixel Perfect 1:1 Physical Scale Mode (P1)
+## 1. Calibrated Pixel Perfect 1:1 Physical Scale Mode — shipped
 
-### The Challenge
-A mathematically correct 3D model does not automatically display at its true physical scale on arbitrary computer screens. Screen pixel density (PPI), OS display scaling factors (e.g. 125%, 150%, 200%), and browser zoom levels vary across setups.
-
-### Proposed Solution
-- **Interactive Credit Card / Calibration Ruler Flow:** The developer holds a standard credit/ID card (ISO/IEC 7810 ID-1 standard: $85.60 \times 53.98\text{ mm}$) or a physical ruler against their monitor and adjusts a calibration on-screen slider until the outline matches.
-- **DPI Calculation:** Compute the exact CSS pixels per physical millimetre for that specific monitor.
-- **1:1 Scale Lock:** Orthographic or fixed-distance perspective camera lock displaying the watch model at true 1:1 real-world size.
+Implemented: card calibration dialog (`src/components/CalibrationDialog.tsx`), stored px/mm per screen signature
+(`src/calibration/calibration.ts`), and a narrow-FOV camera whose distance is solved so the display plane renders at
+exactly the calibrated scale (`ThreeViewer.setRealScale`). Possible follow-ups: ruler-based calibration, a
+"compare two watches side by side at 1:1" view.
 
 ---
 
 ## 2. Additional Device Profiles (P1)
 
 Following the strict research-first methodology established in MVP:
-- **Samsung Galaxy Watch6 / Watch7:** Slimmer bezels, upgraded Sapphire crystal.
+- **Samsung Galaxy Watch7 / Ultra:** (Watch6 44 mm and Watch5 40 mm shipped.)
 - **Google Pixel Watch 2 & 3 (41 mm and 45 mm variants):** Larger active display areas, curved Actua display specs.
 - **OnePlus Watch 2 / 2R:** Dual-engine architecture, 1.43" AMOLED, distinctive asymmetric stainless steel right chassis.
 - **Mobvoi TicWatch Pro 5:** Dual-layer display (Ultra-low-power FSTN LCD overlaying OLED).
