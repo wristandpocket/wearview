@@ -11,7 +11,7 @@ This document records the actual verification results and outcomes for WearView.
 | **Functional Acceptance** | 21 | 21 | 0 | 0 |
 | **Deep Engineering Audit & Precision Pass** | 7 | 7 | 0 | 0 |
 | **Build & Type Safety** | 3 | 3 | 0 | 0 |
-| **Unit Test Suites** | 6 local suites (50 tests) | 50 | 0 | 0 |
+| **Unit Test Suites** | 7 local suites (187 tests) | 187 | 0 | 0 |
 
 ---
 
@@ -52,14 +52,15 @@ This document records the actual verification results and outcomes for WearView.
 2. **Vitest Unit Tests:**
    - Command: `npm.cmd test -- --run`
    - Exit Code: `0`
-   - Outcome: All 6 test suites passed (50 tests):
+   - Outcome: All 7 test suites passed (187 tests):
      - `src/textures/validator.test.ts` (9 tests: format validation, size checks, resolution/square checks)
      - `src/textures/imageFit.test.ts` (4 tests: contain fit calculations)
      - `src/textures/testPattern.test.ts` (7 tests: testPattern options, device switching regeneration, safe zone badges, degree markings, handleGlobalKeyDown shortcuts)
      - `src/calibration/calibration.test.ts` (3 tests: physical calibration storage and math)
      - `src/devices/geometry.test.ts` (12 tests: procedural profiles, lathe, knurled bezel, wrist dimensions, wrap path for 52.4mm lugs, anatomical downward strap bend, case top cap non-occlusion)
-     - `src/devices/devices.test.ts` (15 tests: all 11 devices, 1:1 mm math, named meshes, legacy aliases, normalizeDeviceId, archetype-aware screen-to-body ratios, strict vertical stacking hierarchy, case body dial floor termination, safe zone overlay mesh hierarchy, and 1:1 camera preset distance invariance)
+     - `src/devices/devices.test.ts` (15 tests: all 11 devices, 1:1 mm math, named meshes, legacy aliases, normalizeDeviceId, archetype-aware screen-to-body ratios, strict vertical stacking hierarchy, case body dial floor termination, single-mesh safe zone overlay with CircleGeometry and renderOrder 20, and 1:1 camera preset distance invariance)
+     - `src/viewer/viewerInvariants.test.ts` (137 tests: Frustum visibility across all 11 devices, wrist on/off, camera presets front/tilt35/side75, normal vs 1:1 real size mode, no NaN/Infinity, no gimbal lock, safe zone alignment and single-instance invariant, safe camera direction invariant)
 3. **Production Build:**
    - Command: `npm.cmd run build`
    - Exit Code: `0`
-   - Outcome: Vite production build generated `dist/` bundle cleanly in 2.23s.
+   - Outcome: Vite production build generated `dist/` bundle cleanly in 2.28s.

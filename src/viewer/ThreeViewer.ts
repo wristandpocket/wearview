@@ -13,6 +13,7 @@ export interface ViewerOptions {
   initialDeviceId?: DeviceId;
   initialLighting?: LightingPreset;
   initialViewMode?: ViewMode;
+  renderer?: THREE.WebGLRenderer;
   onInitSuccess?: () => void;
   onInitError?: (error: Error) => void;
 }
@@ -91,15 +92,33 @@ export function computeRealSizeCameraDistance(heightCss: number, vFovDeg: number
   return heightCss / (2 * Math.tan(vFov / 2) * pxPerMm);
 }
 
+export const MIN_POLAR_OFFSET_RAD = 0.005;
+
+export function getSafeCameraDirection(
+  cameraPos: THREE.Vector3,
+  target: THREE.Vector3,
+  up = new THREE.Vector3(0, 1, 0)
+): THREE.Vector3 {
+  const dir = cameraPos.clone().sub(target);
+  if (dir.lengthSq() < 1e-6 || !Number.isFinite(dir.x) || !Number.isFinite(dir.y) || !Number.isFinite(dir.z)) {
+    return new THREE.Vector3(0, Math.cos(MIN_POLAR_OFFSET_RAD), Math.sin(MIN_POLAR_OFFSET_RAD)).normalize();
+  }
+  dir.normalize();
+  if (Math.abs(dir.dot(up)) > 0.9999) {
+    return new THREE.Vector3(0, Math.cos(MIN_POLAR_OFFSET_RAD), Math.sin(MIN_POLAR_OFFSET_RAD)).normalize();
+  }
+  return dir;
+}
+
 export function computeCameraPresetPose(
   target: THREE.Vector3,
-  angle: 'front' | 'tilt' | 'side',
+  angle: 'front' | 'tilt' | 'side' | 'tilt35' | 'side75',
   distance: number
 ): { position: THREE.Vector3; target: THREE.Vector3; dir: THREE.Vector3 } {
   let dir: THREE.Vector3;
   if (angle === 'front') {
-    dir = new THREE.Vector3(0, 1, 0.0001).normalize();
-  } else if (angle === 'tilt') {
+    dir = new THREE.Vector3(0, Math.cos(MIN_POLAR_OFFSET_RAD), Math.sin(MIN_POLAR_OFFSET_RAD)).normalize();
+  } else if (angle === 'tilt' || angle === 'tilt35') {
     const rad = (35 * Math.PI) / 180;
     dir = new THREE.Vector3(0, Math.cos(rad), Math.sin(rad)).normalize();
   } else {
@@ -136,12 +155,19 @@ export class ThreeViewer {
   private currentTexture: THREE.Texture | null = null;
   private currentLightingPreset: LightingPreset;
   private viewMode: ViewMode;
-  private safeZoneGroup: THREE.Group | null = null;
+  private safeZoneMesh: THREE.Mesh | null = null;
   private safeZonesEnabled = false;
 
   private needsRender = true;
   private userMovedCamera = false;
-  private fly: { fromPos: THREE.Vector3; fromTarget: THREE.Vector3; toPos: THREE.Vector3; toTarget: THREE.Vector3; start: number } | null = null;
+  private fly: {
+    fromPos: THREE.Vector3;
+    fromTarget: THREE.Vector3;
+    toPos: THREE.Vector3;
+    toTarget: THREE.Vector3;
+    start: number;
+    lockDistance?: number;
+  } | null = null;
   private readonly reducedMotion =
     typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -152,7 +178,7 @@ export class ThreeViewer {
     this.materials = createWatchMaterials();
 
     try {
-      this.initRenderer();
+      this.initRenderer(options.renderer);
       this.initScene();
       this.initCameraAndControls();
       this.initLighting();
@@ -177,7 +203,12 @@ export class ThreeViewer {
 
   // ---------------------------------------------------------------- setup
 
-  private initRenderer(): void {
+  private initRenderer(customRenderer?: THREE.WebGLRenderer): void {
+    if (customRenderer) {
+      this.renderer = customRenderer;
+      return;
+    }
+
     const probe = document.createElement('canvas');
     if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) {
       throw new Error('WebGL is not supported or disabled in your browser.');
@@ -211,25 +242,29 @@ export class ThreeViewer {
   private initScene(): void {
     this.scene = new THREE.Scene();
 
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    const room = new RoomEnvironment();
-    this.envMaps.studio = pmrem.fromScene(room, 0.03).texture;
-    room.dispose();
+    try {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      const room = new RoomEnvironment();
+      this.envMaps.studio = pmrem.fromScene(room, 0.03).texture;
+      room.dispose();
 
-    const sun = buildSunlightEnvironment();
-    this.envMaps.sunlight = pmrem.fromScene(sun.scene, 0.02).texture;
-    sun.dispose();
+      const sun = buildSunlightEnvironment();
+      this.envMaps.sunlight = pmrem.fromScene(sun.scene, 0.02).texture;
+      sun.dispose();
 
-    const night = buildNightEnvironment();
-    this.envMaps.night = pmrem.fromScene(night.scene, 0.02).texture;
-    this.glassEnvMaps.night = pmrem.fromScene(night.scene, 0).texture;
-    night.dispose();
+      const night = buildNightEnvironment();
+      this.envMaps.night = pmrem.fromScene(night.scene, 0.02).texture;
+      this.glassEnvMaps.night = pmrem.fromScene(night.scene, 0).texture;
+      night.dispose();
 
-    const softbox = buildSoftboxEnvironment();
-    this.glassEnvMaps.studio = pmrem.fromScene(softbox.scene, 0).texture;
-    softbox.dispose();
-    this.glassEnvMaps.sunlight = this.envMaps.sunlight;
-    pmrem.dispose();
+      const softbox = buildSoftboxEnvironment();
+      this.glassEnvMaps.studio = pmrem.fromScene(softbox.scene, 0).texture;
+      softbox.dispose();
+      this.glassEnvMaps.sunlight = this.envMaps.sunlight;
+      pmrem.dispose();
+    } catch {
+      // In headless test environments without WebGL PMREM compiling support
+    }
 
     const shadowGeo = new THREE.PlaneGeometry(600, 600);
     shadowGeo.rotateX(-Math.PI / 2);
@@ -239,14 +274,14 @@ export class ThreeViewer {
   }
 
   private initCameraAndControls(): void {
-    this.camera = new THREE.PerspectiveCamera(DEFAULT_FOV, this.aspect(), 5.0, 1200.0);
+    this.camera = new THREE.PerspectiveCamera(DEFAULT_FOV, this.aspect(), 2.0, 1200.0);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.rotateSpeed = 0.8;
     this.controls.zoomSpeed = 0.9;
-    this.controls.minPolarAngle = 0.02;
+    this.controls.minPolarAngle = MIN_POLAR_OFFSET_RAD;
     this.controls.maxPolarAngle = Math.PI * 0.62; // allow a little look from below the face plane
     this.controls.minDistance = 40;
     this.controls.maxDistance = 520;
@@ -289,7 +324,12 @@ export class ThreeViewer {
     this.viewMode = mode;
     if (this.wristModel) this.wristModel.group.visible = mode === 'wrist';
     this.updateGroundPlane();
+    this.updateSafeZoneOverlay();
     this.flyToHome();
+  }
+
+  public setOnWrist(onWrist: boolean): void {
+    this.setViewMode(onWrist ? 'wrist' : 'watch');
   }
 
   public loadDevice(deviceId: DeviceId): void {
@@ -299,26 +339,20 @@ export class ThreeViewer {
       this.currentDeviceModel = null;
     }
 
-    if (this.safeZoneGroup) {
-      this.scene.remove(this.safeZoneGroup);
-      this.disposeSafeZones(this.safeZoneGroup);
-      this.safeZoneGroup = null;
-    }
-
     this.currentDeviceModel = buildDevice(deviceId, this.materials);
     this.scene.add(this.currentDeviceModel.group);
 
-    const screenRadius = this.currentDeviceModel.spec.activeDisplayDiameterMm / 2;
-    const displayY = this.currentDeviceModel.displayMesh.position.y;
-    this.safeZoneGroup = ThreeViewer.buildSafeZoneOverlay(screenRadius, displayY);
-    this.safeZoneGroup.visible = this.safeZonesEnabled;
-    this.scene.add(this.safeZoneGroup);
+    this.updateSafeZoneOverlay();
 
     this.wristModel?.fitToWatch(this.currentDeviceModel.backY);
     this.updateGroundPlane();
     this.applyTextureToDisplay(this.currentTexture);
     if (this.realScale !== null) this.handleResize();
     this.requestRender();
+  }
+
+  public setDevice(deviceId: DeviceId): void {
+    this.loadDevice(deviceId);
   }
 
   public setScreenshotTexture(texture: THREE.Texture | null): void {
@@ -337,22 +371,81 @@ export class ThreeViewer {
    * is solved so the display plane is drawn at exactly that scale.
    */
   public setRealScale(pxPerMm: number | null): void {
-    if (pxPerMm !== null && !(pxPerMm > 0)) return;
-    const wasReal = this.realScale !== null;
-    this.realScale = pxPerMm;
-    const real = pxPerMm !== null;
-    this.camera.fov = real ? REAL_SIZE_FOV : DEFAULT_FOV;
-    this.camera.near = 5.0;
-    this.camera.far = 1200.0;
+    if (pxPerMm === null) {
+      if (this.realScale === null) return;
+      this.realScale = null;
+      // Exit realSize mode: widen distance bounds, re-enable zoom and pan
+      this.controls.minDistance = 20;
+      this.controls.maxDistance = 500;
+      this.controls.enableZoom = true;
+      this.controls.enablePan = true;
+      this.camera.fov = DEFAULT_FOV;
+      this.camera.near = 2.0;
+      this.camera.far = 1200.0;
+      this.camera.updateProjectionMatrix();
+
+      const target = this.displayPlaneTarget();
+      const currentDist = this.camera.position.distanceTo(target);
+      if (currentDist > 200) {
+        const safeDir = getSafeCameraDirection(this.camera.position, target, this.camera.up);
+        const comfortableDist = 110;
+        this.camera.position.copy(target).addScaledVector(safeDir, comfortableDist);
+        this.controls.target.copy(target);
+        this.controls.update();
+      }
+      this.groundShadowMesh.visible = true;
+      this.userMovedCamera = false;
+      this.requestRender();
+      return;
+    }
+
+    const validPxPerMm = pxPerMm > 0.5 ? pxPerMm : 3.7795;
+    this.realScale = validPxPerMm;
+    this.applyRealSize();
+  }
+
+  public setRealSizeMode(enabled: boolean, pxPerMm = 3.7795): void {
+    this.setRealScale(enabled ? pxPerMm : null);
+  }
+
+  private applyRealSize(): void {
+    if (this.realScale === null) return;
+    const viewportHeightPx = (this.container && this.container.clientHeight > 0)
+      ? this.container.clientHeight
+      : 600;
+    const pxPerMm = this.realScale > 0.5 ? this.realScale : 3.7795;
+    this.camera.fov = REAL_SIZE_FOV;
+    const distance = computeRealSizeCameraDistance(viewportHeightPx, this.camera.fov, pxPerMm);
+
+    this.camera.near = 2.0;
+    this.camera.far = Math.max(2000, distance * 3);
     this.camera.updateProjectionMatrix();
-    this.controls.enableZoom = !real;
-    this.controls.enablePan = !real;
-    const realDist = real ? this.realSizeDistance() : 0;
-    this.controls.minDistance = real ? realDist : 40;
-    this.controls.maxDistance = real ? realDist : 520;
-    this.groundShadowMesh.visible = !real;
+
+    // CRITICAL ORDER:
+    // 1. Unclamp OrbitControls distance bounds first
+    this.controls.minDistance = 0;
+    this.controls.maxDistance = Infinity;
+
+    // 2. Read target with forced matrix update
+    const target = this.displayPlaneTarget();
+
+    // 3. Obtain safe direction without gimbal lock or zero length
+    const safeDir = getSafeCameraDirection(this.camera.position, target, this.camera.up);
+
+    // 4. Update controls target and camera position
+    this.controls.target.copy(target);
+    this.camera.position.copy(target).addScaledVector(safeDir, distance);
+
+    // 5. Lock distance bounds and disable zoom & pan
+    this.controls.minDistance = distance;
+    this.controls.maxDistance = distance;
+    this.controls.enableZoom = false;
+    this.controls.enablePan = false;
+    this.controls.update();
+
+    this.groundShadowMesh.visible = false;
     this.userMovedCamera = false;
-    if (real || wasReal) this.jumpToHome();
+    this.requestRender();
   }
 
   /** QA helper: on-screen diameter of the active display in CSS px (projected from the 3D model). */
@@ -374,8 +467,10 @@ export class ThreeViewer {
 
   public setSafeZonesEnabled(enabled: boolean): void {
     this.safeZonesEnabled = enabled;
-    if (this.safeZoneGroup) {
-      this.safeZoneGroup.visible = enabled;
+    if (!this.safeZoneMesh && enabled && this.currentDeviceModel) {
+      this.updateSafeZoneOverlay();
+    } else if (this.safeZoneMesh) {
+      this.safeZoneMesh.visible = enabled;
       this.requestRender();
     }
   }
@@ -384,30 +479,99 @@ export class ThreeViewer {
     return this.safeZonesEnabled;
   }
 
-  public setCameraAngle(angle: 'front' | 'tilt' | 'side'): void {
+  private updateSafeZoneOverlay(): void {
+    if (this.safeZoneMesh) {
+      this.scene.remove(this.safeZoneMesh);
+      this.safeZoneMesh.geometry.dispose();
+      const mat = this.safeZoneMesh.material as THREE.MeshBasicMaterial;
+      mat.map?.dispose();
+      mat.dispose();
+      this.safeZoneMesh = null;
+    }
+
+    if (!this.currentDeviceModel) return;
+
+    this.scene.updateMatrixWorld(true);
+    const displayPos = new THREE.Vector3();
+    this.currentDeviceModel.displayMesh.getWorldPosition(displayPos);
+    const screenRadius = this.currentDeviceModel.spec.activeDisplayDiameterMm / 2;
+
+    this.safeZoneMesh = createSafeZoneOverlay(screenRadius);
+    this.safeZoneMesh.position.set(displayPos.x, displayPos.y + 0.005, displayPos.z);
+    this.safeZoneMesh.visible = this.safeZonesEnabled;
+    this.scene.add(this.safeZoneMesh);
+  }
+
+  public setCameraAngle(angle: 'front' | 'tilt' | 'side' | 'tilt35' | 'side75'): void {
+    const normalizedAngle: 'front' | 'tilt' | 'side' =
+      angle === 'tilt35' ? 'tilt' : angle === 'side75' ? 'side' : angle;
+
     const target = this.displayPlaneTarget();
     const vFov = THREE.MathUtils.degToRad(this.camera.fov);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
     const fov = Math.min(vFov, hFov);
     const defaultRadius = 38;
     const isReal = this.realScale !== null;
-    const distance = isReal
-      ? this.realSizeDistance()
-      : THREE.MathUtils.clamp(defaultRadius / Math.sin(fov / 2), this.controls.minDistance, this.controls.maxDistance);
 
+    let distance: number;
     if (isReal) {
-      // In 1:1 real size mode, lock zoom distance strictly to calibrated scale while allowing preset angle
-      this.controls.minDistance = distance;
-      this.controls.maxDistance = distance;
+      const viewportHeightPx = (this.container && this.container.clientHeight > 0)
+        ? this.container.clientHeight
+        : 600;
+      const pxPerMm = (this.realScale && this.realScale > 0.5) ? this.realScale : 3.7795;
+      distance = computeRealSizeCameraDistance(viewportHeightPx, this.camera.fov, pxPerMm);
+      // Temporarily unclamp
+      this.controls.minDistance = 0;
+      this.controls.maxDistance = Infinity;
+    } else {
+      distance = THREE.MathUtils.clamp(
+        defaultRadius / Math.sin(fov / 2),
+        this.controls.minDistance,
+        this.controls.maxDistance
+      );
     }
 
-    const { position } = computeCameraPresetPose(target, angle, distance);
+    const { position } = computeCameraPresetPose(target, normalizedAngle, distance);
     this.userMovedCamera = true;
-    this.flyToPose(position, target);
+
+    if (this.reducedMotion) {
+      this.fly = null;
+      this.camera.position.copy(position);
+      this.controls.target.copy(target);
+      if (isReal) {
+        this.controls.minDistance = distance;
+        this.controls.maxDistance = distance;
+      }
+      this.controls.update();
+      this.requestRender();
+      return;
+    }
+
+    this.flyToPose(position, target, isReal ? distance : undefined);
   }
 
-  public setCameraPreset(angle: 'front' | 'tilt' | 'side'): void {
+  public setCameraPreset(angle: 'front' | 'tilt' | 'side' | 'tilt35' | 'side75'): void {
     this.setCameraAngle(angle);
+  }
+
+  public getCamera(): THREE.PerspectiveCamera {
+    return this.camera;
+  }
+
+  public getControls(): OrbitControls {
+    return this.controls;
+  }
+
+  public getScene(): THREE.Scene {
+    return this.scene;
+  }
+
+  public getCurrentDeviceModel(): DeviceModelResult | null {
+    return this.currentDeviceModel;
+  }
+
+  public getSafeZoneMesh(): THREE.Mesh | null {
+    return this.safeZoneMesh;
   }
 
   public exportPngSnapshot(filename?: string): void {
@@ -522,8 +686,8 @@ export class ThreeViewer {
 
   private displayPlaneTarget(): THREE.Vector3 {
     const target = new THREE.Vector3(0, 0, 0);
+    this.scene.updateMatrixWorld(true);
     if (this.currentDeviceModel?.displayMesh) {
-      this.currentDeviceModel.displayMesh.updateWorldMatrix(true, false);
       this.currentDeviceModel.displayMesh.getWorldPosition(target);
     }
     return target;
@@ -531,9 +695,9 @@ export class ThreeViewer {
 
   private homePose(mode: ViewMode): { position: THREE.Vector3; target: THREE.Vector3 } {
     if (this.realScale !== null) {
-      // Straight down onto the face; the tiny Z offset keeps 12 o'clock at the top of the screen
+      // Straight down onto the face with MIN_POLAR_OFFSET_RAD to prevent gimbal lock
       const target = this.displayPlaneTarget();
-      const dir = new THREE.Vector3(0, 1, 1e-4).normalize();
+      const dir = new THREE.Vector3(0, Math.cos(MIN_POLAR_OFFSET_RAD), Math.sin(MIN_POLAR_OFFSET_RAD)).normalize();
       return { target, position: target.clone().addScaledVector(dir, this.realSizeDistance()) };
     }
     const home = HOMES[mode];
@@ -556,11 +720,15 @@ export class ThreeViewer {
     this.requestRender();
   }
 
-  private flyToPose(position: THREE.Vector3, target: THREE.Vector3): void {
+  private flyToPose(position: THREE.Vector3, target: THREE.Vector3, lockDistance?: number): void {
     if (this.reducedMotion) {
       this.fly = null;
       this.camera.position.copy(position);
       this.controls.target.copy(target);
+      if (lockDistance !== undefined) {
+        this.controls.minDistance = lockDistance;
+        this.controls.maxDistance = lockDistance;
+      }
       this.controls.update();
       this.requestRender();
       return;
@@ -571,6 +739,7 @@ export class ThreeViewer {
       toPos: position,
       toTarget: target,
       start: performance.now(),
+      lockDistance,
     };
     this.requestRender();
   }
@@ -593,16 +762,7 @@ export class ThreeViewer {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     if (this.realScale !== null) {
-      // Scale must stay exact: keep the viewing direction, re-solve the distance
-      this.fly = null;
-      const target = this.displayPlaneTarget();
-      const dir = this.camera.position.clone().sub(this.controls.target).normalize();
-      const realDist = this.realSizeDistance();
-      this.controls.minDistance = realDist;
-      this.controls.maxDistance = realDist;
-      this.controls.target.copy(target);
-      this.camera.position.copy(target).addScaledVector(dir, realDist);
-      this.controls.update();
+      this.applyRealSize();
     } else if (!this.userMovedCamera && !this.fly) {
       // Keep the watch framed while the user hasn't taken over the camera
       this.jumpToHome();
@@ -618,7 +778,13 @@ export class ThreeViewer {
       const e = 1 - Math.pow(1 - t, 3);
       this.camera.position.lerpVectors(this.fly.fromPos, this.fly.toPos, e);
       this.controls.target.lerpVectors(this.fly.fromTarget, this.fly.toTarget, e);
-      if (t >= 1) this.fly = null;
+      if (t >= 1) {
+        if (this.fly.lockDistance !== undefined) {
+          this.controls.minDistance = this.fly.lockDistance;
+          this.controls.maxDistance = this.fly.lockDistance;
+        }
+        this.fly = null;
+      }
       this.needsRender = true;
     }
 
@@ -653,136 +819,6 @@ export class ThreeViewer {
     });
   }
 
-  public static buildSafeZoneOverlay(screenRadius: number, displayY: number): THREE.Group {
-    const group = new THREE.Group();
-    group.name = 'safeZonesOverlay';
-    // Position at displayY + 0.08 mm with renderOrder: 5 (above displayMesh, below coverGlass)
-    group.position.set(0, displayY + 0.08, 0);
-
-    const createContrastRing = (
-      radius: number,
-      thickness: number,
-      color: number,
-      opacity: number,
-      backingThickness = 0.38
-    ) => {
-      const ringGroup = new THREE.Group();
-
-      // Thin dark backing ring underneath for guaranteed contrast over bright screenshots
-      const backingGeo = new THREE.RingGeometry(radius - backingThickness / 2, radius + backingThickness / 2, 128);
-      backingGeo.rotateX(-Math.PI / 2);
-      const backingMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.55,
-        depthTest: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      });
-      const backingMesh = new THREE.Mesh(backingGeo, backingMat);
-      backingMesh.renderOrder = 5;
-      ringGroup.add(backingMesh);
-
-      // High-visibility colored foreground ring
-      const foreGeo = new THREE.RingGeometry(radius - thickness / 2, radius + thickness / 2, 128);
-      foreGeo.rotateX(-Math.PI / 2);
-      const foreMat = new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        depthTest: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      });
-      const foreMesh = new THREE.Mesh(foreGeo, foreMat);
-      foreMesh.renderOrder = 5;
-      ringGroup.add(foreMesh);
-
-      return ringGroup;
-    };
-
-    // 100% active display boundary (outer screen rim reference)
-    group.add(createContrastRing(screenRadius, 0.16, 0x38bdf8, 0.75, 0.32));
-
-    // 90% Action Safe ring in high-visibility cyan (#00f0ff, thickness: 0.22 mm)
-    group.add(createContrastRing(screenRadius * 0.9, 0.22, 0x00f0ff, 0.95, 0.38));
-
-    // 80% Text Safe ring in vibrant amber (#ffb800, thickness: 0.18 mm)
-    group.add(createContrastRing(screenRadius * 0.8, 0.18, 0xffb800, 0.95, 0.38));
-
-    // Cardinal degree ticks (0°, 90°, 180°, 270°) and 15° minor ticks around the perimeter
-    const ticksGroup = new THREE.Group();
-    const tickSteps = 24; // 360 / 15 = 24 ticks around the perimeter
-    for (let i = 0; i < tickSteps; i++) {
-      const angle = (i * Math.PI * 2) / tickSteps; // 0, 15, 30, ...
-      const isCardinal = i % 6 === 0; // 0°, 90°, 180°, 270°
-
-      const length = isCardinal ? 1.6 : 0.75;
-      const width = isCardinal ? 0.22 : 0.14;
-      const backingWidth = width + 0.16;
-      const backingLength = length + 0.16;
-      const color = isCardinal ? 0xffb800 : 0x00f0ff;
-      const opacity = isCardinal ? 0.95 : 0.75;
-
-      const radialDist = screenRadius - length / 2;
-      const posX = radialDist * Math.sin(angle);
-      const posZ = -radialDist * Math.cos(angle);
-
-      // Dark backing segment
-      const backGeo = new THREE.PlaneGeometry(backingWidth, backingLength);
-      backGeo.rotateX(-Math.PI / 2);
-      const backMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.55,
-        depthTest: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      });
-      const backMesh = new THREE.Mesh(backGeo, backMat);
-      backMesh.position.set(posX, 0, posZ);
-      backMesh.rotation.y = -angle;
-      backMesh.renderOrder = 5;
-      ticksGroup.add(backMesh);
-
-      // Crisp colored tick segment
-      const foreGeo = new THREE.PlaneGeometry(width, length);
-      foreGeo.rotateX(-Math.PI / 2);
-      const foreMat = new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        depthTest: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      });
-      const foreMesh = new THREE.Mesh(foreGeo, foreMat);
-      foreMesh.position.set(posX, 0, posZ);
-      foreMesh.rotation.y = -angle;
-      foreMesh.renderOrder = 5;
-      ticksGroup.add(foreMesh);
-    }
-    group.add(ticksGroup);
-
-    return group;
-  }
-
-  private disposeSafeZones(group: THREE.Group): void {
-    group.traverse((obj) => {
-      if ('geometry' in obj && (obj as THREE.Mesh).geometry instanceof THREE.BufferGeometry) {
-        (obj as THREE.Mesh).geometry.dispose();
-      }
-      if ('material' in obj && (obj as THREE.Mesh).material) {
-        const mat = (obj as THREE.Mesh).material;
-        if (Array.isArray(mat)) {
-          mat.forEach((m) => m.dispose());
-        } else {
-          mat.dispose();
-        }
-      }
-    });
-  }
-
   public dispose(): void {
     if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
     this.animationFrameId = null;
@@ -799,10 +835,13 @@ export class ThreeViewer {
       this.disposeDeviceModel(this.currentDeviceModel);
       this.currentDeviceModel = null;
     }
-    if (this.safeZoneGroup) {
-      this.scene.remove(this.safeZoneGroup);
-      this.disposeSafeZones(this.safeZoneGroup);
-      this.safeZoneGroup = null;
+    if (this.safeZoneMesh) {
+      this.scene.remove(this.safeZoneMesh);
+      this.safeZoneMesh.geometry.dispose();
+      const mat = this.safeZoneMesh.material as THREE.MeshBasicMaterial;
+      mat.map?.dispose();
+      mat.dispose();
+      this.safeZoneMesh = null;
     }
     if (this.wristModel) {
       this.wristModel.wristMesh.geometry.dispose();
@@ -830,7 +869,102 @@ export class ThreeViewer {
   }
 }
 
-export const buildSafeZoneOverlay = ThreeViewer.buildSafeZoneOverlay;
+/**
+ * Creates a single-mesh Wear OS Safe Zone overlay with crisp 1024x1024 CanvasTexture.
+ * 90%-100% outer danger annulus (evenodd fill), 80%-90% inner warning annulus (evenodd fill),
+ * solid red outer rim, solid amber 90% ring, dashed 80% ring, and subtle center crosshair.
+ */
+export function createSafeZoneOverlay(displayRadiusMm: number): THREE.Mesh {
+  let canvas: HTMLCanvasElement | null = null;
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, 1024, 1024);
+      const cx = 512;
+      const cy = 512;
+      const R = 510;
+
+      // 1. Outer Danger Annulus (90% to 100% radius) with evenodd fill
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 1.00 * R, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, 0.90 * R, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+
+      // 2. Inner Warning Annulus (80% to 90% radius) with evenodd fill
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.16)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 0.90 * R, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, 0.80 * R, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+
+      // 3. Crisp outer solid red ring at 0.995 * R (lineWidth = 3, #ef4444)
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 0.995 * R, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 4. Crisp solid amber ring at 0.90 * R (lineWidth = 2.5, #f59e0b)
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 0.90 * R, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 5. Crisp dashed yellow-green/amber ring at 0.80 * R (lineWidth = 2.5, setLineDash([16, 12]), #eab308)
+      ctx.strokeStyle = '#eab308';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([16, 12]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, 0.80 * R, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 6. Subtle crosshair center ticks at (512, 512) (12px arms, rgba(255, 255, 255, 0.45))
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 1.5;
+      const arm = 12;
+      ctx.beginPath();
+      ctx.moveTo(cx - arm, cy);
+      ctx.lineTo(cx + arm, cy);
+      ctx.moveTo(cx, cy - arm);
+      ctx.lineTo(cx, cy + arm);
+      ctx.stroke();
+    }
+  }
+
+  const texture = canvas ? new THREE.CanvasTexture(canvas) : null;
+  if (texture) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 4;
+    texture.needsUpdate = true;
+  }
+
+  const geo = new THREE.CircleGeometry(displayRadiusMm, 96);
+  geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    toneMapped: false,
+    side: THREE.DoubleSide,
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'safeZonesOverlay';
+  mesh.renderOrder = 20;
+  return mesh;
+}
+
+export const buildSafeZoneOverlay = (screenRadius: number, _displayY?: number): THREE.Mesh => {
+  return createSafeZoneOverlay(screenRadius);
+};
 
 // ---------------------------------------------------------------- environment scenes for reflections
 

@@ -13,7 +13,7 @@ import {
 import { createWatchMaterials } from './materials';
 import { buildWristModel } from '../wrist/wristModel';
 import {
-  buildSafeZoneOverlay,
+  createSafeZoneOverlay,
   computeRealSizeCameraDistance,
   computeCameraPresetPose,
 } from '../viewer/ThreeViewer';
@@ -267,33 +267,21 @@ describe('Device Catalogue & Profiles', () => {
     }
   });
 
-  it('buildSafeZoneOverlay generates crisp RingGeometry and PlaneGeometry meshes at displayY + 0.08mm with renderOrder 5', () => {
+  it('createSafeZoneOverlay generates a single THREE.Mesh with CircleGeometry and renderOrder 20', () => {
     const screenRadius = 18.0;
-    const displayY = 0.5;
-    const overlay = buildSafeZoneOverlay(screenRadius, displayY);
+    const overlay = createSafeZoneOverlay(screenRadius);
 
-    expect(overlay.position.y).toBeCloseTo(displayY + 0.08, 0.001);
+    expect(overlay).toBeInstanceOf(THREE.Mesh);
+    expect(overlay.name).toBe('safeZonesOverlay');
+    expect(overlay.renderOrder).toBe(20);
+    expect(overlay.geometry).toBeInstanceOf(THREE.CircleGeometry);
+    overlay.geometry.computeBoundingSphere();
+    expect(overlay.geometry.boundingSphere!.radius).toBeCloseTo(screenRadius, 0.001);
 
-    const rings: THREE.Mesh[] = [];
-    const ticks: THREE.Mesh[] = [];
-
-    overlay.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        expect(child.renderOrder).toBe(5);
-        const mat = child.material as THREE.MeshBasicMaterial;
-        expect(mat.depthWrite).toBe(false);
-        if (child.geometry instanceof THREE.RingGeometry) {
-          rings.push(child);
-        } else if (child.geometry instanceof THREE.PlaneGeometry) {
-          ticks.push(child);
-        }
-      }
-    });
-
-    // Ring pairs (backing + foreground) for 100%, 90%, 80%
-    expect(rings.length).toBeGreaterThanOrEqual(6);
-    // 24 ticks with backing + foreground planes
-    expect(ticks.length).toBeGreaterThanOrEqual(48);
+    const mat = overlay.material as THREE.MeshBasicMaterial;
+    expect(mat.transparent).toBe(true);
+    expect(mat.depthWrite).toBe(false);
+    expect(mat.depthTest).toBe(false);
   });
 
   it('camera preset angles strictly preserve calibrated 1:1 camera distance to displayPlaneTarget', () => {
