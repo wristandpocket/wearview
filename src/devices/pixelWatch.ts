@@ -104,6 +104,7 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   const displayY = 1.10;
 
   // 1. Lower metal housing (polished steel or matte aluminum) below the glass equator (y = +0.2 mm)
+  const bezelOuterRadius = R * 0.92;
   const bodyPoints: Array<[number, number]> = [
     [14.2 * scaleRatio, -9.25],
     [16.8 * scaleRatio, -9.0],
@@ -113,6 +114,7 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
     [R * 0.998, -1.8],
     [R, 0.0],
     [R, 0.2],
+    [bezelOuterRadius, 0.2],
   ];
   const bodyGeo = latheFromProfile(bodyPoints);
   const bodyMat = spec.caseMaterialName.includes('Aluminum') ? materials.caseAluminum : materials.caseStainlessSteel;
@@ -122,18 +124,13 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   caseMesh.receiveShadow = true;
   group.add(caseMesh);
 
-  // 2. Black glass substrate following dome underside starting directly at equator (R, 0.15)
-  const substratePoints: Array<[number, number]> = [
-    [R, 0.15],
-    [R * 0.96, 0.45],
-    [R * 0.90, 0.70],
-    [screenRadius + 0.3, displayY - 0.15],
-    [screenRadius, displayY - 0.15],
-    [0, displayY - 0.15],
-  ];
-  const substrateGeo = latheFromProfile(substratePoints);
-  const bezelMesh = new THREE.Mesh(substrateGeo, materials.bezelBlack);
+  // 2. Black bezel ring flush with the active display plane underneath the continuous domed glass cap
+  // Flat annular ring in the XZ plane at displayY - 0.02 mm eliminating the stepped cylinder ledge
+  const bezelGeo = new THREE.RingGeometry(screenRadius, bezelOuterRadius, 96);
+  bezelGeo.rotateX(-Math.PI / 2);
+  const bezelMesh = new THREE.Mesh(bezelGeo, materials.bezelBlack);
   bezelMesh.name = 'bezel';
+  bezelMesh.position.y = displayY - 0.02;
   bezelMesh.renderOrder = 1;
   group.add(bezelMesh);
 
