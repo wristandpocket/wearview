@@ -26,10 +26,26 @@ WearView helps smartwatch developers inspect how game and interactive app screen
   - `Front (0°)`: Straight-on perpendicular view directly over the screen face.
   - `Tilt (35°)`: Natural wrist-glance viewing angle to verify edge button clearance on raised bezels.
   - `Side (75°)`: Grazing angle to inspect dome curvature, case thickness (9.7mm vs 12.3mm), and wrist contact.
-- **High-Resolution PNG Snapshot Export:** 1-click snapshot export from the dock or header generating clean PNG renders (`wearview-{deviceId}-{timestamp}.png`).
-- **Hardware-Aware Procedural QA Pattern:** Built-in test pattern showing exact native resolution (e.g. `456×456 px`), physical diameter and density (`35.56 mm • 320 PPI`), and safe margin guides.
+- **High-Resolution PNG Snapshot Export:** 1-click snapshot export from the dock generating clean PNG renders (`wearview-{deviceId}-{timestamp}.png`) via synchronous frame capture with zero runtime frame-rate penalty (`preserveDrawingBuffer: false`).
+- **Hardware-Aware Procedural QA Pattern:** Built-in test pattern showing exact native resolution (e.g. `456×456 px`), physical diameter and density (`35.56 mm • 320 PPI`), and safe margin guides, with instant 1-click toggling between sample game graphics (`Cyberpunk 3D`) and QA calibration rings.
 - **Responsive:** phones (portrait and landscape), tablets, desktops and ultrawide monitors.
 - **Local-only:** images never leave the browser. No accounts, no analytics.
+
+---
+
+### Keyboard Shortcuts
+
+For rapid inspection without taking hands off the keyboard:
+
+| Shortcut | Action | Description |
+| :---: | :--- | :--- |
+| **`P`** | **PNG Snapshot** | Export high-resolution PNG render (`wearview-{deviceId}-{timestamp}.png`) |
+| **`S`** | **Safe Zones** | Toggle 3D Wear OS Safe-Zone wireframe (80% text, 90% action, 100% boundary) |
+| **`R`** | **Reset View** | Reset camera angle and distance back to default home pose |
+| **`W`** | **Watch / Wrist** | Toggle view between isolated watch and anatomical wrist mount |
+| **`1`** | **Front (0°)** | Animate camera to perpendicular top-down screen view |
+| **`2`** | **Tilt (35°)** | Animate camera to natural wrist-glance angle (checks raised bezel occlusion) |
+| **`3`** | **Side (75°)** | Animate camera to grazing angle (checks dome curvature, thickness, wrist contact) |
 
 ---
 

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { generateTestPatternCanvas, createTestPatternFile } from './testPattern';
+import { handleGlobalKeyDown, type KeyboardActions } from '../utils/keyboard';
+import { getDeviceSpec } from '../devices';
 
 describe('testPattern generator', () => {
   let mockCtx: any;
@@ -91,6 +93,23 @@ describe('testPattern generator', () => {
     expect(filledTexts).toContain('270°');
   });
 
+  it('re-generates distinctive canvas specs when switching device profiles', () => {
+    const ticwatch = getDeviceSpec('ticwatch-pro-5-48');
+    generateTestPatternCanvas({
+      size: ticwatch.resolutionPx.width,
+      widthPx: ticwatch.resolutionPx.width,
+      heightPx: ticwatch.resolutionPx.height,
+      displayDiameterMm: ticwatch.activeDisplayDiameterMm,
+      ppi: ticwatch.ppi,
+      deviceName: ticwatch.shortLabel,
+    });
+
+    const filledTexts = mockCtx.fillText.mock.calls.map((c: any[]) => c[0]);
+    expect(filledTexts).toContain('466×466 px');
+    expect(filledTexts).toContain('36.32 mm • 326 PPI');
+    expect(filledTexts).toContain(ticwatch.shortLabel);
+  });
+
   it('createTestPatternFile produces a valid PNG File instance', async () => {
     const file = await createTestPatternFile({
       size: 432,
@@ -104,5 +123,65 @@ describe('testPattern generator', () => {
     expect(file).toBeInstanceOf(File);
     expect(file.name).toBe('wearview-test-pattern-432x432.png');
     expect(file.type).toBe('image/png');
+  });
+});
+
+describe('handleGlobalKeyDown keyboard shortcuts', () => {
+  let actions: KeyboardActions;
+
+  beforeEach(() => {
+    actions = {
+      exportPng: vi.fn(),
+      toggleSafeZones: vi.fn(),
+      resetCamera: vi.fn(),
+      toggleViewMode: vi.fn(),
+      setCameraAngle: vi.fn(),
+    };
+  });
+
+  it('dispatches single-key shortcuts: P, S, R, W, 1, 2, 3', () => {
+    expect(handleGlobalKeyDown({ key: 'p', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.exportPng).toHaveBeenCalledTimes(1);
+
+    expect(handleGlobalKeyDown({ key: 'S', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.toggleSafeZones).toHaveBeenCalledTimes(1);
+
+    expect(handleGlobalKeyDown({ key: 'r', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.resetCamera).toHaveBeenCalledTimes(1);
+
+    expect(handleGlobalKeyDown({ key: 'w', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.toggleViewMode).toHaveBeenCalledTimes(1);
+
+    expect(handleGlobalKeyDown({ key: '1', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.setCameraAngle).toHaveBeenCalledWith('front');
+
+    expect(handleGlobalKeyDown({ key: '2', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.setCameraAngle).toHaveBeenCalledWith('tilt');
+
+    expect(handleGlobalKeyDown({ key: '3', preventDefault: vi.fn() }, actions)).toBe(true);
+    expect(actions.setCameraAngle).toHaveBeenCalledWith('side');
+  });
+
+  it('ignores shortcuts when focus is inside form input, select, or textarea', () => {
+    const inputTarget = { tagName: 'INPUT' } as unknown as HTMLElement;
+    const selectTarget = { tagName: 'SELECT' } as unknown as HTMLElement;
+    const textareaTarget = { tagName: 'TEXTAREA' } as unknown as HTMLElement;
+    const editableTarget = { tagName: 'DIV', isContentEditable: true } as unknown as HTMLElement;
+
+    expect(handleGlobalKeyDown({ key: 'p', target: inputTarget }, actions)).toBe(false);
+    expect(handleGlobalKeyDown({ key: 's', target: selectTarget }, actions)).toBe(false);
+    expect(handleGlobalKeyDown({ key: 'r', target: textareaTarget }, actions)).toBe(false);
+    expect(handleGlobalKeyDown({ key: 'w', target: editableTarget }, actions)).toBe(false);
+    expect(actions.exportPng).not.toHaveBeenCalled();
+    expect(actions.toggleSafeZones).not.toHaveBeenCalled();
+  });
+
+  it('ignores shortcuts when modifier keys (Ctrl, Meta, Alt) are active', () => {
+    expect(handleGlobalKeyDown({ key: 'p', ctrlKey: true }, actions)).toBe(false);
+    expect(handleGlobalKeyDown({ key: 'p', metaKey: true }, actions)).toBe(false);
+    expect(handleGlobalKeyDown({ key: 'r', ctrlKey: true }, actions)).toBe(false);
+    expect(handleGlobalKeyDown({ key: 'w', ctrlKey: true }, actions)).toBe(false);
+    expect(actions.exportPng).not.toHaveBeenCalled();
+    expect(actions.resetCamera).not.toHaveBeenCalled();
   });
 });
