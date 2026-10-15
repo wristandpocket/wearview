@@ -7,7 +7,7 @@ export const PIXEL_WATCH_1_SPEC: DeviceSpec = {
   id: 'pixel-watch-1-41mm',
   name: 'Google Pixel Watch',
   generation: 'Pixel Watch · 1st gen · 41 mm (2022)',
-  shortLabel: 'Pixel Watch 41',
+  shortLabel: 'Pixel 41',
   releaseYear: 2022,
   caseDiameterMm: 41.0,
   caseHeightMm: 41.0,

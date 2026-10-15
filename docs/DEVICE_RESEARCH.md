@@ -127,6 +127,22 @@ Built in `src/devices/pixelWatch1.ts`.
 
 ---
 
+## Device 4: Samsung Galaxy Watch6 (44 mm)
+
+- **Sources:** [Samsung Mobile Press spec sheet](https://www.samsungmobilepress.com/media-assets/galaxy-watch6?tab=specs), [GSMArena](https://m.gsmarena.com/samsung_galaxy_watch6-12437.php) (accessed October 2026).
+
+| Property | Status | Value |
+| :--- | :--- | :--- |
+| Case (W × H × D) | Confirmed (Samsung) | 44.4 × 42.8 × 9.0 mm |
+| Display | Confirmed (Samsung) | 1.5" / 37.3 mm Super AMOLED, 480 × 480 (~327 ppi) |
+| Glass | Confirmed | Sapphire crystal |
+| Black border / metal rim | Estimated | ~1.25 mm border, ~1.5 mm rim (thinner than Watch5) |
+
+Built by the shared Galaxy builder in `src/devices/galaxyWatch.ts` (rim width 1.5 mm). The Watch5 40 mm (Device 3)
+uses the same builder with a 2.2 mm rim.
+
+---
+
 ## 5. Summary Comparison for 3D Modeling
 
 | Feature | Samsung Galaxy Watch5 (44 mm) | Samsung Galaxy Watch5 (40 mm) | Google Pixel Watch (Gen 1, 41 mm) |

@@ -6,6 +6,8 @@ interface ControlsBarProps {
   onViewModeChange: (mode: ViewMode) => void;
   lightingPreset: LightingPreset;
   onLightingChange: (preset: LightingPreset) => void;
+  realSize: boolean;
+  onToggleRealSize: () => void;
 }
 
 const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }> = [
@@ -63,7 +65,14 @@ const LIGHT_OPTIONS: Array<{ id: LightingPreset; label: string; title: string; i
   },
 ];
 
-export const ControlsBar: React.FC<ControlsBarProps> = ({ viewMode, onViewModeChange, lightingPreset, onLightingChange }) => {
+export const ControlsBar: React.FC<ControlsBarProps> = ({
+  viewMode,
+  onViewModeChange,
+  lightingPreset,
+  onLightingChange,
+  realSize,
+  onToggleRealSize,
+}) => {
   return (
     <div className="controls-dock">
       <div className="segmented-bar" role="radiogroup" aria-label="View mode">
@@ -101,6 +110,23 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({ viewMode, onViewModeCh
             <span>{opt.label}</span>
           </button>
         ))}
+      </div>
+
+      <div className="segmented-bar real-size-bar">
+        <button
+          type="button"
+          className={`segmented-btn ${realSize ? 'active accent' : ''}`}
+          onClick={onToggleRealSize}
+          aria-pressed={realSize}
+          title="Show the watch at its real physical size on this screen (one-time card calibration)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="10" rx="2" />
+            <path d="M6 7v3M10 7v4M14 7v3M18 7v4" />
+          </svg>
+          <span>1:1</span>
+          <span className="real-size-label">Real size</span>
+        </button>
       </div>
     </div>
   );

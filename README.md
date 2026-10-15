@@ -11,34 +11,26 @@ WearView helps smartwatch developers inspect how game and interactive app screen
 
 ## Key Features
 
-- **Device-Specific 3D Geometry:**
-  - **Samsung Galaxy Watch5 (44 mm):** Accurate squircle aluminum body ($44.4 \times 43.3 \times 9.8\text{ mm}$), flat sapphire crystal with protective raised aluminum rim, dual pill buttons, and 20 mm lugs.
-  - **Google Pixel Watch (1st gen, 41 mm, 2022):** Signature continuous 3D domed Corning Gorilla Glass 5 pebble profile, watertight polished stainless steel bucket, rotating digital crown at 3 o'clock, flush button at 2 o'clock, and lugless strap channels.
-- **Accurate Display Mapping & Aspect Fit:**
-  - Textures are clipped strictly to the active circular display surface without bleeding onto bezels or outer cases.
-  - Centered aspect-ratio preserving `contain` fit for non-square screenshots.
-  - Native WebP, PNG, JPG, and JPEG support.
-  - Correct Three.js `SRGBColorSpace` handling and emissive color fidelity with zero glass bleaching.
-- **Interactive WebGL Controls & Macro-to-Life Zoom:**
-  - Orbit rotation, smooth damping, bounded pitch clamp ($0.05 \le \theta \le 0.49\pi$), and one-click camera view reset.
-  - Zoom range ($28 - 450\text{ mm}$) allowing macro pixel inspection up to real-life size distance comparison while preventing clipping inside the watch body.
-- **3 Dynamic Lighting Presets:**
-  - **Studio:** Clean pure white studio environment (`#ffffff`) with dynamic HDR reflection mapping (`RoomEnvironment`) for realistic metallic sheen on Armor Aluminum and polished steel.
-  - **Sunlight:** High-intensity warm directional light ($3.4$) with crisp specular glint and contact shadows.
-  - **Night:** Low-ambient atmosphere with cool cyan/violet rim accents while maintaining screen readability.
-- **Contextual Wrist View:**
-  - Switch between isolated **Watch view** and **On wrist** view to judge device bulk and silhouette on an anatomical reference.
-- **Privacy First & Local-Only:**
-  - All image processing, canvas compositing, and WebGL texturing occur 100% inside your browser. No server uploads, no accounts, and zero analytics.
+- **Four real watches, modeled from published specs:**
+  - **Samsung Galaxy Watch5 · 44 mm** — 34.6 mm, 450 × 450 display; 44.4 × 43.3 × 9.8 mm aluminum case.
+  - **Samsung Galaxy Watch5 · 40 mm** — 30.4 mm, 396 × 396 display; 40.4 × 39.3 × 9.8 mm.
+  - **Samsung Galaxy Watch6 · 44 mm** — 37.3 mm, 480 × 480 display, thinner bezel; 44.4 × 42.8 × 9.0 mm.
+  - **Google Pixel Watch · 1st gen · 41 mm** — domed glass, polished steel, fluted crown; 41 × 12.3 mm.
+- **Real size (1:1) mode:** a one-time calibration with any bank/ID card (ISO/IEC 7810 ID-1, 85.6 × 53.98 mm) measures CSS pixels per millimetre on your screen; the watch is then drawn at its true physical size. Calibration is stored per screen + browser zoom and re-requested when either changes. Adjust with slider, buttons, mouse wheel, arrow keys or pinch.
+- **Screen on the real display surface:** the screenshot is clipped to the active circular area only, aspect ratio preserved (centered `contain` fit for non-square images), correct sRGB handling.
+- **Glossy cover glass:** glass reflects a dedicated dark softbox environment, so the screen stays crisp and saturated while highlights sweep across it as you tilt the watch.
+- **Lighting presets:** Studio, Sunlight (strong glare on the glass) and Night.
+- **Watch / On wrist:** the same watch on a simple neutral arm; the band wraps the wrist cross-section.
+- **Responsive:** phones (portrait and landscape), tablets, desktops and ultrawide monitors.
+- **Local-only:** images never leave the browser. No accounts, no analytics.
 
 ---
 
 ## Current Scope & Hardware Accuracy
 
-- **Supported Devices (MVP 2-Device Scope):**
-  1. Samsung Galaxy Watch5 · 44 mm ($450 \times 450\text{ px}$, $34.6\text{ mm}$ display)
-  2. Google Pixel Watch · 1st gen · 41 mm ($450 \times 450\text{ px}$, $33.5\text{ mm}$ calibrated display)
-- **Physical Scale:** Internal 3D scene units are strictly scaled ($1\text{ unit} = 1\text{ mm}$). Camera distances ($28 - 450\text{ mm}$) allow matching real-world wrist proportions. Full monitor PPI calibration is a post-MVP roadmap item.
+- Scene units are millimetres (1 unit = 1 mm); confirmed vs. estimated dimensions are tracked in [DEVICE_RESEARCH.md](docs/DEVICE_RESEARCH.md).
+- Bezel/rim widths and button positions are estimates from product photos, not CAD data.
+- Real-size accuracy depends on the calibration; the projected display diameter is verified to match `diameter × px/mm` to within 0.01 px.
 
 ---
 
