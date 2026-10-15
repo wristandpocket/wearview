@@ -6,9 +6,10 @@ interface HeaderProps {
   selectedDeviceId: DeviceId;
   onSelectDevice: (id: DeviceId) => void;
   onResetCamera: () => void;
+  onExportPng?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice, onResetCamera }) => {
+export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice, onResetCamera, onExportPng }) => {
   return (
     <header className="app-header">
       <div className="brand-section">
@@ -62,13 +63,31 @@ export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice
         </span>
       </div>
 
-      <button type="button" className="btn-secondary reset-btn" onClick={onResetCamera} title="Reset camera" aria-label="Reset camera">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-          <path d="M3 3v5h5" />
-        </svg>
-        <span className="reset-label">Reset view</span>
-      </button>
+      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {onExportPng && (
+          <button
+            type="button"
+            className="btn-secondary export-btn"
+            onClick={onExportPng}
+            title="Export high-resolution PNG snapshot"
+            aria-label="Export high-resolution PNG snapshot"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span className="reset-label">Snapshot</span>
+          </button>
+        )}
+        <button type="button" className="btn-secondary reset-btn" onClick={onResetCamera} title="Reset camera" aria-label="Reset camera">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          <span className="reset-label">Reset view</span>
+        </button>
+      </div>
     </header>
   );
 };

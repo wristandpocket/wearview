@@ -17,11 +17,17 @@ function sectionValue(z: number, y: number, centerY: number): number {
 }
 
 describe('strap wrap geometry', () => {
+  it('WRIST_SECTION breadth supports large lug-to-lug devices without overhang', () => {
+    expect(WRIST_SECTION.halfWidth).toBe(33.5);
+    expect(WRIST_SECTION.halfHeight).toBe(21);
+  });
+
   for (const [label, attachZ, attachY, backY, thickness] of [
     ['Galaxy Watch5', 21.2, -5.0, -11.4, 2.6],
     ['Pixel Watch', 18.4, -5.6, -10.1, 2.4],
     ['Galaxy Watch Ultra', 22.8, -5.2, -13.7, 2.8],
     ['TicWatch Pro 5', 24.5, -5.2, -13.7, 2.8],
+    ['Galaxy Watch6 Classic 47mm', 26.2, -5.2, -12.3, 2.8],
   ] as const) {
     it(`${label}: band wraps outside the wrist and closes at both attachments`, () => {
       const path = wrapStrapPath(attachZ, attachY, backY, thickness);

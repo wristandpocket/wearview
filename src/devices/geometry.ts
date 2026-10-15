@@ -8,7 +8,7 @@ import * as THREE from 'three';
 
 /** Wrist cross-section used by both the strap loop and the wrist mesh (superellipse in the YZ plane). */
 export const WRIST_SECTION = {
-  halfWidth: 31, // across the wrist (Z)
+  halfWidth: 33.5, // across the wrist (Z) (67mm total width, realistic adult forearm/wrist)
   halfHeight: 21, // top-to-bottom (Y)
   exponent: 4, // >2 flattens the top where the watch sits
 };

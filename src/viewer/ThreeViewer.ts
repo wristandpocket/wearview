@@ -110,6 +110,8 @@ export class ThreeViewer {
   private currentTexture: THREE.Texture | null = null;
   private currentLightingPreset: LightingPreset;
   private viewMode: ViewMode;
+  private safeZoneGroup: THREE.Group | null = null;
+  private safeZonesEnabled = false;
 
   private needsRender = true;
   private userMovedCamera = false;
@@ -155,7 +157,12 @@ export class ThreeViewer {
       throw new Error('WebGL is not supported or disabled in your browser.');
     }
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: true,
+    });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -266,8 +273,21 @@ export class ThreeViewer {
       this.currentDeviceModel = null;
     }
 
+    if (this.safeZoneGroup) {
+      this.scene.remove(this.safeZoneGroup);
+      this.disposeSafeZones(this.safeZoneGroup);
+      this.safeZoneGroup = null;
+    }
+
     this.currentDeviceModel = buildDevice(deviceId, this.materials);
     this.scene.add(this.currentDeviceModel.group);
+
+    const screenRadius = this.currentDeviceModel.spec.activeDisplayDiameterMm / 2;
+    const displayY = this.currentDeviceModel.displayMesh.position.y;
+    this.safeZoneGroup = this.buildSafeZoneOverlay(screenRadius, displayY);
+    this.safeZoneGroup.visible = this.safeZonesEnabled;
+    this.scene.add(this.safeZoneGroup);
+
     this.wristModel?.fitToWatch(this.currentDeviceModel.backY);
     this.updateGroundPlane();
     this.applyTextureToDisplay(this.currentTexture);
@@ -321,6 +341,60 @@ export class ThreeViewer {
   /** Whether real-size (1:1) mode is on. */
   public get isRealSize(): boolean {
     return this.realScale !== null;
+  }
+
+  public setSafeZonesEnabled(enabled: boolean): void {
+    this.safeZonesEnabled = enabled;
+    if (this.safeZoneGroup) {
+      this.safeZoneGroup.visible = enabled;
+      this.requestRender();
+    }
+  }
+
+  public isSafeZonesEnabled(): boolean {
+    return this.safeZonesEnabled;
+  }
+
+  public setCameraAngle(angle: 'front' | 'tilt' | 'side'): void {
+    const target = this.displayPlaneTarget();
+    const vFov = THREE.MathUtils.degToRad(this.camera.fov);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
+    const fov = Math.min(vFov, hFov);
+    const defaultRadius = 38;
+    const distance =
+      this.realScale !== null
+        ? this.realSizeDistance()
+        : THREE.MathUtils.clamp(defaultRadius / Math.sin(fov / 2), this.controls.minDistance, this.controls.maxDistance);
+
+    let dir: THREE.Vector3;
+    if (angle === 'front') {
+      dir = new THREE.Vector3(0, 1, 0.0001).normalize();
+    } else if (angle === 'tilt') {
+      const rad = (35 * Math.PI) / 180;
+      dir = new THREE.Vector3(0, Math.cos(rad), Math.sin(rad)).normalize();
+    } else {
+      const elev = ((90 - 75) * Math.PI) / 180;
+      const horiz = Math.cos(elev);
+      const azimuth = (28 * Math.PI) / 180;
+      dir = new THREE.Vector3(horiz * Math.sin(azimuth), Math.sin(elev), horiz * Math.cos(azimuth)).normalize();
+    }
+
+    const position = target.clone().addScaledVector(dir, distance);
+    this.userMovedCamera = true;
+    this.flyToPose(position, target);
+  }
+
+  public exportPngSnapshot(filename?: string): void {
+    this.renderer.render(this.scene, this.camera);
+    const dataUrl = this.renderer.domElement.toDataURL('image/png');
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const id = this.currentDeviceModel?.spec.id ?? 'device';
+    a.download = filename ?? `wearview-${id}-${timestamp}.png`;
+    a.href = dataUrl;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // ---------------------------------------------------------------- internals
@@ -447,20 +521,28 @@ export class ThreeViewer {
     this.requestRender();
   }
 
-  private flyToHome(): void {
+  private flyToPose(position: THREE.Vector3, target: THREE.Vector3): void {
     if (this.reducedMotion) {
-      this.jumpToHome();
+      this.fly = null;
+      this.camera.position.copy(position);
+      this.controls.target.copy(target);
+      this.controls.update();
+      this.requestRender();
       return;
     }
-    const pose = this.homePose(this.viewMode);
     this.fly = {
       fromPos: this.camera.position.clone(),
       fromTarget: this.controls.target.clone(),
-      toPos: pose.position,
-      toTarget: pose.target,
+      toPos: position,
+      toTarget: target,
       start: performance.now(),
     };
     this.requestRender();
+  }
+
+  private flyToHome(): void {
+    const pose = this.homePose(this.viewMode);
+    this.flyToPose(pose.position, pose.target);
   }
 
   private setupResizeObserver(): void {
@@ -533,6 +615,83 @@ export class ThreeViewer {
     });
   }
 
+  private buildSafeZoneOverlay(screenRadius: number, displayY: number): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'safeZonesOverlay';
+    // Position slightly above the display mesh (0.04mm) to avoid z-fighting while staying below glass
+    group.position.set(0, displayY + 0.04, 0);
+
+    const createCircle = (radius: number, color: number, opacity: number) => {
+      const points: THREE.Vector3[] = [];
+      const segments = 96;
+      for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius));
+      }
+      const geom = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        depthTest: true,
+        depthWrite: false,
+      });
+      const line = new THREE.LineLoop(geom, mat);
+      line.renderOrder = 3;
+      return line;
+    };
+
+    // 100% active display boundary (cyan)
+    group.add(createCircle(screenRadius, 0x38bdf8, 0.7));
+
+    // 90% Action / Button Safe Zone (amber)
+    group.add(createCircle(screenRadius * 0.9, 0xf59e0b, 0.85));
+
+    // 80% Title / Text Safe Zone (emerald)
+    group.add(createCircle(screenRadius * 0.8, 0x10b981, 0.75));
+
+    // Cardinal tick marks at 12h, 3h, 6h, 9h
+    const cardinalPoints: THREE.Vector3[] = [
+      new THREE.Vector3(0, 0, -screenRadius * 0.72),
+      new THREE.Vector3(0, 0, -screenRadius * 1.0),
+      new THREE.Vector3(0, 0, screenRadius * 0.72),
+      new THREE.Vector3(0, 0, screenRadius * 1.0),
+      new THREE.Vector3(-screenRadius * 0.72, 0, 0),
+      new THREE.Vector3(-screenRadius * 1.0, 0, 0),
+      new THREE.Vector3(screenRadius * 0.72, 0, 0),
+      new THREE.Vector3(screenRadius * 1.0, 0, 0),
+    ];
+    const cardinalGeom = new THREE.BufferGeometry().setFromPoints(cardinalPoints);
+    const cardinalMat = new THREE.LineBasicMaterial({
+      color: 0xf59e0b,
+      transparent: true,
+      opacity: 0.8,
+      depthTest: true,
+      depthWrite: false,
+    });
+    const cardinalLines = new THREE.LineSegments(cardinalGeom, cardinalMat);
+    cardinalLines.renderOrder = 3;
+    group.add(cardinalLines);
+
+    return group;
+  }
+
+  private disposeSafeZones(group: THREE.Group): void {
+    group.traverse((obj) => {
+      if ('geometry' in obj && (obj as THREE.Mesh).geometry instanceof THREE.BufferGeometry) {
+        (obj as THREE.Mesh).geometry.dispose();
+      }
+      if ('material' in obj && (obj as THREE.Mesh).material) {
+        const mat = (obj as THREE.Mesh).material;
+        if (Array.isArray(mat)) {
+          mat.forEach((m) => m.dispose());
+        } else {
+          mat.dispose();
+        }
+      }
+    });
+  }
+
   public dispose(): void {
     if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
     this.animationFrameId = null;
@@ -548,6 +707,11 @@ export class ThreeViewer {
     if (this.currentDeviceModel) {
       this.disposeDeviceModel(this.currentDeviceModel);
       this.currentDeviceModel = null;
+    }
+    if (this.safeZoneGroup) {
+      this.scene.remove(this.safeZoneGroup);
+      this.disposeSafeZones(this.safeZoneGroup);
+      this.safeZoneGroup = null;
     }
     if (this.wristModel) {
       this.wristModel.wristMesh.geometry.dispose();

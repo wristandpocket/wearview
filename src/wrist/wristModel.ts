@@ -18,12 +18,12 @@ interface SectionKey {
 
 // Simple neutral reference arm: forearm → wrist (matches WRIST_SECTION at x = 0) → back of hand
 const KEYS: SectionKey[] = [
-  { x: -200, a: 37, b: 27, dy: 1 },
-  { x: -70, a: 34, b: 24.5, dy: 0.5 },
+  { x: -200, a: 39, b: 27, dy: 1 },
+  { x: -70, a: 36, b: 24.5, dy: 0.5 },
   { x: 0, a: WRIST_SECTION.halfWidth, b: WRIST_SECTION.halfHeight, dy: 0 },
-  { x: 38, a: 35, b: 16, dy: 3.5 },
-  { x: 75, a: 41, b: 13, dy: 6 },
-  { x: 130, a: 40, b: 10.5, dy: 5.5 },
+  { x: 38, a: 36, b: 16, dy: 3.5 },
+  { x: 75, a: 42, b: 13, dy: 6 },
+  { x: 130, a: 41, b: 10.5, dy: 5.5 },
 ];
 const X_START = -200;
 const X_END = 130;

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { LightingPreset, ViewMode } from '../types';
+
+export type CameraPreset = 'front' | 'tilt' | 'side';
 
 interface ControlsBarProps {
   viewMode: ViewMode;
@@ -8,6 +10,10 @@ interface ControlsBarProps {
   onLightingChange: (preset: LightingPreset) => void;
   realSize: boolean;
   onToggleRealSize: () => void;
+  safeZones: boolean;
+  onToggleSafeZones: () => void;
+  onSelectCameraAngle?: (angle: CameraPreset) => void;
+  onExportPng?: () => void;
 }
 
 const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }> = [
@@ -32,6 +38,12 @@ const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }
       </>
     ),
   },
+];
+
+const CAMERA_PRESETS: Array<{ id: CameraPreset; label: string; title: string }> = [
+  { id: 'front', label: 'Front 0°', title: 'Perpendicular top-down view (0°)' },
+  { id: 'tilt', label: 'Tilt 35°', title: 'Natural wrist-glance viewing angle (35°)' },
+  { id: 'side', label: 'Side 75°', title: 'Grazing angle to inspect dome curvature & case thickness (75°)' },
 ];
 
 const LIGHT_OPTIONS: Array<{ id: LightingPreset; label: string; title: string; icon: React.ReactNode }> = [
@@ -72,7 +84,26 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
   onLightingChange,
   realSize,
   onToggleRealSize,
+  safeZones,
+  onToggleSafeZones,
+  onSelectCameraAngle,
+  onExportPng,
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        onToggleSafeZones();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onToggleSafeZones]);
+
   return (
     <div className="controls-dock">
       <div className="segmented-bar" role="radiogroup" aria-label="View mode">
@@ -93,6 +124,22 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
         ))}
       </div>
 
+      {onSelectCameraAngle && (
+        <div className="segmented-bar" role="group" aria-label="Camera presets">
+          {CAMERA_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className="segmented-btn"
+              onClick={() => onSelectCameraAngle(preset.id)}
+              title={preset.title}
+            >
+              <span>{preset.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="segmented-bar" role="radiogroup" aria-label="Lighting">
         {LIGHT_OPTIONS.map((opt) => (
           <button
@@ -112,7 +159,22 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
         ))}
       </div>
 
-      <div className="segmented-bar real-size-bar">
+      <div className="segmented-bar tools-bar" role="group" aria-label="Inspection tools">
+        <button
+          type="button"
+          className={`segmented-btn ${safeZones ? 'active accent' : ''}`}
+          onClick={onToggleSafeZones}
+          aria-pressed={safeZones}
+          title="Toggle Wear OS Safe Zones (80% / 90% / 100% boundary overlay) [Shortcut: S]"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" strokeDasharray="2 2" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+          <span>Safe Zones</span>
+        </button>
+
         <button
           type="button"
           className={`segmented-btn ${realSize ? 'active accent' : ''}`}
@@ -127,6 +189,22 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
           <span>1:1</span>
           <span className="real-size-label">Real size</span>
         </button>
+
+        {onExportPng && (
+          <button
+            type="button"
+            className="segmented-btn"
+            onClick={onExportPng}
+            title="Export high-resolution WebGL canvas snapshot as PNG"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Export PNG</span>
+          </button>
+        )}
       </div>
     </div>
   );
