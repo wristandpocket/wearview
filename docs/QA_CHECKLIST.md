@@ -119,3 +119,13 @@ to the studio. The studio site header links to `/wearview/`.
 | Controls dock fits one row at 1600 px | PASS | Export PNG moved to header actions; display + tools bars merged |
 | Phone width (375 px) header and dock | PASS | |
 | Studio site `jekyll build`: WearView nav link is `/wearview/` in en and uk (no locale prefix) | PASS | studio nav on a real phone NOT TESTED |
+
+## SEO and studio landing — 2026-10-15
+
+| Check | Result | How |
+|---|---|---|
+| App page JSON-LD (WebApplication) | PASS | present in `dist/index.html` |
+| OG image `wristandpocket.dev/assets/images/tools/wearview-og.webp` (1200×630) | PASS | served by the studio site, deployed together |
+| Studio `/tools/wearview/` in en/uk/ru/ko, SoftwareApplication + FAQPage JSON-LD parse | PASS | local `jekyll build`, JSON parsed |
+| Localized studio pages link to `/wearview/` without a locale prefix | PASS | `static_href` |
+| Dev-only: sample screen black after full reload until re-selected | NOT A PROD BUG | production build shows the sample on load |
