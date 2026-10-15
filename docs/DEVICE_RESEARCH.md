@@ -143,15 +143,21 @@ uses the same builder with a 2.2 mm rim.
 
 ---
 
-## 5. Summary Comparison for 3D Modeling
+---
 
-| Feature | Samsung Galaxy Watch5 (44 mm) | Samsung Galaxy Watch5 (40 mm) | Google Pixel Watch (Gen 1, 41 mm) |
-| :--- | :--- | :--- | :--- |
-| **Overall Size** | Large ($44.4 \times 43.3 \times 9.8\text{ mm}$) | Compact ($40.4 \times 39.3 \times 9.8\text{ mm}$) | Compact ($41.0 \times 41.0 \times 12.3\text{ mm}$) |
-| **Glass Top** | Flat sapphire crystal with raised lip | Flat sapphire crystal with raised lip | Continuous 3D domed Corning Gorilla Glass 5 |
-| **Bezel Feel** | Protected sports watch ($4.4\text{ mm}$ border) | Slim sports watch ($2.3\text{ mm}$ border) | Seamless glossy pebble with curved dome bezel |
-| **Active Display** | $34.6\text{ mm}$ diameter ($1.4"$) | $30.4\text{ mm}$ diameter ($1.2"$) | $33.5\text{ mm}$ calibrated diameter |
-| **Resolution** | $450 \times 450\text{ px}$ | $396 \times 396\text{ px}$ | $450 \times 450\text{ px}$ |
-| **Side Controls** | Two pill buttons at 2 and 4 o'clock | Two pill buttons at 2 and 4 o'clock | Rotating crown at 3 o'clock, flush button at 2 o'clock |
-| **Strap Mount** | Standard 20 mm sculpted lugs | Standard 20 mm sculpted lugs | Lugless internal slide-and-lock band mechanism |
-| **Primary Material** | Matte Armor Aluminum | Matte Armor Aluminum | Polished Stainless Steel & 3D Glass |
+## 5. Comprehensive Top 10+ Wear OS Smartwatches Reference Table
+
+| # | ID | Device Name | Archetype | Case (W×H×T mm) | Display (mm / in) | Resolution | PPI | Bezel (mm) | Lug (mm) | Glass & Material |
+| :- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `pixel-watch-41` | Google Pixel Watch 1/2 (41mm) | `domed-pebble` | 41.0 × 41.0 × 12.3 | 30.48 / 1.20" | 384 × 384 | 320 | 5.26 | 20 | 3D domed Gorilla Glass, Polished Steel |
+| 2 | `pixel-watch-3-41` | Google Pixel Watch 3 (41mm) | `domed-pebble` | 41.0 × 41.0 × 12.3 | 32.20 / 1.27" | 408 × 408 | 320 | 4.40 | 20 | 3D domed Gorilla Glass, Matte Aluminum |
+| 3 | `pixel-watch-3-45` | Google Pixel Watch 3 (45mm) | `domed-pebble` | 45.0 × 45.0 × 12.3 | 35.56 / 1.40" | 456 × 456 | 326 | 4.72 | 22 | 3D domed Gorilla Glass, Matte Aluminum |
+| 4 | `galaxy-watch-7-40` | Samsung Galaxy Watch7 (40mm) | `flat-minimalist` | 40.4 × 40.4 × 9.7 | 33.27 / 1.31" | 432 × 432 | 330 | 3.565 | 20 | Flat Sapphire with Rim, Armor Aluminum |
+| 5 | `galaxy-watch-7-44` | Samsung Galaxy Watch7 (44mm) | `flat-minimalist` | 44.4 × 44.4 × 9.7 | 37.34 / 1.47" | 480 × 480 | 327 | 3.53 | 20 | Flat Sapphire with Rim, Armor Aluminum |
+| 6 | `galaxy-watch-5-40` | Samsung Galaxy Watch5 (40mm) | `flat-minimalist` | 40.4 × 39.3 × 9.8 | 30.23 / 1.19" | 396 × 396 | 330 | 5.085 | 20 | Flat Sapphire with Rim, Armor Aluminum |
+| 7 | `galaxy-watch-6-classic-43` | Galaxy Watch6 Classic (43mm) | `classic-rotating-bezel` | 42.5 × 42.5 × 10.9 | 33.27 / 1.31" | 432 × 432 | 330 | 4.615 | 20 | Sunken Sapphire, Stainless Steel + 48-teeth Bezel |
+| 8 | `galaxy-watch-6-classic-47` | Galaxy Watch6 Classic (47mm) | `classic-rotating-bezel` | 46.5 × 46.5 × 10.9 | 37.34 / 1.47" | 480 × 480 | 327 | 4.58 | 20 | Sunken Sapphire, Stainless Steel + 48-teeth Bezel |
+| 9 | `galaxy-watch-ultra-47` | Galaxy Watch Ultra (47mm) | `squircle-cushion-ultra` | 47.4 × 47.4 × 12.1 | 37.34 / 1.47" | 480 × 480 | 327 | 5.03 | 22 | Sunken Sapphire, Titanium Cushion + Orange Quick Button |
+| 10 | `oneplus-watch-2-46` | OnePlus Watch 2 (46mm) | `asymmetric-chrono` | 47.0 × 46.6 × 12.1 | 36.32 / 1.43" | 466 × 466 | 326 | 5.14 | 22 | 2.5D Sapphire with Index Ring, Stainless Steel |
+| 11 | `ticwatch-pro-5-48` | Mobvoi TicWatch Pro 5 (48mm) | `rugged-tactical` | 50.1 × 48.0 × 12.2 | 36.32 / 1.43" | 466 × 466 | 326 | 5.84 | 24 | Sunken Sapphire, Knurled Tactical Bezel + Guarded Crown |
+

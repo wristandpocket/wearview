@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DeviceId } from '../types';
-import { DEVICE_LIST } from '../devices';
+import { DEVICE_GROUPS } from '../devices';
 
 interface HeaderProps {
   selectedDeviceId: DeviceId;
@@ -29,21 +29,37 @@ export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice
         </div>
       </div>
 
-      <div className="device-select" role="radiogroup" aria-label="Watch model">
-        {DEVICE_LIST.map((device) => (
-          <button
-            key={device.id}
-            type="button"
-            className={`device-select-btn ${selectedDeviceId === device.id ? 'active' : ''}`}
-            onClick={() => onSelectDevice(device.id)}
-            role="radio"
-            aria-checked={selectedDeviceId === device.id}
-            title={device.generation}
-          >
-            <span className="label-long">{device.generation.replace(/ \(\d{4}\)$/, '')}</span>
-            <span className="label-short">{device.shortLabel}</span>
-          </button>
-        ))}
+      <div className="device-dropdown-wrapper">
+        <label htmlFor="device-selector" className="device-dropdown-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="7" />
+            <polyline points="12 9 12 12 13.5 13.5" />
+            <path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83" />
+          </svg>
+          <span className="sr-only">Device</span>
+        </label>
+        <select
+          id="device-selector"
+          className="device-dropdown-select"
+          value={selectedDeviceId}
+          onChange={(e) => onSelectDevice(e.target.value as DeviceId)}
+          aria-label="Select smartwatch device"
+        >
+          {DEVICE_GROUPS.map((group) => (
+            <optgroup key={group.id} label={group.name}>
+              {group.devices.map((device) => (
+                <option key={device.id} value={device.id}>
+                  {device.name} — {(device.activeDisplayDiameterMm / 25.4).toFixed(2)}&quot; • {device.resolutionPx.width}×{device.resolutionPx.height}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <span className="device-dropdown-arrow" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
       </div>
 
       <button type="button" className="btn-secondary reset-btn" onClick={onResetCamera} title="Reset camera" aria-label="Reset camera">

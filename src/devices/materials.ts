@@ -16,6 +16,9 @@ export interface WatchMaterials {
    * environment reflections (Fresnel-weighted) on top of the screen and never dims it.
    */
   coverGlass: THREE.MeshPhysicalMaterial;
+  caseTitanium: THREE.MeshPhysicalMaterial;
+  accentOrange: THREE.MeshPhysicalMaterial;
+  bezelTachymeter: THREE.MeshPhysicalMaterial;
   crownSteel: THREE.MeshPhysicalMaterial;
   strapSilicone: THREE.MeshPhysicalMaterial;
   wristSkin: THREE.MeshPhysicalMaterial;
@@ -91,9 +94,31 @@ export function createWatchMaterials(): WatchMaterials {
     sheenColor: new THREE.Color(0xffd9c2),
   });
 
+  const caseTitanium = new THREE.MeshPhysicalMaterial({
+    color: 0x5a5e65,
+    metalness: 0.85,
+    roughness: 0.44,
+  });
+
+  const accentOrange = new THREE.MeshPhysicalMaterial({
+    color: 0xff5e00,
+    metalness: 0.1,
+    roughness: 0.3,
+    clearcoat: 0.5,
+  });
+
+  const bezelTachymeter = new THREE.MeshPhysicalMaterial({
+    color: 0x111317,
+    metalness: 0.3,
+    roughness: 0.45,
+  });
+
   return {
     caseAluminum,
     caseStainlessSteel,
+    caseTitanium,
+    accentOrange,
+    bezelTachymeter,
     sensorGlass,
     bezelBlack,
     displayEmpty,

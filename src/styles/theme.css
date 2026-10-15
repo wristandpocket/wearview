@@ -169,6 +169,84 @@ button {
   background-color: var(--accent-emerald);
 }
 
+.device-dropdown-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 0 0.6rem 0 0.75rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  min-width: 260px;
+  max-width: 420px;
+}
+
+.device-dropdown-wrapper:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.device-dropdown-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.device-dropdown-label {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.device-dropdown-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 1.2rem 7px 0;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-dropdown-select optgroup {
+  background-color: #171c28;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding-top: 4px;
+}
+
+.device-dropdown-select option {
+  background-color: #10141d;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.82rem;
+  padding: 4px 8px;
+}
+
+.device-dropdown-arrow {
+  position: absolute;
+  right: 0.65rem;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+}
+
+.device-dropdown-wrapper:hover .device-dropdown-arrow {
+  color: var(--accent);
+}
+
 .device-select {
   display: flex;
   overflow-x: auto;
@@ -202,14 +280,6 @@ button {
 }
 
 .device-select::-webkit-scrollbar { display: none; }
-
-.label-long { display: none; }
-.label-short { display: inline; }
-
-@media (min-width: 1280px) {
-  .label-long { display: inline; }
-  .label-short { display: none; }
-}
 
 .btn-secondary {
   display: inline-flex;

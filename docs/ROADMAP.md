@@ -13,13 +13,13 @@ exactly the calibrated scale (`ThreeViewer.setRealScale`). Possible follow-ups: 
 
 ---
 
-## 2. Additional Device Profiles (P1)
+## 2. Expanded Top 10+ Device Catalog — shipped
 
-Following the strict research-first methodology established in MVP:
-- **Samsung Galaxy Watch7 / Ultra:** (Watch6 44 mm and Watch5 40 mm shipped.)
-- **Google Pixel Watch 2 & 3 (41 mm and 45 mm variants):** Larger active display areas, curved Actua display specs.
-- **OnePlus Watch 2 / 2R:** Dual-engine architecture, 1.43" AMOLED, distinctive asymmetric stainless steel right chassis.
-- **Mobvoi TicWatch Pro 5:** Dual-layer display (Ultra-low-power FSTN LCD overlaying OLED).
+Shipped all 11 top Wear OS models with 1:1 millimeter physical proportions, 5 procedural archetypes, and grouped dropdown selector:
+- **Google Pixel Watch:** Pixel Watch 1/2 (41mm), Pixel Watch 3 (41mm), Pixel Watch 3 (45mm).
+- **Samsung Galaxy Watch (Modern Flat):** Galaxy Watch7 (40mm & 44mm), Galaxy Watch5 (40mm).
+- **Samsung Galaxy Watch (Classic & Ultra):** Galaxy Watch6 Classic (43mm & 47mm), Galaxy Watch Ultra (47mm).
+- **OnePlus & Mobvoi:** OnePlus Watch 2 (46mm), Mobvoi TicWatch Pro 5 (48mm).
 
 ---
 

@@ -372,6 +372,9 @@ export class ThreeViewer {
     this.materials.bezelBlack.envMap = glassEnv;
     this.materials.bezelBlack.envMapIntensity = cfg.glassReflection * 0.6;
     this.materials.bezelBlack.needsUpdate = true;
+    this.materials.bezelTachymeter.envMap = glassEnv;
+    this.materials.bezelTachymeter.envMapIntensity = cfg.glassReflection * 0.6;
+    this.materials.bezelTachymeter.needsUpdate = true;
     this.renderer.toneMappingExposure = cfg.exposure;
     this.groundShadowMesh.material.opacity = cfg.shadowOpacity;
     this.requestRender();
