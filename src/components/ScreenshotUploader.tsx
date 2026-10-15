@@ -1,14 +1,17 @@
 import React, { useRef, useState } from 'react';
-import type { UploadedImageInfo } from '../types';
+import { visibleSize, elementSize, type ScreenSource } from '../textures/screenTexture';
 
-export type TextureSource = 'sample' | 'test-pattern' | 'user' | null;
+export type TextureSource = 'sample' | 'test-pattern' | 'user' | 'live' | null;
 
 interface ScreenshotUploaderProps {
-  uploadedImage: UploadedImageInfo | null;
+  source: ScreenSource | null;
   onImageSelected: (file: File) => void;
   onImageRemoved: () => void;
   onLoadTestPattern: () => void;
   onLoadSampleGame?: () => void;
+  onCaptureWindow?: () => void;
+  onStopCapture: () => void;
+  onCrop: () => void;
   activeSource?: TextureSource;
   errorMessage: string | null;
   resolutionWarning?: string | null;
@@ -21,17 +24,18 @@ const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
 
-const getFitLabel = (aspect: number): string => {
-  if (Math.abs(aspect - 1.0) < 0.01) return '1:1 · fills display';
-  return `${aspect.toFixed(2)}:1 · centered, not cropped`;
-};
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+const PASTE_KEYS = isMac ? '⌘V' : 'Ctrl+V';
 
 export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
-  uploadedImage,
+  source,
   onImageSelected,
   onImageRemoved,
   onLoadTestPattern,
   onLoadSampleGame,
+  onCaptureWindow,
+  onStopCapture,
+  onCrop,
   activeSource,
   errorMessage,
   resolutionWarning,
@@ -44,6 +48,7 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragActive(false);
     onClearError();
     const file = e.dataTransfer.files?.[0];
@@ -60,6 +65,15 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
     e.target.value = '';
   };
 
+  const dragProps = {
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setIsDragActive(true); },
+    onDragLeave: () => setIsDragActive(false),
+    onDrop: handleDrop,
+  };
+
+  const frame = source ? elementSize(source.element) : null;
+  const shown = source ? visibleSize(source) : null;
+
   return (
     <div className="uploader">
       <input
@@ -70,30 +84,35 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
         onChange={handleFileInputChange}
       />
 
-      {uploadedImage ? (
-        <div
-          className={`image-card ${isDragActive ? 'drag-active' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
-          onDragLeave={() => setIsDragActive(false)}
-          onDrop={handleDrop}
-        >
+      {source && frame && shown ? (
+        <div className={`image-card ${isDragActive ? 'drag-active' : ''}`} {...dragProps}>
           <div className="image-meta-row">
-            <span className="image-name" title={uploadedImage.file.name}>{uploadedImage.file.name}</span>
+            {source.live && <span className="live-dot" aria-label="Live" />}
+            <span className="image-name" title={source.name}>{source.name}</span>
           </div>
           <div className="image-meta-details">
-            <span>{uploadedImage.width} × {uploadedImage.height}</span>
-            <span>{formatFileSize(uploadedImage.file.size)}</span>
-            <span className="image-fit">{getFitLabel(uploadedImage.aspectRatio)}</span>
+            <span>{shown.width} × {shown.height}{source.crop ? ` of ${frame.width} × ${frame.height}` : ''}</span>
+            {source.bytes !== null && <span>{formatFileSize(source.bytes)}</span>}
+            <span className="image-fit">
+              {source.crop ? 'cropped · fills display' : shown.width === shown.height ? '1:1 · fills display' : 'letterboxed'}
+            </span>
           </div>
           <div className="image-actions">
-            <button type="button" className="btn-secondary grow" onClick={openPicker}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              <span>Replace</span>
-            </button>
+            {source.live ? (
+              <button type="button" className="btn-secondary grow" onClick={onStopCapture} title="Stop sharing and keep the last frame">
+                Stop live
+              </button>
+            ) : (
+              <button type="button" className="btn-secondary grow" onClick={openPicker}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span>Replace</span>
+              </button>
+            )}
+            <button type="button" className="btn-secondary" onClick={onCrop} title="Select the square game area [K]">Crop</button>
             <button type="button" className="btn-danger" onClick={onImageRemoved}>Remove</button>
           </div>
         </div>
@@ -101,9 +120,7 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
         <button
           type="button"
           className={`dropzone ${isDragActive ? 'drag-active' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
-          onDragLeave={() => setIsDragActive(false)}
-          onDrop={handleDrop}
+          {...dragProps}
           onClick={openPicker}
         >
           <svg className="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -113,6 +130,21 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
           </svg>
           <span className="dropzone-prompt">Drop a screenshot or tap to browse</span>
           <span className="dropzone-sub">PNG, JPEG or WebP · up to 20 MB · square works best</span>
+        </button>
+      )}
+
+      <p className="uploader-tip">
+        Tip: copy a screenshot (ShareX, Snipping Tool, Unity) and press <kbd>{PASTE_KEYS}</kbd> anywhere. You can also drop files onto the 3D view.
+      </p>
+
+      {onCaptureWindow && !source?.live && (
+        <button type="button" className="btn-secondary capture-btn" onClick={onCaptureWindow} title="Mirror a window live, e.g. the Unity Game view or the Wear OS emulator">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="2" y="4" width="20" height="14" rx="2" />
+            <path d="M8 21h8M12 18v3" />
+            <circle cx="12" cy="11" r="2.5" />
+          </svg>
+          <span>Capture window (live)</span>
         </button>
       )}
 
@@ -129,7 +161,7 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
       )}
 
       <div className="preset-screens-row">
-        <span className="preset-screens-label">Quick samples:</span>
+        <span className="preset-screens-label">Samples:</span>
         <div className="preset-screens-pills">
           {onLoadSampleGame && (
             <button
@@ -147,7 +179,7 @@ export const ScreenshotUploader: React.FC<ScreenshotUploaderProps> = ({
             onClick={onLoadTestPattern}
             title="Load hardware-accurate QA test pattern (resolution, safe zones, degree ticks)"
           >
-            QA Test Pattern
+            QA pattern
           </button>
         </div>
       </div>

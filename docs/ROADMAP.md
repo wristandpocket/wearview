@@ -31,7 +31,13 @@ Shipped all 11 top Wear OS models with 1:1 millimeter physical proportions, 5 pr
 
 ---
 
-## 4. Developer Export & Presets (P2)
+## 4. Developer Export & Presets — mostly shipped
+
+Shipped: PNG export, camera presets (Front / Tilt 35° / Side 75°), side-by-side compare with synced cameras,
+URL-hash shareable view state, clipboard paste, live window capture with crop, native-pixel display.
+Open: transparent-background export, watching a folder for new screenshots (File System Access API).
+
+### Original notes
 
 - One-click high-resolution screenshot export from current camera angle (PNG with transparent or dark studio background).
 - Pre-set camera angles: Top-Down Front Face, $45^\circ$ Hero Angle, Profile Rim View.

@@ -62,9 +62,9 @@ export interface ResolutionCheckResult {
 }
 
 /**
- * Validates whether an image's resolution matches the target watch screen dimensions.
- * Returns non-blocking advisory feedback if the screenshot is non-square or has
- * a different pixel resolution than the watch hardware.
+ * Advisory check of what lands on the display against the panel's native resolution.
+ * Larger square images are fine (they are downsampled like a real render target), so
+ * only a non-square frame or an image smaller than the panel produces a warning.
  */
 export function checkScreenshotResolution(
   width: number,
@@ -77,9 +77,9 @@ export function checkScreenshotResolution(
 
   let warning: string | undefined;
   if (!isSquare) {
-    warning = `Non-square image (${width}×${height}). Wear OS displays are circular or square and non-square screenshots may be stretched or clipped.`;
-  } else if (!matchesNative) {
-    warning = `Image resolution (${width}×${height}) differs from device native resolution (${expectedResolution.width}×${expectedResolution.height}). Texture will be resampled by GPU.`;
+    warning = `Non-square image (${width}×${height}) is letterboxed. Use Crop to select the square game area.`;
+  } else if (width < expectedResolution.width) {
+    warning = `Image (${width}×${height}) is smaller than the display (${expectedResolution.width}×${expectedResolution.height}), so it is upscaled and looks softer than on the watch.`;
   }
 
   return {

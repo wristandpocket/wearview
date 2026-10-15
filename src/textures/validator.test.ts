@@ -61,12 +61,18 @@ describe('checkScreenshotResolution', () => {
     expect(result.warning).toBeUndefined();
   });
 
-  it('returns non-blocking warning for square non-matching resolution', () => {
+  it('warns when a square image is smaller than the display', () => {
     const result = checkScreenshotResolution(400, 400, nativeRes);
     expect(result.isSquare).toBe(true);
     expect(result.matchesNative).toBe(false);
     expect(result.aspectRatio).toBe(1.0);
-    expect(result.warning).toContain('differs from device native resolution');
+    expect(result.warning).toContain('smaller than the display');
+  });
+
+  it('does not warn for a square image larger than the display', () => {
+    const result = checkScreenshotResolution(1024, 1024, nativeRes);
+    expect(result.matchesNative).toBe(false);
+    expect(result.warning).toBeUndefined();
   });
 
   it('returns warning for non-square screenshot', () => {
@@ -74,5 +80,6 @@ describe('checkScreenshotResolution', () => {
     expect(result.isSquare).toBe(false);
     expect(result.matchesNative).toBe(false);
     expect(result.warning).toContain('Non-square image');
+    expect(result.warning).toContain('Crop');
   });
 });

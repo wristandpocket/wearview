@@ -77,3 +77,27 @@ This document records the actual verification results and outcomes for WearView.
 | Calibration dialog closes on Escape | PASS |
 | No-WebGL path shows error overlay instead of crashing | Code fix only — NOT verified in a browser with WebGL disabled |
 | PNG export via `toBlob` | Code fix only — download not verified manually |
+
+## v1.0 production pass — 2026-10-15
+
+New: clipboard paste, drop on 3D view, crop dialog, live window capture, native-pixel mode, side-by-side compare
+with synced cameras, URL-hash share links, MIT license. Verified in the built-in browser (Chromium) on the dev server
+and on `vite preview` of the production build.
+
+| Check | Result | How |
+|---|---|---|
+| `npm.cmd run typecheck` | PASS (0 errors) | |
+| `npm.cmd run test` | PASS (197/197, 9 files) | new: `urlState.test.ts`, `screenTexture.test.ts`, resolution-warning cases |
+| `npm.cmd run build` | PASS | |
+| Production preview console | PASS (no messages) | `vite preview`, compare + safe zones + tilt preset |
+| Paste image (Ctrl+V) | PASS | synthetic `ClipboardEvent` with a 1920×1080 PNG → loaded as `pasted-HHMMSS.png` |
+| Non-square warning points to Crop; 1024² sample on a 480² watch no longer warns | PASS | |
+| Crop dialog: wheel resize, Enter applies, shade clipped to frame | PASS | |
+| Live capture: frames update on the watch, crop applies, Stop keeps last frame and ends the track | PASS | `getDisplayMedia` stubbed with `canvas.captureStream()`; the real browser picker was NOT exercised |
+| Native px: display texture = panel width (480), nearest mag filter, no mipmaps | PASS | |
+| Compare: second viewer, camera positions identical after dragging the first | PASS | |
+| URL hash: state written on change; pasted link applied via `hashchange`; missing keys reset to defaults | PASS | |
+| Phone width (375 px): no horizontal page scroll | PASS | was 381 px before |
+| Sidebar: no horizontal scroll at 1100 px breakpoint | PASS | |
+| Drop a file onto the 3D view | NOT TESTED | drag-and-drop of OS files cannot be driven from the test browser |
+| Firefox / Safari | NOT TESTED | |

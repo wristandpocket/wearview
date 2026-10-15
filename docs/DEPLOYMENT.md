@@ -36,7 +36,7 @@ In `https://github.com/wristandpocket/wearview/settings/pages`:
 Every push to `master` triggers the GitHub Actions pipeline:
 1. `npm ci` — Installs clean dependencies.
 2. `npm run typecheck` — Strict TypeScript validation.
-3. `npm run test` — Executes all Vitest unit tests (16 tests).
+3. `npm run test` — Executes all Vitest unit tests.
 4. `npm run build` — Compiles production bundle with relative asset paths (`base: './'`).
 5. `actions/deploy-pages` — Deploys static bundle to GitHub Pages.
 

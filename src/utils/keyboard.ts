@@ -4,6 +4,9 @@ export interface KeyboardActions {
   resetCamera: () => void;
   toggleViewMode: () => void;
   setCameraAngle: (angle: 'front' | 'tilt' | 'side') => void;
+  toggleCompare?: () => void;
+  togglePixelMode?: () => void;
+  openCrop?: () => void;
 }
 
 /**
@@ -16,6 +19,9 @@ export interface KeyboardActions {
  *   [1] - Front perpendicular view (0°)
  *   [2] - Tilt wrist-glance view (35°)
  *   [3] - Side grazing view (75°)
+ *   [C] - Toggle side-by-side compare
+ *   [N] - Toggle native-pixel display
+ *   [K] - Crop the current screenshot / capture
  */
 export function handleGlobalKeyDown(
   e: {
@@ -70,6 +76,15 @@ export function handleGlobalKeyDown(
       e.preventDefault?.();
       actions.setCameraAngle('side');
       return true;
+    case 'c':
+    case 'n':
+    case 'k': {
+      const action = key === 'c' ? actions.toggleCompare : key === 'n' ? actions.togglePixelMode : actions.openCrop;
+      if (!action) return false;
+      e.preventDefault?.();
+      action();
+      return true;
+    }
     default:
       return false;
   }
