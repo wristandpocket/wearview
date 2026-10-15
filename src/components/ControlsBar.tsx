@@ -14,6 +14,10 @@ interface ControlsBarProps {
   onToggleSafeZones: () => void;
   onSelectCameraAngle?: (angle: CameraPreset) => void;
   onExportPng?: () => void;
+  nativePixels: boolean;
+  onToggleNativePixels: () => void;
+  compare: boolean;
+  onToggleCompare: () => void;
 }
 
 const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; title: string; icon: React.ReactNode }> = [
@@ -90,6 +94,10 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
   onToggleSafeZones,
   onSelectCameraAngle,
   onExportPng,
+  nativePixels,
+  onToggleNativePixels,
+  compare,
+  onToggleCompare,
 }) => {
   return (
     <div className="controls-dock">
@@ -143,6 +151,37 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             <span>{opt.label}</span>
           </button>
         ))}
+      </div>
+
+      <div className="segmented-bar" role="group" aria-label="Display">
+        <button
+          type="button"
+          className={`segmented-btn ${nativePixels ? 'active accent' : ''}`}
+          onClick={onToggleNativePixels}
+          aria-pressed={nativePixels}
+          title="Show the screen at the watch's real pixel resolution with crisp pixels, like on the device [N]"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+          <span>Native px</span>
+        </button>
+        <button
+          type="button"
+          className={`segmented-btn ${compare ? 'active accent' : ''}`}
+          onClick={onToggleCompare}
+          aria-pressed={compare}
+          title="Compare two watches side by side; cameras stay in sync [C]"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="7" cy="12" r="4.5" />
+            <circle cx="17" cy="12" r="4.5" />
+          </svg>
+          <span>Compare</span>
+        </button>
       </div>
 
       <div className="segmented-bar tools-bar" role="group" aria-label="Inspection tools">

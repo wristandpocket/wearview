@@ -7,6 +7,7 @@ import { buildDevice, DEFAULT_DEVICE_ID } from '../devices';
 import type { DeviceModelResult } from '../devices/types';
 import { WRIST_SECTION } from '../devices/geometry';
 import { buildWristModel, type WristModelResult } from '../wrist/wristModel';
+import { ScreenTexture, type PixelMode, type ScreenSource } from '../textures/screenTexture';
 
 export interface ViewerOptions {
   container: HTMLElement;
@@ -16,6 +17,8 @@ export interface ViewerOptions {
   renderer?: THREE.WebGLRenderer;
   onInitSuccess?: () => void;
   onInitError?: (error: Error) => void;
+  /** Fired while the user drives this viewer's camera, so a second viewer can follow it. */
+  onCameraChange?: (position: THREE.Vector3, target: THREE.Vector3) => void;
 }
 
 interface LightingConfig {
@@ -154,7 +157,12 @@ export class ThreeViewer {
   private materials: WatchMaterials;
   private currentDeviceModel: DeviceModelResult | null = null;
   private wristModel: WristModelResult | null = null;
-  private currentTexture: THREE.Texture | null = null;
+  private screen: ScreenTexture | null = null;
+  private pixelMode: PixelMode = 'smooth';
+  private onCameraChange?: (position: THREE.Vector3, target: THREE.Vector3) => void;
+  /** True after the user grabbed this viewer's controls; cleared when another viewer drives. */
+  private driving = false;
+  private applyingSync = false;
   private currentLightingPreset: LightingPreset;
   private viewMode: ViewMode;
   private safeZoneMesh: THREE.Mesh | null = null;
@@ -180,8 +188,10 @@ export class ThreeViewer {
     this.currentLightingPreset = options.initialLighting || 'studio';
     this.viewMode = options.initialViewMode || 'watch';
     this.materials = createWatchMaterials();
+    this.onCameraChange = options.onCameraChange;
 
     try {
+      this.screen = new ScreenTexture();
       this.initRenderer(options.renderer);
       this.initScene();
       this.initCameraAndControls();
@@ -293,7 +303,7 @@ export class ThreeViewer {
     this.controls.screenSpacePanning = true;
     this.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     this.controls.addEventListener('start', this.onControlsStart);
-    this.controls.addEventListener('change', this.requestRender);
+    this.controls.addEventListener('change', this.onControlsChange);
   }
 
   private initLighting(): void {
@@ -351,7 +361,8 @@ export class ThreeViewer {
 
     this.wristModel?.fitToWatch(this.currentDeviceModel.backY);
     this.updateGroundPlane();
-    this.applyTextureToDisplay(this.currentTexture);
+    this.screen?.configure(this.pixelMode, this.currentDeviceModel.spec.resolutionPx.width);
+    this.applyTextureToDisplay();
     if (this.realScale !== null) this.handleResize();
     this.requestRender();
   }
@@ -360,9 +371,32 @@ export class ThreeViewer {
     this.loadDevice(deviceId);
   }
 
-  public setScreenshotTexture(texture: THREE.Texture | null): void {
-    this.currentTexture = texture;
-    this.applyTextureToDisplay(texture);
+  /** Shows an image or live capture on the display (null = screen off). */
+  public setScreenSource(source: ScreenSource | null): void {
+    if (!this.screen) return;
+    this.screen.setSource(source);
+    this.applyTextureToDisplay();
+  }
+
+  public setPixelMode(mode: PixelMode): void {
+    this.pixelMode = mode;
+    if (!this.screen || !this.currentDeviceModel) return;
+    this.screen.configure(mode, this.currentDeviceModel.spec.resolutionPx.width);
+    this.applyTextureToDisplay();
+  }
+
+  /** Follows a camera driven by another viewer (side-by-side compare). */
+  public syncCamera(position: THREE.Vector3, target: THREE.Vector3): void {
+    if (!this.ready) return;
+    this.driving = false;
+    this.fly = null;
+    this.userMovedCamera = true;
+    this.applyingSync = true;
+    this.camera.position.copy(position);
+    this.controls.target.copy(target);
+    this.controls.update();
+    this.applyingSync = false;
+    this.requestRender();
   }
 
   public resetCamera(): void {
@@ -618,7 +652,15 @@ export class ThreeViewer {
 
   private onControlsStart = (): void => {
     this.userMovedCamera = true;
+    this.driving = true;
     this.fly = null;
+  };
+
+  private onControlsChange = (): void => {
+    this.needsRender = true;
+    if (this.driving && !this.applyingSync) {
+      this.onCameraChange?.(this.camera.position, this.controls.target);
+    }
   };
 
   private onContextLost = (event: Event): void => {
@@ -669,12 +711,12 @@ export class ThreeViewer {
     this.requestRender();
   }
 
-  private applyTextureToDisplay(texture: THREE.Texture | null): void {
+  private applyTextureToDisplay(): void {
     if (!this.currentDeviceModel) return;
     const mat = this.currentDeviceModel.displayMesh.material;
+    const texture = this.screen?.hasSource ? this.screen.texture : null;
     if (texture) {
-      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-      texture.needsUpdate = true;
+      texture.anisotropy = this.pixelMode === 'native' ? 1 : this.renderer.capabilities.getMaxAnisotropy();
       mat.map = texture;
       mat.color.setHex(0xffffff);
     } else {
@@ -797,6 +839,7 @@ export class ThreeViewer {
 
     // update() returns true while damping is still moving the camera
     if (this.controls.update()) this.needsRender = true;
+    if (this.screen?.tick()) this.needsRender = true;
 
     if (this.needsRender) {
       this.needsRender = false;
@@ -817,7 +860,7 @@ export class ThreeViewer {
         for (const mat of mats) {
           if (shared.has(mat)) continue;
           // Never dispose the user's screenshot texture with the per-device display material
-          if ('map' in mat && (mat as THREE.MeshBasicMaterial).map === this.currentTexture) {
+          if ('map' in mat && (mat as THREE.MeshBasicMaterial).map === this.screen?.texture) {
             (mat as THREE.MeshBasicMaterial).map = null;
           }
           mat.dispose();
@@ -834,7 +877,7 @@ export class ThreeViewer {
 
     if (this.controls) {
       this.controls.removeEventListener('start', this.onControlsStart);
-      this.controls.removeEventListener('change', this.requestRender);
+      this.controls.removeEventListener('change', this.onControlsChange);
       this.controls.dispose();
     }
 
@@ -859,6 +902,8 @@ export class ThreeViewer {
       this.groundShadowMesh.material.dispose();
     }
 
+    this.screen?.dispose();
+    this.screen = null;
     Object.values(this.materials).forEach((mat) => mat.dispose());
     const envs = new Set([...Object.values(this.envMaps), ...Object.values(this.glassEnvMaps)]);
     envs.forEach((tex) => tex?.dispose());

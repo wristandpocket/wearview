@@ -64,21 +64,3 @@ export interface DeviceSpec {
   confirmedSources: string[];
   notes: string;
 }
-
-export interface UploadedImageInfo {
-  file: File;
-  objectUrl: string;
-  width: number;
-  height: number;
-  aspectRatio: number;
-  texture: import('three').Texture;
-}
-
-export interface ViewerState {
-  selectedDeviceId: DeviceId;
-  viewMode: ViewMode;
-  lightingPreset: LightingPreset;
-  uploadedImage: UploadedImageInfo | null;
-  isLoading: boolean;
-  errorMessage: string | null;
-}

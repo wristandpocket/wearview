@@ -1,196 +1,302 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type { DeviceId, LightingPreset, ViewMode, UploadedImageInfo } from './types';
-import { DEFAULT_DEVICE_ID, getDeviceSpec, normalizeDeviceId } from './devices';
+import type * as THREE from 'three';
+import type { DeviceId, LightingPreset, ViewMode } from './types';
+import { DEFAULT_DEVICE_ID, DEVICE_LIST, getDeviceSpec, normalizeDeviceId } from './devices';
 import { guessPxPerMm, loadAnyCalibration, loadCalibration, saveCalibration } from './calibration/calibration';
 import { CalibrationDialog } from './components/CalibrationDialog';
-import { ThreeViewer } from './viewer/ThreeViewer';
-import { loadScreenshotTexture, disposeUploadedTexture } from './textures/textureLoader';
+import { CropDialog } from './components/CropDialog';
+import {
+  fileFromClipboard,
+  freezeLiveSource,
+  isWindowCaptureSupported,
+  loadScreenSource,
+  startWindowCapture,
+  stopScreenSource,
+} from './textures/textureLoader';
+import { visibleSize, type CropRect, type PixelMode, type ScreenSource } from './textures/screenTexture';
 import { createTestPatternFile } from './textures/testPattern';
 import { checkScreenshotResolution } from './textures/validator';
-import { Header } from './components/Header';
+import { DeviceOptions, Header } from './components/Header';
 import { ControlsBar } from './components/ControlsBar';
 import { ScreenshotUploader, type TextureSource } from './components/ScreenshotUploader';
 import { DeviceSpecDrawer } from './components/DeviceSpecDrawer';
-import { ViewportOverlay } from './components/ViewportOverlay';
+import { SpecPill, ViewportOverlay } from './components/ViewportOverlay';
+import { ViewerPane, type ViewerPaneHandle } from './components/ViewerPane';
 import { handleGlobalKeyDown } from './utils/keyboard';
+import { parseHash, toHash, type ShareableState } from './utils/urlState';
 import './styles/theme.css';
 
 const DEVICE_STORAGE_KEY = 'wearview.device';
+type CameraAngle = 'front' | 'tilt' | 'side';
 
-function initialDevice(): DeviceId {
+function initialState(): ShareableState {
+  let device: DeviceId = DEFAULT_DEVICE_ID;
   try {
     const saved = window.localStorage.getItem(DEVICE_STORAGE_KEY);
-    if (saved) return normalizeDeviceId(saved);
+    if (saved) device = normalizeDeviceId(saved);
   } catch {
     // ignore unavailable storage
   }
-  return DEFAULT_DEVICE_ID;
+  return parseHash(window.location.hash, {
+    device,
+    compareDevice: null,
+    lighting: 'studio',
+    viewMode: 'watch',
+    safeZones: false,
+    pixelMode: 'smooth',
+  });
+}
+
+/** A different watch to compare against: the first one from another family, so the contrast is useful. */
+function defaultCompareDevice(primary: DeviceId): DeviceId {
+  const spec = getDeviceSpec(primary);
+  return (DEVICE_LIST.find((d) => d.familyGroup !== spec.familyGroup) ?? DEVICE_LIST[0]).id;
+}
+
+function testPatternFor(id: DeviceId): Promise<File> {
+  const spec = getDeviceSpec(id);
+  return createTestPatternFile({
+    size: spec.resolutionPx.width,
+    widthPx: spec.resolutionPx.width,
+    heightPx: spec.resolutionPx.height,
+    displayDiameterMm: spec.activeDisplayDiameterMm,
+    ppi: spec.ppi,
+    deviceName: spec.shortLabel,
+  });
 }
 
 export const App: React.FC = () => {
-  const [selectedDeviceId, setSelectedDeviceId] = useState<DeviceId>(initialDevice);
-  const [viewMode, setViewMode] = useState<ViewMode>('watch');
-  const [lightingPreset, setLightingPreset] = useState<LightingPreset>('studio');
-  const [uploadedImage, setUploadedImage] = useState<UploadedImageInfo | null>(null);
+  const [initial] = useState(initialState);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<DeviceId>(initial.device);
+  const [compareDeviceId, setCompareDeviceId] = useState<DeviceId | null>(initial.compareDevice);
+  const [viewMode, setViewMode] = useState<ViewMode>(initial.viewMode);
+  const [lightingPreset, setLightingPreset] = useState<LightingPreset>(initial.lighting);
+  const [safeZones, setSafeZones] = useState(initial.safeZones);
+  const [pixelMode, setPixelMode] = useState<PixelMode>(initial.pixelMode);
+  const [source, setSource] = useState<ScreenSource | null>(null);
   const [textureSource, setTextureSource] = useState<TextureSource>('sample');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [webglError, setWebglError] = useState<string | null>(null);
   const [pxPerMm, setPxPerMm] = useState<number | null>(null); // non-null = real-size mode on
   const [calibrating, setCalibrating] = useState(false);
+  const [cropping, setCropping] = useState(false);
   const [calibrationNotice, setCalibrationNotice] = useState<string | null>(null);
-  const [safeZones, setSafeZones] = useState(false);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [dropActive, setDropActive] = useState(false);
 
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const viewerInstanceRef = useRef<ThreeViewer | null>(null);
+  const primaryRef = useRef<ViewerPaneHandle>(null);
+  const compareRef = useRef<ViewerPaneHandle>(null);
+  const viewers = useCallback(
+    () => [primaryRef.current?.viewer, compareRef.current?.viewer].filter((v) => !!v),
+    []
+  );
 
-  // Initialize ThreeViewer on mount
-  useEffect(() => {
-    if (!viewportRef.current) return;
+  // ---------------------------------------------------------------- screen source
 
-    const viewer = new ThreeViewer({
-      container: viewportRef.current,
-      initialDeviceId: selectedDeviceId,
-      initialLighting: lightingPreset,
-      initialViewMode: viewMode,
-      onInitError: (err) => {
-        setWebglError(err.message);
-      }
-    });
+  const sourceRef = useRef(source);
+  sourceRef.current = source;
 
-    if (!viewer.ready) {
-      viewer.dispose();
-      return;
-    }
-    viewerInstanceRef.current = viewer;
-    if (import.meta.env.DEV) (window as unknown as { __wearview?: ThreeViewer }).__wearview = viewer;
-
-    return () => {
-      viewer.dispose();
-      viewerInstanceRef.current = null;
-    };
+  // Only one source at a time: a replaced live capture is stopped
+  const replaceSource = useCallback((next: ScreenSource | null, kind: TextureSource) => {
+    const prev = sourceRef.current;
+    if (prev && prev !== next) stopScreenSource(prev);
+    sourceRef.current = next;
+    setSource(next);
+    setTextureSource(kind);
   }, []);
 
-  // Handle generalized image loading
+  /** Ends a live capture but keeps its last frame on the display. */
+  const freezeLive = useCallback(() => {
+    const prev = sourceRef.current;
+    if (!prev?.live) return;
+    const still = freezeLiveSource(prev);
+    sourceRef.current = still;
+    setSource(still);
+  }, []);
+
   const loadTokenRef = useRef(0);
-  const handleLoadImage = useCallback(async (file: File, source: TextureSource = 'user') => {
+  const handleLoadImage = useCallback(async (file: File, kind: TextureSource = 'user') => {
     setErrorMessage(null);
     const token = ++loadTokenRef.current;
     try {
-      const info = await loadScreenshotTexture(file);
-      if (token !== loadTokenRef.current) {
-        disposeUploadedTexture(info);
-        return;
-      }
-      setUploadedImage((prev) => {
-        if (prev) {
-          disposeUploadedTexture(prev);
-        }
-        return info;
-      });
-      setTextureSource(source);
+      const next = await loadScreenSource(file);
+      if (token !== loadTokenRef.current) return;
+      replaceSource(next, kind);
     } catch (err) {
       if (token !== loadTokenRef.current) return;
-      const msg = err instanceof Error ? err.message : 'Failed to load image file.';
-      setErrorMessage(msg);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load image file.');
     }
-  }, []);
+  }, [replaceSource]);
 
-  // Handle user-dropped or picked file
   const handleImageSelected = useCallback((file: File) => {
     handleLoadImage(file, 'user');
   }, [handleLoadImage]);
 
-  // Handle image removal
   const handleImageRemoved = useCallback(() => {
     loadTokenRef.current++;
-    setUploadedImage((prev) => {
-      if (prev) {
-        disposeUploadedTexture(prev);
-      }
-      return null;
-    });
-    setTextureSource(null);
+    replaceSource(null, null);
     setErrorMessage(null);
-  }, []);
+  }, [replaceSource]);
 
-  const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
-
-  // Handle QA test pattern loading matching active device screen resolution and physical metadata
   const handleLoadTestPattern = useCallback(async () => {
     setErrorMessage(null);
     try {
-      const testFile = await createTestPatternFile({
-        size: currentDeviceSpec.resolutionPx.width,
-        widthPx: currentDeviceSpec.resolutionPx.width,
-        heightPx: currentDeviceSpec.resolutionPx.height,
-        displayDiameterMm: currentDeviceSpec.activeDisplayDiameterMm,
-        ppi: currentDeviceSpec.ppi,
-        deviceName: currentDeviceSpec.shortLabel,
-      });
-      await handleLoadImage(testFile, 'test-pattern');
+      await handleLoadImage(await testPatternFor(selectedDeviceId), 'test-pattern');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to generate test pattern.';
-      setErrorMessage(msg);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to generate test pattern.');
     }
-  }, [currentDeviceSpec, handleLoadImage]);
+  }, [selectedDeviceId, handleLoadImage]);
 
-  // Handle Sample Game (Cyberpunk 3D) loading
   const handleLoadSampleGame = useCallback(async () => {
     setErrorMessage(null);
     try {
       const response = await fetch('./cyberpunk3d-screen2-full.webp');
       if (!response.ok) throw new Error('Could not fetch sample game image.');
       const blob = await response.blob();
-      const defaultFile = new File([blob], 'cyberpunk3d-screen2-full.webp', {
-        type: 'image/webp'
-      });
-      await handleLoadImage(defaultFile, 'sample');
+      await handleLoadImage(new File([blob], 'cyberpunk3d-screen2-full.webp', { type: 'image/webp' }), 'sample');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load sample game.';
-      setErrorMessage(msg);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load sample game.');
     }
   }, [handleLoadImage]);
 
-  // Auto-load default Cyberpunk screenshot on initial mount
+  // Sample screen on first load
   useEffect(() => {
     handleLoadSampleGame();
   }, [handleLoadSampleGame]);
 
-  // Update device model and auto-regenerate test pattern if active
-  const lastDeviceRef = useRef<DeviceId | null>(null);
-  useEffect(() => {
-    const deviceChanged = lastDeviceRef.current !== selectedDeviceId;
-    lastDeviceRef.current = selectedDeviceId;
-    if (!deviceChanged) return;
-    if (viewerInstanceRef.current) {
-      viewerInstanceRef.current.loadDevice(selectedDeviceId);
+  const handleCaptureWindow = useCallback(async () => {
+    setErrorMessage(null);
+    loadTokenRef.current++;
+    try {
+      const live = await startWindowCapture();
+      // The user pressed "Stop sharing" in the browser: keep the last frame on screen
+      live.stream?.getVideoTracks()[0]?.addEventListener('ended', () => {
+        if (sourceRef.current?.stream === live.stream) freezeLive();
+      });
+      replaceSource(live, 'live');
+      setCropping(true);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Could not start window capture.');
     }
+  }, [replaceSource, freezeLive]);
+
+  const handleCropApplied = useCallback((crop: CropRect | null) => {
+    setCropping(false);
+    setSource((prev) => (prev ? { ...prev, crop } : prev));
+  }, []);
+
+  // Stop a running capture when the app goes away
+  useEffect(() => () => stopScreenSource(sourceRef.current), []);
+
+  // Paste an image from the clipboard anywhere on the page
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const file = fileFromClipboard(e.clipboardData);
+      if (!file) return;
+      e.preventDefault();
+      handleLoadImage(file, 'user');
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [handleLoadImage]);
+
+  // ---------------------------------------------------------------- devices
+
+  const currentDeviceSpec = getDeviceSpec(selectedDeviceId);
+  const compareSpec = compareDeviceId ? getDeviceSpec(compareDeviceId) : null;
+
+  // The QA pattern is drawn for one panel; regenerate it when the primary watch changes
+  const lastDeviceRef = useRef<DeviceId>(selectedDeviceId);
+  useEffect(() => {
+    if (lastDeviceRef.current === selectedDeviceId) return;
+    lastDeviceRef.current = selectedDeviceId;
     try {
       window.localStorage.setItem(DEVICE_STORAGE_KEY, selectedDeviceId);
     } catch {
       // ignore unavailable storage
     }
-
-    // Auto-regenerate test pattern for new watch dimensions
     if (textureSource === 'test-pattern') {
-      const spec = getDeviceSpec(selectedDeviceId);
-      createTestPatternFile({
-        size: spec.resolutionPx.width,
-        widthPx: spec.resolutionPx.width,
-        heightPx: spec.resolutionPx.height,
-        displayDiameterMm: spec.activeDisplayDiameterMm,
-        ppi: spec.ppi,
-        deviceName: spec.shortLabel,
-      })
+      testPatternFor(selectedDeviceId)
         .then((file) => handleLoadImage(file, 'test-pattern'))
         .catch((err) => console.warn('Failed to auto-regenerate test pattern:', err));
     }
   }, [selectedDeviceId, textureSource, handleLoadImage]);
 
-  // Real-size (1:1) mode
+  const handleSelectDevice = useCallback((id: DeviceId | string) => {
+    setSelectedDeviceId(normalizeDeviceId(id));
+  }, []);
+
+  const handleToggleCompare = useCallback(() => {
+    setCompareDeviceId((prev) => (prev ? null : defaultCompareDevice(selectedDeviceId)));
+  }, [selectedDeviceId]);
+
+  // Keep the two cameras locked together while either one is dragged
+  const syncFromPrimary = useCallback((pos: THREE.Vector3, target: THREE.Vector3) => {
+    compareRef.current?.viewer?.syncCamera(pos, target);
+  }, []);
+  const syncFromCompare = useCallback((pos: THREE.Vector3, target: THREE.Vector3) => {
+    primaryRef.current?.viewer?.syncCamera(pos, target);
+  }, []);
+
+  // ---------------------------------------------------------------- shareable state
+
   useEffect(() => {
-    viewerInstanceRef.current?.setRealScale(pxPerMm);
-  }, [pxPerMm]);
+    const hash = toHash({
+      device: selectedDeviceId,
+      compareDevice: compareDeviceId,
+      lighting: lightingPreset,
+      viewMode,
+      safeZones,
+      pixelMode,
+    });
+    if (window.location.hash !== hash) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    }
+  }, [selectedDeviceId, compareDeviceId, lightingPreset, viewMode, safeZones, pixelMode]);
+
+  // A shared link pasted into an open tab only changes the hash
+  const stateRef = useRef<ShareableState>(initial);
+  stateRef.current = {
+    device: selectedDeviceId,
+    compareDevice: compareDeviceId,
+    lighting: lightingPreset,
+    viewMode,
+    safeZones,
+    pixelMode,
+  };
+  useEffect(() => {
+    const onHashChange = () => {
+      // Links omit default values, so a missing key means "default", not "keep current"
+      const next = parseHash(window.location.hash, {
+        device: stateRef.current.device,
+        compareDevice: null,
+        lighting: 'studio',
+        viewMode: 'watch',
+        safeZones: false,
+        pixelMode: 'smooth',
+      });
+      setSelectedDeviceId(next.device);
+      setCompareDeviceId(next.compareDevice);
+      setLightingPreset(next.lighting);
+      setViewMode(next.viewMode);
+      setSafeZones(next.safeZones);
+      setPixelMode(next.pixelMode);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareStatus('Link copied');
+    } catch {
+      setShareStatus('Copy failed');
+    }
+    window.setTimeout(() => setShareStatus(null), 2000);
+  }, []);
+
+  // ---------------------------------------------------------------- real size (1:1)
 
   // A calibration is only valid for the zoom level / monitor it was made on
   useEffect(() => {
@@ -223,65 +329,31 @@ export const App: React.FC = () => {
     setPxPerMm(value);
   }, []);
 
-  // Update lighting preset
-  useEffect(() => {
-    if (viewerInstanceRef.current) {
-      viewerInstanceRef.current.setLightingPreset(lightingPreset);
-    }
-  }, [lightingPreset]);
+  // ---------------------------------------------------------------- camera & tools
 
-  // Update view mode (Watch vs On wrist)
-  useEffect(() => {
-    if (viewerInstanceRef.current) {
-      viewerInstanceRef.current.setViewMode(viewMode);
-    }
-  }, [viewMode]);
-
-  // Update texture on viewer
-  useEffect(() => {
-    if (viewerInstanceRef.current) {
-      viewerInstanceRef.current.setScreenshotTexture(
-        uploadedImage ? uploadedImage.texture : null
-      );
-    }
-  }, [uploadedImage]);
-
-  // Handle camera reset
   const handleResetCamera = useCallback(() => {
-    if (viewerInstanceRef.current) {
-      viewerInstanceRef.current.resetCamera();
-    }
-  }, []);
+    viewers().forEach((v) => v.resetCamera());
+  }, [viewers]);
 
-  // Handle camera angle preset
-  const handleCameraAngle = useCallback((angle: 'front' | 'tilt' | 'side') => {
-    if (pxPerMm !== null && angle !== 'front') {
-      setPxPerMm(null);
-    }
-    viewerInstanceRef.current?.setCameraAngle(angle);
-  }, [pxPerMm]);
+  const handleCameraAngle = useCallback((angle: CameraAngle) => {
+    if (pxPerMm !== null && angle !== 'front') setPxPerMm(null);
+    viewers().forEach((v) => v.setCameraAngle(angle));
+  }, [pxPerMm, viewers]);
 
-  // Handle safe-zone overlay toggle
-  const handleToggleSafeZones = useCallback(() => {
-    setSafeZones((prev) => {
-      const next = !prev;
-      viewerInstanceRef.current?.setSafeZonesEnabled(next);
-      return next;
-    });
-  }, []);
+  const handleToggleSafeZones = useCallback(() => setSafeZones((prev) => !prev), []);
+  const handleTogglePixelMode = useCallback(() => setPixelMode((m) => (m === 'native' ? 'smooth' : 'native')), []);
 
-  // Handle high-resolution PNG snapshot export
   const handleExportPng = useCallback(() => {
-    viewerInstanceRef.current?.exportPngSnapshot();
+    viewers().forEach((v) => v.exportPngSnapshot());
+  }, [viewers]);
+
+  const handleOpenCrop = useCallback(() => {
+    if (sourceRef.current) setCropping(true);
   }, []);
 
-  const handleSelectDevice = useCallback((id: DeviceId | string) => {
-    setSelectedDeviceId(normalizeDeviceId(id));
-  }, []);
-
-  // Centralized keyboard shortcuts (disabled while the calibration dialog is open)
+  // Centralized keyboard shortcuts (disabled while a dialog is open)
   useEffect(() => {
-    if (calibrating) return;
+    if (calibrating || cropping) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       handleGlobalKeyDown(e, {
         exportPng: handleExportPng,
@@ -289,15 +361,49 @@ export const App: React.FC = () => {
         resetCamera: handleResetCamera,
         toggleViewMode: () => setViewMode((m) => (m === 'watch' ? 'wrist' : 'watch')),
         setCameraAngle: handleCameraAngle,
+        toggleCompare: handleToggleCompare,
+        togglePixelMode: handleTogglePixelMode,
+        openCrop: handleOpenCrop,
       });
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [calibrating, handleExportPng, handleToggleSafeZones, handleResetCamera, handleCameraAngle]);
+  }, [calibrating, cropping, handleExportPng, handleToggleSafeZones, handleResetCamera, handleCameraAngle,
+    handleToggleCompare, handleTogglePixelMode, handleOpenCrop]);
 
-  const resolutionWarning = uploadedImage
-    ? checkScreenshotResolution(uploadedImage.width, uploadedImage.height, currentDeviceSpec.resolutionPx).warning
+  // ---------------------------------------------------------------- drop onto the 3D view
+
+  const stageDragProps = {
+    onDragOver: (e: React.DragEvent) => {
+      if (!Array.from(e.dataTransfer.types).includes('Files')) return;
+      e.preventDefault();
+      setDropActive(true);
+    },
+    onDragLeave: (e: React.DragEvent) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropActive(false);
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDropActive(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleLoadImage(file, 'user');
+    },
+  };
+
+  const shown = source ? visibleSize(source) : null;
+  const resolutionWarning = shown
+    ? checkScreenshotResolution(shown.width, shown.height, currentDeviceSpec.resolutionPx).warning
     : null;
+
+  const paneProps = {
+    lighting: lightingPreset,
+    viewMode,
+    safeZones,
+    pxPerMm,
+    source,
+    pixelMode,
+    onInitError: setWebglError,
+  };
 
   return (
     <div className="app-container">
@@ -305,21 +411,63 @@ export const App: React.FC = () => {
         selectedDeviceId={selectedDeviceId}
         onSelectDevice={handleSelectDevice}
         onResetCamera={handleResetCamera}
+        onShare={handleShare}
+        shareStatus={shareStatus}
       />
 
       <main className="app-workspace">
-        <section className="stage" aria-label="3D preview">
-          <div className="viewport-container" data-lighting={lightingPreset}>
-            <div ref={viewportRef} className="canvas-mount" />
+        <section className="stage" aria-label="3D preview" {...stageDragProps}>
+          <div
+            className={`viewport-container ${compareSpec ? 'compare' : ''}`}
+            data-lighting={lightingPreset}
+          >
+            <div className="viewer-slot">
+              <ViewerPane
+                ref={primaryRef}
+                deviceId={selectedDeviceId}
+                onCameraChange={compareSpec ? syncFromPrimary : undefined}
+                debugName="__wearview"
+                {...paneProps}
+              />
+              {!webglError && <SpecPill spec={currentDeviceSpec} />}
+            </div>
+
+            {compareSpec && compareDeviceId && (
+              <div className="viewer-slot">
+                <ViewerPane
+                  ref={compareRef}
+                  deviceId={compareDeviceId}
+                  onCameraChange={syncFromCompare}
+                  debugName="__wearviewCompare"
+                  {...paneProps}
+                />
+                {!webglError && (
+                  <SpecPill spec={compareSpec}>
+                    <label className="sr-only" htmlFor="compare-device">Compare with</label>
+                    <select
+                      id="compare-device"
+                      className="compare-select"
+                      value={compareDeviceId}
+                      onChange={(e) => setCompareDeviceId(normalizeDeviceId(e.target.value))}
+                    >
+                      <DeviceOptions />
+                    </select>
+                  </SpecPill>
+                )}
+              </div>
+            )}
+
             <ViewportOverlay
               deviceSpec={currentDeviceSpec}
-              hasImage={uploadedImage !== null}
+              hasImage={source !== null}
               webglError={webglError}
               realSize={pxPerMm !== null}
               notice={calibrationNotice}
               onRecalibrate={() => setCalibrating(true)}
               onDismissNotice={() => setCalibrationNotice(null)}
             />
+
+            {dropActive && <div className="drop-overlay">Drop image to preview</div>}
           </div>
 
           <ControlsBar
@@ -333,20 +481,27 @@ export const App: React.FC = () => {
             onToggleSafeZones={handleToggleSafeZones}
             onSelectCameraAngle={handleCameraAngle}
             onExportPng={handleExportPng}
+            nativePixels={pixelMode === 'native'}
+            onToggleNativePixels={handleTogglePixelMode}
+            compare={compareSpec !== null}
+            onToggleCompare={handleToggleCompare}
           />
         </section>
 
         <aside className="sidebar-panel">
           <section className="panel-section">
             <div className="section-label">
-              <span>Game screenshot</span>
+              <span>Game screen</span>
             </div>
             <ScreenshotUploader
-              uploadedImage={uploadedImage}
+              source={source}
               onImageSelected={handleImageSelected}
               onImageRemoved={handleImageRemoved}
               onLoadTestPattern={handleLoadTestPattern}
               onLoadSampleGame={handleLoadSampleGame}
+              onCaptureWindow={isWindowCaptureSupported() ? handleCaptureWindow : undefined}
+              onStopCapture={freezeLive}
+              onCrop={handleOpenCrop}
               activeSource={textureSource}
               errorMessage={errorMessage}
               resolutionWarning={resolutionWarning}
@@ -366,6 +521,10 @@ export const App: React.FC = () => {
           onConfirm={handleCalibrated}
           onCancel={() => setCalibrating(false)}
         />
+      )}
+
+      {cropping && source && (
+        <CropDialog source={source} onApply={handleCropApplied} onCancel={() => setCropping(false)} />
       )}
     </div>
   );

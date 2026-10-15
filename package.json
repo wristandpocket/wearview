@@ -1,7 +1,14 @@
 {
   "name": "wearview",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Preview Wear OS game and app screens on accurate 3D smartwatch models, at real physical size, in the browser.",
+  "license": "MIT",
+  "homepage": "https://wristandpocket.dev/wearview/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wristandpocket/wearview.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

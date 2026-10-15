@@ -1,6 +1,17 @@
 import React from 'react';
 import type { DeviceSpec } from '../types';
 
+export const SpecPill: React.FC<{ spec: DeviceSpec; children?: React.ReactNode }> = ({ spec, children }) => (
+  <div className={`spec-pill ${children ? 'interactive' : ''}`}>
+    {children ?? <strong>{spec.name}</strong>}
+    <span className="spec-pill-detail">
+      {spec.activeDisplayDiameterMm} mm ({(spec.activeDisplayDiameterMm / 25.4).toFixed(2)}&quot;) ·{' '}
+      <span className="spec-highlight">{spec.resolutionPx.width}×{spec.resolutionPx.height}</span>{' '}
+      ({spec.ppi} PPI) · {spec.caseDiameterMm}×{spec.caseHeightMm} mm
+    </span>
+  </div>
+);
+
 interface ViewportOverlayProps {
   deviceSpec: DeviceSpec;
   hasImage: boolean;
@@ -32,15 +43,6 @@ export const ViewportOverlay: React.FC<ViewportOverlayProps> = ({
 
   return (
     <>
-      <div className="spec-pill">
-        <strong>{deviceSpec.name}</strong>
-        <span className="spec-pill-detail">
-          {deviceSpec.activeDisplayDiameterMm} mm ({(deviceSpec.activeDisplayDiameterMm / 25.4).toFixed(2)}&quot;) ·{' '}
-          <span className="spec-highlight">{deviceSpec.resolutionPx.width}×{deviceSpec.resolutionPx.height}</span>{' '}
-          ({deviceSpec.ppi} PPI) · {deviceSpec.caseDiameterMm}×{deviceSpec.caseHeightMm} mm
-        </span>
-      </div>
-
       {realSize && (
         <div className="real-size-badge" role="status">
           <span className="real-size-dot" aria-hidden="true" />
@@ -56,7 +58,7 @@ export const ViewportOverlay: React.FC<ViewportOverlayProps> = ({
         </div>
       )}
 
-      {!hasImage && <div className="empty-hint">Add a screenshot to see it on the display</div>}
+      {!hasImage && <div className="empty-hint">Paste, drop or capture a screenshot to see it on the display</div>}
 
       <div className="viewport-nav-hint" aria-hidden="true">
         <span className="hint-pointer">{realSize ? 'Drag to tilt · zoom locked at real size' : 'Drag to rotate · Scroll to zoom · Right-drag to pan'}</span>
