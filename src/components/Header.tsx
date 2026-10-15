@@ -8,6 +8,7 @@ interface HeaderProps {
   onResetCamera: () => void;
   onShare: () => void;
   shareStatus: string | null;
+  onExportPng?: () => void;
 }
 
 export const DeviceOptions: React.FC = () => (
@@ -24,20 +25,15 @@ export const DeviceOptions: React.FC = () => (
   </>
 );
 
-export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice, onResetCamera, onShare, shareStatus }) => {
+export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice, onResetCamera, onShare, shareStatus, onExportPng }) => {
   return (
     <header className="app-header">
       <div className="brand-section">
-        <div className="brand-logo" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="7" />
-            <polyline points="12 9 12 12 13.5 13.5" />
-            <path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83" />
-          </svg>
-        </div>
-        <div className="brand-title">
-          <span>WearView</span>
-        </div>
+        <a className="studio-mark" href="https://wristandpocket.dev/" title="Wrist & Pocket Studio">
+          <span>W</span>&amp;<span>P</span>
+        </a>
+        <span className="brand-divider" aria-hidden="true">/</span>
+        <h1 className="brand-title">WearView</h1>
         <div className="privacy-pill" title="Screenshots never leave your browser. No backend, no telemetry.">
           <span className="privacy-dot"></span>
           <span>Local-only</span>
@@ -68,6 +64,23 @@ export const Header: React.FC<HeaderProps> = ({ selectedDeviceId, onSelectDevice
           </svg>
         </span>
       </div>
+
+      {onExportPng && (
+        <button
+          type="button"
+          className="btn-secondary reset-btn"
+          onClick={onExportPng}
+          title="Export a high-resolution PNG of the 3D view [P]"
+          aria-label="Export PNG"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span className="reset-label">Export PNG</span>
+        </button>
+      )}
 
       <button
         type="button"

@@ -101,3 +101,21 @@ and on `vite preview` of the production build.
 | Sidebar: no horizontal scroll at 1100 px breakpoint | PASS | |
 | Drop a file onto the 3D view | NOT TESTED | drag-and-drop of OS files cannot be driven from the test browser |
 | Firefox / Safari | NOT TESTED | |
+
+## Studio design alignment — 2026-10-15
+
+WearView now uses the wristandpocket.dev design tokens: Outfit + Fira Code (vendored latin subsets, no external
+requests), teal `#72e0d6` / purple `#c49bfc` accents, studio surfaces and borders, `W&P / WearView` wordmark linking
+to the studio. The studio site header links to `/wearview/`.
+
+| Check | Result | How |
+|---|---|---|
+| `npm.cmd run typecheck` | PASS (0 errors) | |
+| `npm.cmd run test` | PASS (197/197, 9 files) | |
+| `npm.cmd run build` | PASS | fonts emitted as hashed assets (32 kB + 36 kB) |
+| Dev console | PASS (no errors) | compare + native px + safe zones on |
+| Hidden labels ("Device", "Compare with") no longer visible | PASS | `.sr-only` was referenced but never defined |
+| Adjacent active toggles stay visually separate | PASS | Native px + Compare + Safe Zones all on, 1600 px |
+| Controls dock fits one row at 1600 px | PASS | Export PNG moved to header actions; display + tools bars merged |
+| Phone width (375 px) header and dock | PASS | |
+| Studio site `jekyll build`: WearView nav link is `/wearview/` in en and uk (no locale prefix) | PASS | studio nav on a real phone NOT TESTED |
