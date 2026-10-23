@@ -271,11 +271,174 @@ describe('Viewer Invariants & Frustum Verification', () => {
       expect(MIN_POLAR_OFFSET_RAD).toBe(0.005);
     });
 
-    it('createSafeZoneOverlay creates a valid mesh with correct radius', () => {
+    it('createSafeZoneOverlay creates a valid mesh with correct radius and depth occlusion enabled', () => {
       const mesh = createSafeZoneOverlay(16.0);
       expect(mesh).toBeInstanceOf(THREE.Mesh);
       expect(mesh.name).toBe('safeZonesOverlay');
       expect(mesh.renderOrder).toBe(20);
+      const mat = mesh.material as THREE.MeshBasicMaterial;
+      expect(mat.depthTest).toBe(true);
+      expect(mat.polygonOffset).toBe(true);
+    });
+  });
+
+  describe('4. Real-Size (1:1) Camera Angle Preset Invariant & Compare Export', () => {
+    let mockContainer: any;
+    let mockCanvas: any;
+    let mockCtx: any;
+    let viewer: ThreeViewer;
+    const originalDocument = globalThis.document;
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    const originalCancelAnimationFrame = globalThis.cancelAnimationFrame;
+    const originalResizeObserver = (globalThis as any).ResizeObserver;
+
+    beforeEach(() => {
+      mockCtx = {
+        fillStyle: '',
+        fillRect: vi.fn(),
+        clearRect: vi.fn(),
+        drawImage: vi.fn(),
+        strokeStyle: '',
+        lineWidth: 0,
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        arc: vi.fn(),
+        fill: vi.fn(),
+        setLineDash: vi.fn(),
+      };
+
+      const doc = {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        defaultView: {},
+      };
+
+      mockCanvas = {
+        width: 800,
+        height: 600,
+        style: {},
+        ownerDocument: doc,
+        getRootNode: () => doc,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        toBlob: vi.fn(),
+        getContext: vi.fn((type: string) => {
+          if (type === '2d') return mockCtx;
+          if (type === 'webgl2' || type === 'webgl') return {};
+          return null;
+        }),
+      };
+
+      mockContainer = {
+        clientWidth: 800,
+        clientHeight: 600,
+        replaceChildren: vi.fn(),
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+      };
+
+      (globalThis as any).document = {
+        createElement: vi.fn((tag: string) => {
+          if (tag === 'canvas') return { ...mockCanvas, getContext: mockCanvas.getContext, toBlob: mockCanvas.toBlob };
+          return { style: {}, click: vi.fn(), remove: vi.fn() };
+        }),
+        body: { appendChild: vi.fn() },
+      };
+
+      (globalThis as any).requestAnimationFrame = vi.fn(() => 1);
+      (globalThis as any).cancelAnimationFrame = vi.fn();
+      (globalThis as any).ResizeObserver = class {
+        observe = vi.fn();
+        disconnect = vi.fn();
+      };
+
+      const mockRenderer = {
+        domElement: mockCanvas,
+        capabilities: { getMaxAnisotropy: () => 16 },
+        setPixelRatio: vi.fn(),
+        setClearColor: vi.fn(),
+        setSize: vi.fn(),
+        render: vi.fn(),
+        dispose: vi.fn(),
+        outputColorSpace: THREE.SRGBColorSpace,
+        toneMapping: THREE.AgXToneMapping,
+        toneMappingExposure: 1.0,
+        shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+      } as unknown as THREE.WebGLRenderer;
+
+      viewer = new ThreeViewer({
+        container: mockContainer,
+        initialDeviceId: 'galaxy-watch-7-44',
+        renderer: mockRenderer,
+      });
+    });
+
+    afterEach(() => {
+      viewer?.dispose();
+      vi.restoreAllMocks();
+      (globalThis as any).document = originalDocument;
+      (globalThis as any).requestAnimationFrame = originalRequestAnimationFrame;
+      (globalThis as any).cancelAnimationFrame = originalCancelAnimationFrame;
+      (globalThis as any).ResizeObserver = originalResizeObserver;
+    });
+
+    it('preserves 1:1 mode and calibrated physical camera distance across front, tilt (35°), and side (75°) angles', () => {
+      const pxPerMm = 4.2;
+      viewer.setRealScale(pxPerMm);
+      expect(viewer.isRealSize).toBe(true);
+      expect(viewer.getCamera().fov).toBe(8);
+
+      const expectedDist = computeRealSizeCameraDistance(600, 8, pxPerMm);
+      const initialDist = viewer.getCamera().position.distanceTo(viewer.getControls().target);
+      expect(initialDist).toBeCloseTo(expectedDist, 3);
+
+      for (const angle of ['tilt', 'side', 'front'] as const) {
+        viewer.setCameraAngle(angle);
+        expect(viewer.isRealSize).toBe(true);
+        expect(viewer.getCamera().fov).toBe(8);
+        expect(viewer.getControls().minDistance).toBeCloseTo(expectedDist, 3);
+        expect(viewer.getControls().maxDistance).toBeCloseTo(expectedDist, 3);
+        const dist = viewer.getCamera().position.distanceTo(viewer.getControls().target);
+        expect(dist).toBeCloseTo(expectedDist, 3);
+      }
+    });
+
+    it('stitches both viewer canvases onto a single 2D canvas with lighting background in Compare PNG export', () => {
+      const secondRenderer = {
+        domElement: { ...mockCanvas, width: 800, height: 600 },
+        capabilities: { getMaxAnisotropy: () => 16 },
+        setPixelRatio: vi.fn(),
+        setClearColor: vi.fn(),
+        setSize: vi.fn(),
+        render: vi.fn(),
+        dispose: vi.fn(),
+        outputColorSpace: THREE.SRGBColorSpace,
+        toneMapping: THREE.AgXToneMapping,
+        toneMappingExposure: 1.0,
+        shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap },
+      } as unknown as THREE.WebGLRenderer;
+
+      const compareViewer = new ThreeViewer({
+        container: mockContainer,
+        initialDeviceId: 'pixel-watch-3-45',
+        renderer: secondRenderer,
+      });
+
+      mockCtx.fillRect.mockClear();
+      mockCtx.drawImage.mockClear();
+      mockCanvas.toBlob.mockClear();
+
+      viewer.exportComparePngSnapshot(compareViewer, 'night');
+
+      expect(mockCtx.fillRect).toHaveBeenCalledWith(0, 0, 1600, 600);
+      expect(mockCtx.drawImage).toHaveBeenCalledTimes(2);
+      expect(mockCtx.drawImage).toHaveBeenNthCalledWith(1, mockCanvas, 0, 0);
+      expect(mockCtx.drawImage).toHaveBeenNthCalledWith(2, secondRenderer.domElement, 800, 0);
+      expect(mockCanvas.toBlob).toHaveBeenCalledTimes(1);
+
+      compareViewer.dispose();
     });
   });
 });

@@ -336,16 +336,20 @@ export const App: React.FC = () => {
   }, [viewers]);
 
   const handleCameraAngle = useCallback((angle: CameraAngle) => {
-    if (pxPerMm !== null && angle !== 'front') setPxPerMm(null);
     viewers().forEach((v) => v.setCameraAngle(angle));
-  }, [pxPerMm, viewers]);
+  }, [viewers]);
 
   const handleToggleSafeZones = useCallback(() => setSafeZones((prev) => !prev), []);
   const handleTogglePixelMode = useCallback(() => setPixelMode((m) => (m === 'native' ? 'smooth' : 'native')), []);
 
   const handleExportPng = useCallback(() => {
-    viewers().forEach((v) => v.exportPngSnapshot());
-  }, [viewers]);
+    const active = viewers();
+    if (active.length === 2) {
+      active[0].exportComparePngSnapshot(active[1], lightingPreset);
+    } else {
+      active[0]?.exportPngSnapshot();
+    }
+  }, [viewers, lightingPreset]);
 
   const handleOpenCrop = useCallback(() => {
     if (sourceRef.current) setCropping(true);
