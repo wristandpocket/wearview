@@ -88,6 +88,58 @@ export const PIXEL_WATCH_3_45_SPEC: DeviceSpec = {
   notes: 'Expanded 45mm form factor with 40% more screen area than PW2. Scaled 45mm matte aluminum/glass dome, crown at 3 o\'clock, 22mm band attachment.',
 };
 
+export const PIXEL_WATCH_4_41_SPEC: DeviceSpec = {
+  id: 'pixel-watch-4-41',
+  name: 'Google Pixel Watch 4 (41mm)',
+  generation: 'Pixel Watch 4 · 41 mm (2025)',
+  shortLabel: 'Pixel 4 41',
+  familyGroup: 'google-pixel',
+  releaseYear: 2025,
+  caseDiameterMm: 41.0,
+  caseHeightMm: 41.0,
+  caseThicknessMm: 12.3,
+  displayDiameterMm: 33.02, // 1.30" Actua 360 display
+  activeDisplayDiameterMm: 33.02,
+  resolutionPx: { width: 416, height: 416 },
+  ppi: 320,
+  bezelRadialWidthMm: 3.99, // (41.0 - 33.02) / 2
+  lugWidthMm: 20.0,
+  archetype: 'domed-pebble',
+  glassType: 'domed-pebble-glass',
+  caseMaterialName: 'Satin Recycled Aluminum (Satin Moonstone / Obsidian)',
+  confirmedSources: [
+    'Google Store Tech Specs (Pixel Watch 4 41mm, Actua 360 LTPO AMOLED, 3000 nits)',
+    'Google Support Hardware Specifications (41 x 41 x 12.3 mm, 320 ppi)',
+  ],
+  notes: 'Fourth-generation 41mm model with Actua 360 display, expanding the active screen to 33.02mm (416x416) and narrowing the radial bezel to 3.99mm inside the 41mm 3D Corning Gorilla Glass 5 pebble.',
+};
+
+export const PIXEL_WATCH_4_45_SPEC: DeviceSpec = {
+  id: 'pixel-watch-4-45',
+  name: 'Google Pixel Watch 4 (45mm)',
+  generation: 'Pixel Watch 4 · 45 mm (2025)',
+  shortLabel: 'Pixel 4 45',
+  familyGroup: 'google-pixel',
+  releaseYear: 2025,
+  caseDiameterMm: 45.0,
+  caseHeightMm: 45.0,
+  caseThicknessMm: 12.3,
+  displayDiameterMm: 36.20, // 1.43" Actua 360 display
+  activeDisplayDiameterMm: 36.20,
+  resolutionPx: { width: 456, height: 456 },
+  ppi: 320,
+  bezelRadialWidthMm: 4.40, // (45.0 - 36.20) / 2
+  lugWidthMm: 22.0,
+  archetype: 'domed-pebble',
+  glassType: 'domed-pebble-glass',
+  caseMaterialName: 'Satin Recycled Aluminum (Satin Moonstone / Matte Black)',
+  confirmedSources: [
+    'Google Store Tech Specs (Pixel Watch 4 45mm, Actua 360 LTPO AMOLED, 3000 nits)',
+    'GSMArena & Google Support Hardware Specifications (45 x 45 x 12.3 mm, 456x456, 320 ppi)',
+  ],
+  notes: 'Flagship 45mm Pixel Watch 4 with Actua 360 display (36.20mm active diameter, 456x456) and trimmed 4.40mm radial bezel, satin aluminum lower shell, and 22mm lugless band.',
+};
+
 /**
  * Procedural Pixel Watch builder (domed-pebble archetype).
  * 1 unit = 1 mm, face up (+Y), 12 o'clock at -Z, crown at +X (3 o'clock).
@@ -100,11 +152,12 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   const screenRadius = spec.activeDisplayDiameterMm / 2;
   const backY = -10.1;
   const scaleRatio = R / 20.5;
+  const is45mm = spec.caseDiameterMm >= 44.5;
 
   const displayY = 1.10;
 
-  // 1. Lower metal housing (polished steel or matte aluminum) below the glass equator (y = +0.2 mm)
-  const bezelOuterRadius = R * 0.92;
+  // 1. Lower metal housing (polished steel, matte aluminum, or satin aluminum) below the glass equator (y = +0.2 mm)
+  const bezelOuterRadius = Math.max(R * 0.92, screenRadius + 0.6);
   const bodyPoints: Array<[number, number]> = [
     [14.2 * scaleRatio, -9.25],
     [16.8 * scaleRatio, -9.0],
@@ -117,7 +170,11 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
     [bezelOuterRadius, 0.2],
   ];
   const bodyGeo = latheFromProfile(bodyPoints);
-  const bodyMat = spec.caseMaterialName.includes('Aluminum') ? materials.caseAluminum : materials.caseStainlessSteel;
+  const bodyMat = spec.caseMaterialName.includes('Satin')
+    ? materials.caseTitanium
+    : spec.caseMaterialName.includes('Aluminum')
+      ? materials.caseAluminum
+      : materials.caseStainlessSteel;
   const caseMesh = new THREE.Mesh(bodyGeo, bodyMat);
   caseMesh.name = 'case';
   caseMesh.castShadow = true;
@@ -177,8 +234,8 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
   group.add(sensorMesh);
 
   // 6. Tactile rotating crown at 3 o'clock (+X): recessed neck, knurled wheel, rounded bevel
-  const crownRadius = (spec.id === 'pixel-watch-3-45' ? 2.4 : 2.2);
-  const crownLength = (spec.id === 'pixel-watch-3-45' ? 2.0 : 1.8);
+  const crownRadius = is45mm ? 2.4 : 2.2;
+  const crownLength = is45mm ? 2.0 : 1.8;
   const crownGroup = new THREE.Group();
   crownGroup.name = 'crown';
 
@@ -236,3 +293,5 @@ export function buildPixelWatchModel(materials: WatchMaterials, spec: DeviceSpec
 export const buildPixelWatch1Model = (m: WatchMaterials) => buildPixelWatchModel(m, PIXEL_WATCH_1_SPEC);
 export const buildPixelWatch3_41Model = (m: WatchMaterials) => buildPixelWatchModel(m, PIXEL_WATCH_3_41_SPEC);
 export const buildPixelWatch3_45Model = (m: WatchMaterials) => buildPixelWatchModel(m, PIXEL_WATCH_3_45_SPEC);
+export const buildPixelWatch4_41Model = (m: WatchMaterials) => buildPixelWatchModel(m, PIXEL_WATCH_4_41_SPEC);
+export const buildPixelWatch4_45Model = (m: WatchMaterials) => buildPixelWatchModel(m, PIXEL_WATCH_4_45_SPEC);

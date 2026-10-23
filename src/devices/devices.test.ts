@@ -19,20 +19,30 @@ import {
 } from '../viewer/ThreeViewer';
 
 describe('Device Catalogue & Profiles', () => {
-  it('lists all 11 registered top Wear OS devices grouped logically', () => {
+  it('lists all 21 registered top Wear OS devices grouped logically', () => {
     const ids = DEVICE_LIST.map((d) => d.id);
-    expect(ids).toHaveLength(11);
+    expect(ids).toHaveLength(21);
     expect(ids).toEqual([
       'pixel-watch-41',
       'pixel-watch-3-41',
       'pixel-watch-3-45',
+      'pixel-watch-4-41',
+      'pixel-watch-4-45',
       'galaxy-watch-7-40',
       'galaxy-watch-7-44',
+      'galaxy-watch-6-40',
+      'galaxy-watch-6-44',
       'galaxy-watch-5-40',
+      'galaxy-watch-5-44',
+      'galaxy-watch-8-classic-46',
       'galaxy-watch-6-classic-43',
       'galaxy-watch-6-classic-47',
+      'galaxy-watch-5-pro-45',
+      'galaxy-watch-4-classic-46',
       'galaxy-watch-ultra-47',
+      'oneplus-watch-3-46',
       'oneplus-watch-2-46',
+      'xiaomi-watch-2-pro-46',
       'ticwatch-pro-5-48',
     ]);
     expect(DEVICE_GROUPS).toHaveLength(4);
@@ -129,9 +139,9 @@ describe('Device Catalogue & Profiles', () => {
   });
 
   it('normalizes legacy device IDs to canonical IDs and unknown IDs to default', () => {
-    expect(normalizeDeviceId('galaxy-watch-5-44mm')).toBe('galaxy-watch-7-44');
+    expect(normalizeDeviceId('galaxy-watch-5-44mm')).toBe('galaxy-watch-5-44');
     expect(normalizeDeviceId('galaxy-watch-5-40mm')).toBe('galaxy-watch-5-40');
-    expect(normalizeDeviceId('galaxy-watch-6-44mm')).toBe('galaxy-watch-7-44');
+    expect(normalizeDeviceId('galaxy-watch-6-44mm')).toBe('galaxy-watch-6-44');
     expect(normalizeDeviceId('pixel-watch-1-41mm')).toBe('pixel-watch-41');
     expect(normalizeDeviceId('pixel-watch-3-45')).toBe('pixel-watch-3-45');
     expect(normalizeDeviceId('unknown-device-xyz')).toBe(DEFAULT_DEVICE_ID);
@@ -198,7 +208,7 @@ describe('Device Catalogue & Profiles', () => {
     expect(pwWristY - ultraWristY).toBeCloseTo(3.6, 1);
   });
 
-  it('Galaxy Watch Ultra 47mm has squircle-cushion-ultra archetype with titanium body and orange button', () => {
+  it('Galaxy Watch Ultra 47mm and Watch8 Classic 46mm have squircle-cushion-ultra archetype with center Quick Button', () => {
     const ultra = getDeviceSpec('galaxy-watch-ultra-47');
     expect(ultra.archetype).toBe('squircle-cushion-ultra');
     expect(ultra.caseDiameterMm).toBe(47.4);
@@ -210,12 +220,26 @@ describe('Device Catalogue & Profiles', () => {
     expect(model.group.getObjectByName('crown')).toBeDefined(); // Orange Quick Button
     expect(model.group.getObjectByName('case')).toBeDefined();
     expect(model.group.getObjectByName('bezel')).toBeDefined();
+
+    const gw8c = getDeviceSpec('galaxy-watch-8-classic-46');
+    expect(gw8c.archetype).toBe('squircle-cushion-ultra');
+    expect(gw8c.resolutionPx.width).toBe(438);
+    const gw8cModel = buildDevice('galaxy-watch-8-classic-46', materials);
+    expect(gw8cModel.group.getObjectByName('crown')).toBeDefined();
   });
 
-  it('OnePlus Watch 2 has asymmetric-chrono archetype and TicWatch Pro 5 has rugged-tactical archetype', () => {
-    const oneplus = getDeviceSpec('oneplus-watch-2-46');
-    expect(oneplus.archetype).toBe('asymmetric-chrono');
-    expect(oneplus.activeDisplayDiameterMm).toBe(36.32);
+  it('OnePlus Watch 2/3 have asymmetric-chrono archetype and Xiaomi Watch 2 Pro / TicWatch Pro 5 have rugged-tactical archetype', () => {
+    const oneplus2 = getDeviceSpec('oneplus-watch-2-46');
+    expect(oneplus2.archetype).toBe('asymmetric-chrono');
+    expect(oneplus2.activeDisplayDiameterMm).toBe(36.32);
+
+    const oneplus3 = getDeviceSpec('oneplus-watch-3-46');
+    expect(oneplus3.archetype).toBe('asymmetric-chrono');
+    expect(oneplus3.activeDisplayDiameterMm).toBe(38.10);
+
+    const xiaomi2Pro = getDeviceSpec('xiaomi-watch-2-pro-46');
+    expect(xiaomi2Pro.archetype).toBe('rugged-tactical');
+    expect(xiaomi2Pro.caseDiameterMm).toBe(47.6);
 
     const ticwatch = getDeviceSpec('ticwatch-pro-5-48');
     expect(ticwatch.archetype).toBe('rugged-tactical');

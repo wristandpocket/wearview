@@ -11,7 +11,7 @@ This document records the actual verification results and outcomes for WearView.
 | **Functional Acceptance** | 21 | 21 | 0 | 0 |
 | **Deep Engineering Audit & Precision Pass** | 7 | 7 | 0 | 0 |
 | **Build & Type Safety** | 3 | 3 | 0 | 0 |
-| **Unit Test Suites** | 9 local suites (199 tests) | 199 | 0 | 0 |
+| **Unit Test Suites** | 9 local suites (319 tests) | 319 | 0 | 0 |
 
 ---
 
@@ -20,15 +20,15 @@ This document records the actual verification results and outcomes for WearView.
 | # | Acceptance Criterion | Status | Evidence & Verification Notes |
 | :--- | :--- | :--- | :--- |
 | 1 | **App starts with documented command and loads without console errors.** | **PASS** | `npm.cmd run dev` starts Vite server. Clean HTML response, no unhandled script rejections. Starts in clean, informative empty state with helpful prompt. |
-| 2 | **Top 10+ Wear OS devices are registered with exact 1:1 physical millimeter proportions.** | **PASS** | All 11 smartwatches registered in `src/devices/` covering Google Pixel (PW1/2 41mm, PW3 41mm, PW3 45mm), Samsung Galaxy Modern (GW7 40mm, GW7 44mm, GW5 40mm), Samsung Galaxy Classic/Ultra (GW6 Classic 43mm, GW6 Classic 47mm, GW Ultra 47mm), and OEM watches (OnePlus Watch 2 46mm, TicWatch Pro 5 48mm). Exact millimeter values strictly maintained with 1 unit = 1 mm. |
-| 3 | **Grouped Device Selector Dropdown in UI.** | **PASS** | Header contains accessible `<select>` dropdown grouped by manufacturer family (`Google Pixel Watch`, `Samsung Galaxy Watch (Modern Flat)`, `Samsung Galaxy Watch (Classic & Ultra)`, `OnePlus & Mobvoi`) displaying inline metadata (screen size in inches and resolution in px). Legacy aliases (`galaxy-watch-5-44mm`, etc.) normalize cleanly to avoid dropdown desynchronization. |
-| 4 | **5 Distinct Procedural 3D Archetypes.** | **PASS** | `domed-pebble` (Pixel Watch lathe dome), `flat-minimalist` (flat sapphire with protective lip and dual pill keys), `classic-rotating-bezel` (raised 1.35mm rotating bezel with 48 knurled outer teeth), `squircle-cushion-ultra` (titanium cushion squircle with orange Quick Button and raised circular bezel), and `asymmetric-chrono` / `rugged-tactical` (sculpted asymmetric flank and knurled tactical bezel with guarded center crown). |
+| 2 | **Top 21 Wear OS devices are registered with exact 1:1 physical millimeter proportions.** | **PASS** | All 21 smartwatches registered in `src/devices/` covering Google Pixel (PW1/2 41mm, PW3 41mm, PW3 45mm, PW4 41mm, PW4 45mm), Samsung Galaxy Modern (GW7 40mm, GW7 44mm, GW6 40mm, GW6 44mm, GW5 40mm, GW5 44mm), Samsung Galaxy Classic, Pro & Ultra (GW8 Classic 46mm, GW6 Classic 43mm, GW6 Classic 47mm, GW5 Pro 45mm, GW4 Classic 46mm, GW Ultra 47mm), and OEM watches (OnePlus Watch 3 46mm, OnePlus Watch 2 46mm, Xiaomi Watch 2 Pro 46mm, TicWatch Pro 5 48mm). Exact millimeter values strictly maintained with 1 unit = 1 mm. |
+| 3 | **Grouped Device Selector Dropdown in UI.** | **PASS** | Header contains accessible `<select>` dropdown grouped by manufacturer family (`Google Pixel Watch`, `Samsung Galaxy Watch (Modern Flat)`, `Samsung Galaxy Watch (Classic, Pro & Ultra)`, `OnePlus, Xiaomi & Mobvoi`) displaying inline metadata (screen size in inches and resolution in px). Legacy aliases (`galaxy-watch-5-44mm`, etc.) normalize cleanly to avoid dropdown desynchronization. |
+| 4 | **Distinct Procedural 3D Archetypes & Model Builders.** | **PASS** | `domed-pebble` (Pixel Watch lathe dome), `flat-minimalist` (flat sapphire with protective lip and dual pill keys), `classic-rotating-bezel` (raised 1.35mm rotating bezel with 48 knurled outer teeth, plus smooth concave raised Grade 4 Titanium wall on GW5 Pro), `squircle-cushion-ultra` (titanium/steel cushion squircle on GW Ultra 47mm and GW8 Classic 46mm with Quick Button), and `asymmetric-chrono` / `rugged-tactical` (OnePlus Watch 2/3 sculpted right bridge, Xiaomi Watch 2 Pro 72-notch Parisian hobnail bezel with center crown & twin chrono pushers, and TicWatch Pro 5 knurled tactical bezel with guarded center crown). |
 | 5 | **Valid square PNG/JPG/WebP loads and appears correctly, centered and circularly masked on active display.** | **PASS** | Verified with test pattern generator matching target device resolution. Texture maps strictly to circular `CircleGeometry` screen mesh without bleeding onto bezel or case. |
 | 6 | **Non-square test image preserves aspect ratio and is centered; not stretched or unexpectedly cropped.** | **PASS** | Verified mathematically in `calculateContainFit` unit tests on pure black background. Non-square warning displayed non-blockingly in uploader. |
 | 7 | **Unsupported or corrupt file produces helpful error and does not break scene.** | **PASS** | Verified in `validator.test.ts`. Rejecting empty files (0 bytes), oversized files (>20 MB), `.gif`, `.exe` with explicit inline feedback in `ScreenshotUploader`. Supports PNG, JPG, JPEG, and WebP. |
 | 8 | **Replacing and removing image works repeatedly without breaking rendering.** | **PASS** | Replacing image releases previous texture via `info.texture.dispose()`, revokes temporary object URLs immediately upon image decode, and removing returns display to unlit emissive empty screen state. |
 | 9 | **Drag-to-rotate, zoom limits, and reset camera work.** | **PASS** | `OrbitControls` configured with damping, polar angle clamp preventing flipping below ground, and distance bounds ensuring macro pixel inspection without camera clipping. |
-| 10 | **Watch view ↔ On wrist works, keeps selected watch and screenshot, and watch appears attached to wrist rather than floating/intersecting.** | **PASS** | Switching view mode toggles procedural wrist reference visibility. Dynamic `fitToWatch(backY)` vertically aligns wrist surface so rear sensor housing sits flush for all thicknesses (9.7mm to 12.3mm). Straps wrap laterally with exact lug widths (20mm, 22mm, 24mm). |
+| 10 | **Watch view ↔ On wrist works, keeps selected watch and screenshot, and watch appears attached to wrist rather than floating/intersecting.** | **PASS** | Switching view mode toggles procedural wrist reference visibility. Dynamic `fitToWatch(backY)` vertically aligns wrist surface so rear sensor housing sits flush for all thicknesses (9.0mm to 12.3mm). Straps wrap laterally with exact lug widths (20mm, 22mm, 24mm). |
 | 11 | **Studio, Sunlight, and Night presets make visibly different environmental/specular changes; reflections do not overwhelm screen.** | **PASS** | Studio uses clean white studio background and RoomEnvironment reflections; Sunlight boosts directional intensity with warm sun color; Night introduces ambient rim lighting while emissive display screen remains legible with `toneMapped: false`. |
 | 12 | **Device switching preserves camera distance and zoom level.** | **PASS** | `ThreeViewer.loadDevice()` swaps the 3D model while preserving existing camera position and zoom distance, immediately revealing the physical 1:1 size difference between smaller (e.g. 40mm) and larger (e.g. 47mm/48mm) watches. In real size (1:1) mode, camera distance is solved strictly to the world coordinate plane of `displayMesh` (`displayMesh.getWorldPosition(...)`). |
 | 13 | **Device Spec Drawer and Viewport Overlay show detailed hardware metrics.** | **PASS** | Displays case dimensions (W × H × T mm), active display diameter (mm & inches), native resolution & density (px & PPI), radial bezel border (mm & screen-to-body ratio %), and lug width (mm). Screen-to-body calculation is archetype-aware (rounded rect cushion squircle vs ellipse vs circular). |
@@ -46,24 +46,26 @@ This document records the actual verification results and outcomes for WearView.
 ## 3. Engineering & Test Commands Run
 
 1. **TypeScript Typecheck:**
-   - Command: `npm.cmd run typecheck`
+   - Command: `npm run typecheck`
    - Exit Code: `0`
    - Outcome: All strict typing checks passed with zero errors (`tsc --noEmit`).
 2. **Vitest Unit Tests:**
-   - Command: `npm.cmd test -- --run`
+   - Command: `npm run test -- --run`
    - Exit Code: `0`
-   - Outcome: All 7 test suites passed (187 tests):
-     - `src/textures/validator.test.ts` (9 tests: format validation, size checks, resolution/square checks)
+   - Outcome: All 9 test suites passed (319 tests):
+     - `src/textures/validator.test.ts` (10 tests: format validation, size checks, resolution/square checks)
      - `src/textures/imageFit.test.ts` (4 tests: contain fit calculations)
      - `src/textures/testPattern.test.ts` (7 tests: testPattern options, device switching regeneration, safe zone badges, degree markings, handleGlobalKeyDown shortcuts)
+     - `src/textures/screenTexture.test.ts` (3 tests: screen texture configuration)
+     - `src/utils/urlState.test.ts` (6 tests: URL hash serialization and parsing)
      - `src/calibration/calibration.test.ts` (3 tests: physical calibration storage and math)
      - `src/devices/geometry.test.ts` (12 tests: procedural profiles, lathe, knurled bezel, wrist dimensions, wrap path for 52.4mm lugs, anatomical downward strap bend, case top cap non-occlusion)
-     - `src/devices/devices.test.ts` (15 tests: all 11 devices, 1:1 mm math, named meshes, legacy aliases, normalizeDeviceId, archetype-aware screen-to-body ratios, strict vertical stacking hierarchy, case body dial floor termination, single-mesh safe zone overlay with CircleGeometry and renderOrder 20, and 1:1 camera preset distance invariance)
-     - `src/viewer/viewerInvariants.test.ts` (137 tests: Frustum visibility across all 11 devices, wrist on/off, camera presets front/tilt35/side75, normal vs 1:1 real size mode, no NaN/Infinity, no gimbal lock, safe zone alignment and single-instance invariant, safe camera direction invariant)
+     - `src/devices/devices.test.ts` (15 tests: all 21 devices, 1:1 mm math, named meshes, legacy aliases, normalizeDeviceId, archetype-aware screen-to-body ratios, strict vertical stacking hierarchy, case body dial floor termination, single-mesh safe zone overlay with CircleGeometry and renderOrder 20, and 1:1 camera preset distance invariance)
+     - `src/viewer/viewerInvariants.test.ts` (259 tests: Frustum visibility across all 21 devices, wrist on/off, camera presets front/tilt35/side75, normal vs 1:1 real size mode, no NaN/Infinity, no gimbal lock, safe zone alignment and single-instance invariant, 1:1 camera preset distance retention, Compare PNG stitch export)
 3. **Production Build:**
-   - Command: `npm.cmd run build`
+   - Command: `npm run build`
    - Exit Code: `0`
-   - Outcome: Vite production build generated `dist/` bundle cleanly in 2.28s.
+   - Outcome: Vite production build generated `dist/` bundle cleanly in 950 ms.
 
 ## Production audit — 2026-10-15
 
@@ -130,15 +132,16 @@ to the studio. The studio site header links to `/wearview/`.
 | Localized studio pages link to `/wearview/` without a locale prefix | PASS | `static_href` |
 | Dev-only: sample screen black after full reload until re-selected | NOT A PROD BUG | production build shows the sample on load |
 
-## Post-v1.0 defect fixes — 2026-10-23
+## Post-v1.0 defect fixes & 21-device catalogue expansion — 2026-10-23
 
-Fixes for 1:1 mode retention on camera angle presets, safe-zone overlay depth testing against raised bezels, and single stitched PNG export in Compare mode.
+Fixes for 1:1 mode retention on camera angle presets, safe-zone overlay depth testing against raised bezels, single stitched PNG export in Compare mode, and expansion of the 1:1 physical device catalogue from 11 to 21 Wear OS smartwatches.
 
 | Check | Result | How |
 |---|---|---|
 | `npm run typecheck` | PASS (0 errors) | `tsc --noEmit` on macOS |
-| `npm run test` | PASS (199/199, 9 files) | added `ThreeViewer` 1:1 preset distance lock & Compare PNG stitch tests in `viewerInvariants.test.ts`; updated `safeZonesOverlay` `depthTest`/`polygonOffset` assertions in `devices.test.ts` |
-| `npm run build` | PASS (942 ms) | `tsc && vite build` |
+| `npm run test` | PASS (319/319, 9 files) | 21 devices × wrist states × camera presets × modes verified in `viewerInvariants.test.ts` & `devices.test.ts` |
+| `npm run build` | PASS (950 ms) | `tsc && vite build` |
+| 10 new Wear OS devices (1:1 mm dimensions, PPI math, vertical clearance, frustum invariants) | PASS | `pixel-watch-4-41`, `pixel-watch-4-45`, `galaxy-watch-6-40`, `galaxy-watch-6-44`, `galaxy-watch-5-44`, `galaxy-watch-8-classic-46`, `galaxy-watch-5-pro-45`, `galaxy-watch-4-classic-46`, `oneplus-watch-3-46`, `xiaomi-watch-2-pro-46` |
 | 1:1 mode preserved on Tilt 35° & Side 75° (unit / state invariant) | PASS | verified in `viewerInvariants.test.ts` (`isRealSize === true`, `fov === 8`, `minDistance`/`maxDistance` and camera-to-target distance equal `computeRealSizeCameraDistance`) and removed `setPxPerMm(null)` reset in `App.tsx` |
 | Safe Zones `depthTest: true` + `polygonOffset` (`-4, -4`) configuration | PASS | verified material flags in `devices.test.ts` and `viewerInvariants.test.ts` |
 | Compare mode single PNG export composition (unit test) | PASS | verified 2D canvas dimensions (`1600×600`), lighting background fill, side-by-side `drawImage` calls, and single `toBlob` trigger in `viewerInvariants.test.ts` |
