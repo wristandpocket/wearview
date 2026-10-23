@@ -281,7 +281,8 @@ describe('Device Catalogue & Profiles', () => {
     const mat = overlay.material as THREE.MeshBasicMaterial;
     expect(mat.transparent).toBe(true);
     expect(mat.depthWrite).toBe(false);
-    expect(mat.depthTest).toBe(false);
+    expect(mat.depthTest).toBe(true);
+    expect(mat.polygonOffset).toBe(true);
   });
 
   it('camera preset angles strictly preserve calibrated 1:1 camera distance to displayPlaneTarget', () => {

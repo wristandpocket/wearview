@@ -11,7 +11,7 @@ This document records the actual verification results and outcomes for WearView.
 | **Functional Acceptance** | 21 | 21 | 0 | 0 |
 | **Deep Engineering Audit & Precision Pass** | 7 | 7 | 0 | 0 |
 | **Build & Type Safety** | 3 | 3 | 0 | 0 |
-| **Unit Test Suites** | 7 local suites (187 tests) | 187 | 0 | 0 |
+| **Unit Test Suites** | 9 local suites (199 tests) | 199 | 0 | 0 |
 
 ---
 
@@ -35,9 +35,9 @@ This document records the actual verification results and outcomes for WearView.
 | 14 | **Browser resize and narrow layout remain usable.** | **PASS** | Responsive layout in `theme.css` wraps control drawer underneath viewport on narrow screens. Viewport canvas observer dynamically recalculates camera aspect ratio and 1:1 scale distance. |
 | 15 | **No obvious severe GPU resource leaks occur after repeatedly changing image/device/mode.** | **PASS** | Outgoing models recursively dispose all `BufferGeometry` instances and cloned `Material` instances while preserving active screenshot `Texture`. |
 | 16 | **Browser console is free of avoidable errors and warnings caused by the app.** | **PASS** | Zero syntax errors, zero React warnings, zero Three.js deprecation warnings. Watertight solid chassis geometries. |
-| 17 | **Interactive Wear OS Safe-Zone & Cardinal Overlay (Shortcut: S).** | **PASS** | Non-intrusive 3D circular wireframe overlay rendered at `renderOrder: 3` showing 100% boundary (cyan), 90% Action/Button Safe Zone (amber), and 80% Title/Text Safe Zone (emerald), plus cardinal tick marks (12h, 3h, 6h, 9h) to immediately spot bezel occlusion. Toggled via dock button or `S` key. |
-| 18 | **Quick Camera Angle Presets (Front 0°, Tilt 35°, Side 75°).** | **PASS** | Dedicated inspection presets smoothly animate (`flyToPose`) the camera to: Front (0° perpendicular, shortcut `1`), Tilt (35° natural wrist glance to verify raised bezel clearance, shortcut `2`), and Side (75° grazing angle to inspect dome curvature, case thickness, and wrist contact, shortcut `3`). |
-| 19 | **High-Resolution PNG Snapshot Export (Shortcut: P).** | **PASS** | Canonicalized in the dock controls bar with shortcut `P`. Synchronous `renderer.render()` execution directly before `toDataURL()` with `preserveDrawingBuffer: false` guarantees crisp frame capture with 60fps performance on high-DPI displays and zero browser buffer copy overhead. |
+| 17 | **Interactive Wear OS Safe-Zone & Cardinal Overlay (Shortcut: S).** | **PASS** | Non-intrusive 3D circular wireframe overlay rendered at `renderOrder: 20` with `depthTest: true` and `polygonOffset` (`factor: -4, units: -4`) showing 100% boundary (cyan), 90% Action/Button Safe Zone (amber), and 80% Title/Text Safe Zone (emerald), plus cardinal tick marks (12h, 3h, 6h, 9h) so raised bezels naturally occlude the screen edge under tilt. Toggled via dock button or `S` key. |
+| 18 | **Quick Camera Angle Presets (Front 0°, Tilt 35°, Side 75°).** | **PASS** | Dedicated inspection presets smoothly animate (`flyToPose`) the camera to: Front (0° perpendicular, shortcut `1`), Tilt (35° natural wrist glance to verify raised bezel clearance, shortcut `2`), and Side (75° grazing angle to inspect dome curvature, case thickness, and wrist contact, shortcut `3`), while preserving calibrated 1:1 real-size mode and physical camera distance. |
+| 19 | **High-Resolution PNG Snapshot Export (Shortcut: P).** | **PASS** | Canonicalized in the header actions with shortcut `P`. Synchronous `renderer.render()` execution directly before `toBlob()` with `preserveDrawingBuffer: false` guarantees crisp frame capture; in Compare mode, both canvases are stitched side-by-side onto a 2D canvas over the active lighting background (`studio`, `sunlight`, `night`). |
 | 20 | **Anatomical Wrist Model Proportional Polish.** | **PASS** | `WRIST_SECTION.halfWidth` set to 33.5mm (67mm breadth) with updated lofting keys in `wristModel.ts`, cleanly accommodating wide 48–52.4mm lug-to-lug watches (e.g. GW6 Classic 47mm and TicWatch Pro 5) without skin clipping or artificial overhang. |
 | 21 | **Auto-Regenerate Test Pattern & 1-Click Sample Switching.** | **PASS** | Tracking screen texture source (`sample` vs `test-pattern` vs `user`). When switching smartwatches in the dropdown while `test-pattern` is active, the pattern is automatically regenerated matching the new device's exact resolution, diameter, and PPI. 1-click pills allow toggling between Cyberpunk 3D and QA Pattern. |
 
@@ -129,3 +129,17 @@ to the studio. The studio site header links to `/wearview/`.
 | Studio `/tools/wearview/` in en/uk/ru/ko, SoftwareApplication + FAQPage JSON-LD parse | PASS | local `jekyll build`, JSON parsed |
 | Localized studio pages link to `/wearview/` without a locale prefix | PASS | `static_href` |
 | Dev-only: sample screen black after full reload until re-selected | NOT A PROD BUG | production build shows the sample on load |
+
+## Post-v1.0 defect fixes — 2026-10-23
+
+Fixes for 1:1 mode retention on camera angle presets, safe-zone overlay depth testing against raised bezels, and single stitched PNG export in Compare mode.
+
+| Check | Result | How |
+|---|---|---|
+| `npm run typecheck` | PASS (0 errors) | `tsc --noEmit` on macOS |
+| `npm run test` | PASS (199/199, 9 files) | added `ThreeViewer` 1:1 preset distance lock & Compare PNG stitch tests in `viewerInvariants.test.ts`; updated `safeZonesOverlay` `depthTest`/`polygonOffset` assertions in `devices.test.ts` |
+| `npm run build` | PASS (942 ms) | `tsc && vite build` |
+| 1:1 mode preserved on Tilt 35° & Side 75° (unit / state invariant) | PASS | verified in `viewerInvariants.test.ts` (`isRealSize === true`, `fov === 8`, `minDistance`/`maxDistance` and camera-to-target distance equal `computeRealSizeCameraDistance`) and removed `setPxPerMm(null)` reset in `App.tsx` |
+| Safe Zones `depthTest: true` + `polygonOffset` (`-4, -4`) configuration | PASS | verified material flags in `devices.test.ts` and `viewerInvariants.test.ts` |
+| Compare mode single PNG export composition (unit test) | PASS | verified 2D canvas dimensions (`1600×600`), lighting background fill, side-by-side `drawImage` calls, and single `toBlob` trigger in `viewerInvariants.test.ts` |
+| Live browser visual check: Tilt 35° in 1:1, Safe Zones bezel occlusion under tilt, Compare + Export PNG download | NOT TESTED | CLI sandbox blocks local TCP port binding (`listen EPERM 127.0.0.1`) and has no interactive WebGL browser attached; requires manual verification in a desktop browser |

@@ -181,7 +181,7 @@ export class ThreeViewer {
     lockDistance?: number;
   } | null = null;
   private readonly reducedMotion =
-    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    typeof window === 'undefined' || Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
   constructor(options: ViewerOptions) {
     this.container = options.container;
@@ -559,9 +559,8 @@ export class ThreeViewer {
         : 600;
       const pxPerMm = (this.realScale && this.realScale > 0.5) ? this.realScale : 3.7795;
       distance = computeRealSizeCameraDistance(viewportHeightPx, this.camera.fov, pxPerMm);
-      // Temporarily unclamp
-      this.controls.minDistance = 0;
-      this.controls.maxDistance = Infinity;
+      this.controls.minDistance = distance;
+      this.controls.maxDistance = distance;
     } else {
       distance = THREE.MathUtils.clamp(
         defaultRadius / Math.sin(fov / 2),
@@ -621,17 +620,37 @@ export class ThreeViewer {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const id = this.currentDeviceModel?.spec.id ?? 'device';
     const name = filename ?? `wearview-${id}-${timestamp}.png`;
-    this.renderer.domElement.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.download = name;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, 'image/png');
+    downloadCanvasPng(this.renderer.domElement, name);
+  }
+
+  public exportComparePngSnapshot(
+    other: ThreeViewer,
+    preset: LightingPreset = this.currentLightingPreset,
+    filename?: string
+  ): void {
+    if (!this.ready || !other.ready) return;
+    const c1 = this.renderer.domElement;
+    const c2 = other.renderer.domElement;
+    const width = c1.width + c2.width;
+    const height = Math.max(c1.height, c2.height);
+
+    const out = document.createElement('canvas');
+    out.width = width;
+    out.height = height;
+    const ctx = out.getContext('2d');
+    if (!ctx) return;
+
+    fillLightingBackground(ctx, width, height, preset);
+    this.renderer.render(this.scene, this.camera);
+    ctx.drawImage(c1, 0, 0);
+    other.renderer.render(other.scene, other.camera);
+    ctx.drawImage(c2, c1.width, 0);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const id1 = this.currentDeviceModel?.spec.id ?? 'device1';
+    const id2 = other.currentDeviceModel?.spec.id ?? 'device2';
+    const name = filename ?? `wearview-${id1}-vs-${id2}-${timestamp}.png`;
+    downloadCanvasPng(out, name);
   }
 
   public captureSnapshot(filename?: string): void {
@@ -1003,7 +1022,10 @@ export function createSafeZoneOverlay(displayRadiusMm: number): THREE.Mesh {
     map: texture,
     transparent: true,
     depthWrite: false,
-    depthTest: false,
+    depthTest: true,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
     toneMapped: false,
     side: THREE.DoubleSide,
   });
@@ -1012,6 +1034,75 @@ export function createSafeZoneOverlay(displayRadiusMm: number): THREE.Mesh {
   mesh.name = 'safeZonesOverlay';
   mesh.renderOrder = 20;
   return mesh;
+}
+
+function downloadCanvasPng(canvas: HTMLCanvasElement, filename: string): void {
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = filename;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+}
+
+function fillLightingBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  preset: LightingPreset
+): void {
+  if (preset === 'sunlight') {
+    if (typeof ctx.createLinearGradient === 'function') {
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, '#a9cdf2');
+      grad.addColorStop(0.45, '#dcebf7');
+      grad.addColorStop(0.75, '#f3ede2');
+      grad.addColorStop(1, '#e3dccf');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#dcebf7';
+    }
+  } else if (preset === 'night') {
+    if (typeof ctx.createRadialGradient === 'function') {
+      const grad = ctx.createRadialGradient(
+        width * 0.5,
+        height * 0.3,
+        0,
+        width * 0.5,
+        height * 0.3,
+        Math.hypot(width, height) * 0.7
+      );
+      grad.addColorStop(0, '#141a2b');
+      grad.addColorStop(0.55, '#0a0d17');
+      grad.addColorStop(1, '#040509');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#0a0d17';
+    }
+  } else {
+    if (typeof ctx.createRadialGradient === 'function') {
+      const grad = ctx.createRadialGradient(
+        width * 0.5,
+        height * 0.35,
+        0,
+        width * 0.5,
+        height * 0.35,
+        Math.hypot(width, height) * 0.75
+      );
+      grad.addColorStop(0, '#f4f5f7');
+      grad.addColorStop(0.55, '#dfe2e7');
+      grad.addColorStop(1, '#c9cdd4');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#dfe2e7';
+    }
+  }
+  ctx.fillRect(0, 0, width, height);
 }
 
 export const buildSafeZoneOverlay = (screenRadius: number, _displayY?: number): THREE.Mesh => {
