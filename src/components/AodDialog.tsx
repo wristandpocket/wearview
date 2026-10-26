@@ -9,7 +9,7 @@ interface AodDialogProps {
 export const AodDialog: React.FC<AodDialogProps> = ({ analysis, onClose }) => {
   if (!analysis) return null;
 
-  const { oprPercent, litPixels, circlePixels, averageLuminance, isCompliant, burnInRisk, hotspotCount } = analysis;
+  const { oprPercent, litPixels, circlePixels, averageLuminance, isCompliant, burnInRisk, hotspotCount, heatmapDataUrl } = analysis;
 
   let badgeColor = '#22c55e'; // green
   let statusText = 'Compliant (< 10% OPR)';
@@ -100,6 +100,47 @@ export const AodDialog: React.FC<AodDialogProps> = ({ analysis, onClose }) => {
         <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', lineHeight: 1.5 }}>
           Google Play and Wear OS guidelines strictly require Always-On Display (AOD) ambient screens to maintain an <b>On-Pixel Ratio (OPR) under 10%</b> (ideally &lt; 5%) to preserve battery life and prevent OLED panel burn-in.
         </p>
+
+        {heatmapDataUrl && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              background: 'var(--bg-card, #0f172a)',
+              border: '1px solid #334155',
+              borderRadius: '10px',
+              padding: '12px 16px',
+            }}
+          >
+            <img
+              src={heatmapDataUrl}
+              alt="AOD circular luminance and burn-in hotspot heatmap"
+              style={{
+                width: '96px',
+                height: '96px',
+                borderRadius: '50%',
+                border: '1px solid #475569',
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+              <div style={{ fontWeight: 600, color: '#f8fafc', marginBottom: '2px' }}>OLED Pixel Heatmap</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#0a0f1c', border: '1px solid #475569', display: 'inline-block' }} />
+                <span>Unlit / Off (&le; 5% lum)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#12c2dc', display: 'inline-block' }} />
+                <span>Active Lit Pixels (5–85% lum)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                <span>Burn-in Hotspots (&gt; 85% lum)</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div
           style={{

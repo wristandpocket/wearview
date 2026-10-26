@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeAod } from './aodAnalysis';
+import { analyzeAod, generateAodHeatmap } from './aodAnalysis';
 
 describe('analyzeAod (On-Pixel Ratio & Burn-In Analysis)', () => {
   it('calculates 0% OPR and low risk for fully black screen', () => {
@@ -55,5 +55,39 @@ describe('analyzeAod (On-Pixel Ratio & Burn-In Analysis)', () => {
     expect(result.oprPercent).toBeLessThan(10.0);
     expect(result.isCompliant).toBe(true);
     expect(result.burnInRisk).toBe('low');
+  });
+
+  it('generates circular RGBA heatmap distinguishing off, lit, and hotspot pixels', () => {
+    const width = 20;
+    const height = 20;
+    const data = new Uint8ClampedArray(width * height * 4);
+    for (let i = 3; i < data.length; i += 4) data[i] = 255;
+
+    // Center pixel (10, 10) -> hotspot white (lum = 1.0)
+    const centerIdx = (10 * width + 10) * 4;
+    data[centerIdx] = 255;
+    data[centerIdx + 1] = 255;
+    data[centerIdx + 2] = 255;
+
+    // Neighbor pixel (10, 9) -> moderate gray (lum ~ 0.5)
+    const midIdx = (9 * width + 10) * 4;
+    data[midIdx] = 128;
+    data[midIdx + 1] = 128;
+    data[midIdx + 2] = 128;
+
+    const heat = generateAodHeatmap({ data, width, height });
+
+    // Corner (0, 0) is outside circular display -> alpha = 0
+    expect(heat[3]).toBe(0);
+
+    // Hotspot pixel -> red (239, 68, 68)
+    expect(heat[centerIdx]).toBe(239);
+    expect(heat[centerIdx + 1]).toBe(68);
+    expect(heat[centerIdx + 2]).toBe(68);
+
+    // Moderate lit pixel -> cyan/teal (R=18, G>130, B>150)
+    expect(heat[midIdx]).toBe(18);
+    expect(heat[midIdx + 1]).toBeGreaterThan(150);
+    expect(heat[midIdx + 2]).toBeGreaterThan(170);
   });
 });

@@ -17,11 +17,11 @@ WearView helps smartwatch developers inspect how game and interactive app screen
 
 ## Key Features
 
-- **Top 10+ smartwatches across 4 grouped families, modeled from published specs:**
-  - **Google Pixel Watch:** Pixel Watch 1/2 (41mm), Pixel Watch 3 (41mm & 45mm) — 3D domed pebble glass, fluted crown, flush side key.
-  - **Samsung Galaxy Watch (Modern Flat):** Galaxy Watch7 (40mm & 44mm), Galaxy Watch5 (40mm) — flat sapphire crystal, slim chamfered aluminum protective rim, dual pill buttons.
-  - **Samsung Galaxy Watch (Classic & Ultra):** Galaxy Watch6 Classic (43mm & 47mm with physical 48-teeth knurled rotating bezel), Galaxy Watch Ultra (47mm cushion squircle titanium body with orange Quick Button).
-  - **OnePlus & Mobvoi:** OnePlus Watch 2 (46mm asymmetric chrono chassis), Mobvoi TicWatch Pro 5 (48mm tactical knurled bezel and guarded center crown).
+- **21 smartwatches across 4 grouped families, modeled from published specs:**
+  - **Google Pixel Watch:** Pixel Watch 1/2 (41mm), Pixel Watch 3 (41mm & 45mm), Pixel Watch 4 (41mm & 45mm) — 3D domed pebble glass, fluted crown, flush side key.
+  - **Samsung Galaxy Watch (Modern Flat):** Galaxy Watch7 (40mm & 44mm), Galaxy Watch6 (40mm & 44mm), Galaxy Watch5 (40mm & 44mm) — flat sapphire crystal, slim chamfered aluminum protective rim, dual pill buttons.
+  - **Samsung Galaxy Watch (Classic, Pro & Ultra):** Galaxy Watch8 Classic (46mm), Galaxy Watch6 Classic (43mm & 47mm with physical 48-teeth knurled rotating bezel), Galaxy Watch5 Pro (45mm titanium concave raised rim), Galaxy Watch4 Classic (46mm), Galaxy Watch Ultra (47mm cushion squircle titanium body with orange Quick Button).
+  - **OnePlus, Xiaomi & Mobvoi:** OnePlus Watch 3 (46mm), OnePlus Watch 2 (46mm asymmetric chrono chassis), Xiaomi Watch 2 Pro (46mm 72-notch Parisian hobnail bezel), Mobvoi TicWatch Pro 5 (48mm tactical knurled bezel and guarded center crown).
 - **Real size (1:1) mode:** a one-time calibration with any bank/ID card (ISO/IEC 7810 ID-1, 85.6 × 53.98 mm) measures CSS pixels per millimetre on your screen; the watch is then drawn at its true physical size. Calibration is stored per screen + browser zoom and re-requested when either changes. Adjust with slider, buttons, mouse wheel, arrow keys or pinch.
 - **Fast input:** paste from the clipboard, drop a file anywhere on the 3D view, or pick a file. PNG, JPEG, WebP up to 20 MB.
 - **Live window capture:** share a window (Unity Game view, Android emulator, any app) and it plays on the watch screen in real time, cropped to a square you choose. Stopping the share keeps the last frame. Chrome, Edge and Firefox on desktop.
@@ -40,6 +40,11 @@ WearView helps smartwatch developers inspect how game and interactive app screen
   - `Side (75°)`: Grazing angle to inspect dome curvature, case thickness (9.7mm vs 12.3mm), and wrist contact.
 - **High-Resolution PNG Snapshot Export:** 1-click snapshot export from the dock generating clean PNG renders (`wearview-{deviceId}-{timestamp}.png`) via synchronous frame capture with zero runtime frame-rate penalty (`preserveDrawingBuffer: false`).
 - **Hardware-Aware Procedural QA Pattern:** Built-in test pattern showing exact native resolution (e.g. `456×456 px`), physical diameter and density (`35.56 mm • 320 PPI`), and safe margin guides, with instant 1-click toggling between sample game graphics (`Cyberpunk 3D`) and QA calibration rings.
+- **Physical Ergonomics Pack:**
+  - **14 mm Finger Contact Pad (`👆 14mm Finger`):** Translucent cursor-following human fingertip pad (`14 mm × 15.5 mm`) scaled dynamically to `pxPerMm` in calibrated `1:1` mode to test whether touch targets and close buttons are fat-finger safe.
+  - **2-Second Glanceability Test (`⏱ 2s Glance`):** Simulates a realistic wrist raise (`35°` tilt -> `0°` front view for `2.0 s` -> tilt away) to test whether HUD metrics and actions are readable within a two-second glance.
+  - **AOD & OLED Burn-In Checker (`☀️ AOD / OPR`):** Computes circular On-Pixel Ratio (`OPR %`), ITU-R BT.709 average luminance, and burn-in hotspots (`> 85%` luminance) with a circular OLED pixel heatmap to verify Google Play `< 10% OPR` ambient compliance.
+- **External Tooling `postMessage` Bridge:** Accepts `{ type: 'wearview:frame', image, name }` messages from companion local developer tools (Watch Deploy, UI Blueprint) to load live screenshots directly onto the 3D watch surface without any backend dependency.
 - **Responsive:** phones (portrait and landscape), tablets, desktops and ultrawide monitors.
 - **Local-only:** images and captured windows never leave the browser. No accounts, no analytics, no backend.
 
