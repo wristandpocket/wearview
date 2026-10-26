@@ -17,6 +17,11 @@ interface ControlsBarProps {
   onToggleNativePixels: () => void;
   compare: boolean;
   onToggleCompare: () => void;
+  fingerPad?: boolean;
+  onToggleFingerPad?: () => void;
+  glancing?: boolean;
+  onStartGlance?: () => void;
+  onOpenAod?: () => void;
 }
 
 const VIEW_OPTIONS: Array<{ id: ViewMode; label: string; title: string; icon: React.ReactNode }> = [
@@ -96,6 +101,11 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
   onToggleNativePixels,
   compare,
   onToggleCompare,
+  fingerPad = false,
+  onToggleFingerPad,
+  glancing = false,
+  onStartGlance,
+  onOpenAod,
 }) => {
   return (
     <div className="controls-dock">
@@ -209,6 +219,60 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
           <span>1:1</span>
           <span className="real-size-label">Real size</span>
         </button>
+
+        {onToggleFingerPad && (
+          <button
+            type="button"
+            className={`segmented-btn ${fingerPad ? 'active accent' : ''}`}
+            onClick={onToggleFingerPad}
+            aria-pressed={fingerPad}
+            title="Toggle 14 mm human fingertip contact pad overlay for physical touch target calibration"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2a3 3 0 0 0-3 3v8.5a1.5 1.5 0 0 1-3 0V9a1 1 0 0 0-2 0v5.5a6.5 6.5 0 0 0 13 0V5a3 3 0 0 0-3-3z" />
+            </svg>
+            <span>14mm Finger</span>
+          </button>
+        )}
+
+        {onStartGlance && (
+          <button
+            type="button"
+            className={`segmented-btn ${glancing ? 'active accent' : ''}`}
+            onClick={onStartGlance}
+            aria-pressed={glancing}
+            disabled={glancing}
+            title="2-Second Wrist Raise Glanceability Test: raises the watch to viewing angle for 2.0s to verify glanceability"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>{glancing ? 'Glancing…' : '2s Glance'}</span>
+          </button>
+        )}
+
+        {onOpenAod && (
+          <button
+            type="button"
+            className="segmented-btn"
+            onClick={onOpenAod}
+            title="Always-On Display (AOD) & Ambient Burn-In Checker: inspects On-Pixel Ratio (OPR %)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+            <span>AOD / OPR</span>
+          </button>
+        )}
 
       </div>
     </div>

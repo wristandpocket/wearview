@@ -22,6 +22,9 @@ import { ScreenshotUploader, type TextureSource } from './components/ScreenshotU
 import { DeviceSpecDrawer } from './components/DeviceSpecDrawer';
 import { SpecPill, ViewportOverlay } from './components/ViewportOverlay';
 import { ViewerPane, type ViewerPaneHandle } from './components/ViewerPane';
+import { FingerCalibrator } from './components/FingerCalibrator';
+import { AodDialog } from './components/AodDialog';
+import { analyzeScreenElementAod, type AodAnalysisResult } from './utils/aodAnalysis';
 import { handleGlobalKeyDown } from './utils/keyboard';
 import { parseHash, toHash, type ShareableState } from './utils/urlState';
 import './styles/theme.css';
@@ -83,6 +86,11 @@ export const App: React.FC = () => {
   const [calibrationNotice, setCalibrationNotice] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [dropActive, setDropActive] = useState(false);
+  const [fingerPad, setFingerPad] = useState(false);
+  const [glancing, setGlancing] = useState(false);
+  const [glanceTimeLeft, setGlanceTimeLeft] = useState<number | null>(null);
+  const [aodAnalysis, setAodAnalysis] = useState<AodAnalysisResult | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   const primaryRef = useRef<ViewerPaneHandle>(null);
   const compareRef = useRef<ViewerPaneHandle>(null);
@@ -199,6 +207,90 @@ export const App: React.FC = () => {
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
   }, [handleLoadImage]);
+
+  // Public postMessage frame receiver (WP-1.2) for Watch Deploy and UI Blueprint
+  useEffect(() => {
+    const onMessage = async (e: MessageEvent) => {
+      const data = e.data;
+      if (!data || typeof data !== 'object') return;
+
+      if (data.type === 'wearview:frame' && data.image) {
+        try {
+          let file: File;
+          if (typeof data.image === 'string') {
+            const res = await fetch(data.image);
+            const blob = await res.blob();
+            file = new File([blob], data.name || 'imported-frame.png', { type: blob.type || 'image/png' });
+          } else if (data.image instanceof Blob) {
+            file = new File([data.image], data.name || 'imported-frame.png', { type: data.image.type || 'image/png' });
+          } else {
+            return;
+          }
+          handleLoadImage(file, 'user');
+          if (e.source && 'postMessage' in e.source) {
+            (e.source as Window).postMessage({ type: 'wearview:ack', ok: true }, '*');
+          }
+        } catch (err) {
+          console.warn('Failed to load frame from postMessage:', err);
+        }
+      }
+
+      if (data.type === 'wearview:ping' && e.source && 'postMessage' in e.source) {
+        (e.source as Window).postMessage({ type: 'wearview:pong', ready: true }, '*');
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    if (window.opener) {
+      try {
+        window.opener.postMessage({ type: 'wearview:ready' }, '*');
+      } catch { /* ignore */ }
+    }
+    return () => window.removeEventListener('message', onMessage);
+  }, [handleLoadImage]);
+
+  // 2-Second Glanceability Test (WP-4.1)
+  const handleStartGlance = useCallback(() => {
+    if (glancing) return;
+    setGlancing(true);
+    setGlanceTimeLeft(2.0);
+
+    // 1. Tilt away to simulate natural resting position
+    viewers().forEach((v) => v.setCameraAngle('tilt'));
+
+    // 2. Wrist raise to front view (0°) after 300ms
+    window.setTimeout(() => {
+      viewers().forEach((v) => v.setCameraAngle('front'));
+
+      // 3. 2.0s glance window
+      const start = Date.now();
+      const interval = window.setInterval(() => {
+        const elapsed = (Date.now() - start) / 1000;
+        const rem = Math.max(0, 2.0 - elapsed);
+        setGlanceTimeLeft(Number(rem.toFixed(1)));
+        if (rem <= 0) {
+          window.clearInterval(interval);
+          viewers().forEach((v) => v.setCameraAngle('tilt'));
+          setGlancing(false);
+          setGlanceTimeLeft(null);
+        }
+      }, 100);
+    }, 350);
+  }, [glancing, viewers]);
+
+  // Always-On Display (AOD) OPR% Analysis (WP-4.1)
+  const handleOpenAod = useCallback(() => {
+    if (!source?.element) {
+      setErrorMessage('Load or paste a screenshot first to inspect AOD On-Pixel Ratio (OPR %).');
+      return;
+    }
+    const res = analyzeScreenElementAod(source.element);
+    if (res) {
+      setAodAnalysis(res);
+    } else {
+      setErrorMessage('Could not extract pixel data for AOD analysis.');
+    }
+  }, [source]);
 
   // ---------------------------------------------------------------- devices
 
@@ -423,9 +515,41 @@ export const App: React.FC = () => {
       <main className="app-workspace">
         <section className="stage" aria-label="3D preview" {...stageDragProps}>
           <div
+            ref={viewportRef}
             className={`viewport-container ${compareSpec ? 'compare' : ''}`}
             data-lighting={lightingPreset}
           >
+            <FingerCalibrator
+              enabled={fingerPad}
+              pxPerMm={pxPerMm}
+              containerRef={viewportRef}
+            />
+            {glanceTimeLeft !== null && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(15, 23, 42, 0.9)',
+                  border: '1.5px solid #3b82f6',
+                  borderRadius: '20px',
+                  padding: '6px 18px',
+                  color: '#38bdf8',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                  zIndex: 40,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <span>⏱ Glance Test:</span>
+                <span style={{ color: '#ffffff', minWidth: '32px' }}>{glanceTimeLeft.toFixed(1)}s</span>
+              </div>
+            )}
             <div className="viewer-slot">
               <ViewerPane
                 ref={primaryRef}
@@ -489,6 +613,11 @@ export const App: React.FC = () => {
             onToggleNativePixels={handleTogglePixelMode}
             compare={compareSpec !== null}
             onToggleCompare={handleToggleCompare}
+            fingerPad={fingerPad}
+            onToggleFingerPad={() => setFingerPad((p) => !p)}
+            glancing={glancing}
+            onStartGlance={handleStartGlance}
+            onOpenAod={handleOpenAod}
           />
         </section>
 
@@ -529,6 +658,10 @@ export const App: React.FC = () => {
 
       {cropping && source && (
         <CropDialog source={source} onApply={handleCropApplied} onCancel={() => setCropping(false)} />
+      )}
+
+      {aodAnalysis && (
+        <AodDialog analysis={aodAnalysis} onClose={() => setAodAnalysis(null)} />
       )}
     </div>
   );
