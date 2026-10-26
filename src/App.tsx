@@ -214,15 +214,23 @@ export const App: React.FC = () => {
       const data = e.data;
       if (!data || typeof data !== 'object') return;
 
-      if (data.type === 'wearview:frame' && data.image) {
+      const payloadImage = data.image || data.blob;
+      const payloadName = data.name || data.label || 'imported-frame.png';
+      if (data.type === 'wearview:frame' && payloadImage) {
         try {
           let file: File;
-          if (typeof data.image === 'string') {
-            const res = await fetch(data.image);
+          if (typeof payloadImage === 'string') {
+            const res = await fetch(payloadImage);
             const blob = await res.blob();
-            file = new File([blob], data.name || 'imported-frame.png', { type: blob.type || 'image/png' });
-          } else if (data.image instanceof Blob) {
-            file = new File([data.image], data.name || 'imported-frame.png', { type: data.image.type || 'image/png' });
+            file = new File([blob], payloadName, { type: blob.type || 'image/png' });
+          } else if (payloadImage instanceof Blob) {
+            file = new File([payloadImage], payloadName, { type: payloadImage.type || 'image/png' });
+          } else if (payloadImage instanceof ArrayBuffer || ArrayBuffer.isView(payloadImage)) {
+            const buf = payloadImage instanceof ArrayBuffer
+              ? payloadImage
+              : (payloadImage.buffer.slice(payloadImage.byteOffset, payloadImage.byteOffset + payloadImage.byteLength) as ArrayBuffer);
+            const blob = new Blob([buf], { type: 'image/png' });
+            file = new File([blob], payloadName, { type: 'image/png' });
           } else {
             return;
           }

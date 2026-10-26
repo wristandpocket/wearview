@@ -11,7 +11,7 @@ This document records the actual verification results and outcomes for WearView.
 | **Functional Acceptance** | 21 | 21 | 0 | 0 |
 | **Deep Engineering Audit & Precision Pass** | 7 | 7 | 0 | 0 |
 | **Build & Type Safety** | 3 | 3 | 0 | 0 |
-| **Unit Test Suites** | 9 local suites (319 tests) | 319 | 0 | 0 |
+| **Unit Test Suites** | 10 local suites (323 tests) | 323 | 0 | 0 |
 
 ---
 
@@ -146,3 +146,14 @@ Fixes for 1:1 mode retention on camera angle presets, safe-zone overlay depth te
 | Safe Zones `depthTest: true` + `polygonOffset` (`-4, -4`) configuration | PASS | verified material flags in `devices.test.ts` and `viewerInvariants.test.ts` |
 | Compare mode single PNG export composition (unit test) | PASS | verified 2D canvas dimensions (`1600×600`), lighting background fill, side-by-side `drawImage` calls, and single `toBlob` trigger in `viewerInvariants.test.ts` |
 | Live browser visual check: Tilt 35° in 1:1, Safe Zones bezel occlusion under tilt, Compare + Export PNG download | NOT TESTED | CLI sandbox blocks local TCP port binding (`listen EPERM 127.0.0.1`) and has no interactive WebGL browser attached; requires manual verification in a desktop browser |
+
+## Physical Ergonomics Pack & External Tooling Bridge — 2026-10-26
+
+Added 14 mm Finger Contact Pad (`FingerCalibrator.tsx`), 2-Second Glanceability Test (`handleStartGlance`), Always-On Display (AOD) OPR% & Burn-In Heatmap Checker (`aodAnalysis.ts`, `AodDialog.tsx`), and window `postMessage` Frame Receiver (`wearview:frame`, `wearview:ping`, `wearview:ready`).
+
+| Check | Result | How |
+|---|---|---|
+| `npm.cmd run typecheck` | PASS (0 errors) | `tsc --noEmit` |
+| `npm.cmd run test` | PASS (323/323, 10 files) | Added `src/utils/aodAnalysis.test.ts` (4 tests: 0% black OPR, 100% white OPR, <10% ambient compliance, circular RGBA heatmap generation) |
+| `npm.cmd run build` | PASS | Vite production bundle generated cleanly in `dist/` |
+| `postMessage` receiver (`wearview:frame`) | PASS | Supports Data URL strings, `Blob`, and `ArrayBuffer`/`TypedArray` payloads with `{ type: 'wearview:ack', ok: true }` handshake |
