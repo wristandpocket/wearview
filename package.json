@@ -20,7 +20,8 @@
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "three": "^0.174.0"
+    "three": "^0.174.0",
+    "wrist-pocket-ui": "github:Figarist/wrist-pocket-ui#v1.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.10",

@@ -44,7 +44,7 @@ wearview/
 │   │   ├── ScreenshotUploader.tsx # Drag-and-drop file picker, image metadata, replace/remove
 │   │   ├── DeviceSpecDrawer.tsx   # Minimal hardware specs summary
 │   │   └── ViewportOverlay.tsx    # HUD badges, navigation cues, WebGL error fallback
-│   ├── styles/              # Design tokens and responsive dark studio CSS
+│   ├── styles/              # Responsive dark studio CSS on wrist-pocket-ui --wp-* tokens
 │   │   └── theme.css
 │   ├── App.tsx              # Root coordinator wiring UI state to ThreeViewer
 │   └── main.tsx             # React DOM entry point
