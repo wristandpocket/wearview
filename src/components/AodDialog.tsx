@@ -42,13 +42,13 @@ export const AodDialog: React.FC<AodDialogProps> = ({ analysis, onClose }) => {
       <div
         className="dialog-card"
         style={{
-          background: 'var(--panel-bg, #1e293b)',
-          border: '1px solid var(--border-color, #334155)',
+          background: 'var(--wp-bg-surface-elevated)',
+          border: '1px solid var(--wp-border-medium)',
           borderRadius: '14px',
           padding: '22px 24px',
           maxWidth: '480px',
           width: '100%',
-          color: 'var(--text-main, #f8fafc)',
+          color: 'var(--wp-text-primary)',
           boxShadow: '0 20px 45px rgba(0,0,0,0.6)',
           display: 'flex',
           flexDirection: 'column',
@@ -107,7 +107,7 @@ export const AodDialog: React.FC<AodDialogProps> = ({ analysis, onClose }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '16px',
-              background: 'var(--bg-card, #0f172a)',
+              background: 'var(--wp-bg-sunken)',
               border: '1px solid #334155',
               borderRadius: '10px',
               padding: '12px 16px',
@@ -144,7 +144,7 @@ export const AodDialog: React.FC<AodDialogProps> = ({ analysis, onClose }) => {
 
         <div
           style={{
-            background: 'var(--bg-card, #0f172a)',
+            background: 'var(--wp-bg-sunken)',
             border: '1px solid #334155',
             borderRadius: '10px',
             padding: '12px 16px',
@@ -188,7 +188,7 @@ export const AodDialog: React.FC<AodDialogProps> = ({ analysis, onClose }) => {
               padding: '8px 20px',
               borderRadius: '8px',
               border: 'none',
-              background: 'var(--accent, #3b82f6)',
+              background: 'var(--wp-accent, #3b82f6)',
               color: '#ffffff',
               fontWeight: 600,
               fontSize: '13px',

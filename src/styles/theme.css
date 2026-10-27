@@ -1,58 +1,9 @@
 :root {
-  /* Wrist & Pocket studio design tokens (mirrors wristandpocket.dev) */
-  --font-sans: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Fira Code', ui-monospace, Consolas, monospace;
-
-  --bg-app: #0c1016;
-  --bg-surface: #111923;
-  --bg-surface-elevated: #151d28;
-  --bg-surface-hover: #1c2634;
-  --bg-surface-active: #243347;
-
-  --border-subtle: #222d3b;
-  --border-medium: #303b4b;
-
-  --text-primary: #f2f0eb;
-  --text-secondary: #bcc6d5;
-  --text-tertiary: #8d9ab0;
-
-  --accent: #72e0d6;
-  --accent-hover: #9cece5;
-  --accent-bg: rgba(114, 224, 214, 0.12);
-  --accent-border: rgba(114, 224, 214, 0.42);
-  --accent-ink: #0c1016;
-  --accent-purple: #c49bfc;
-  --accent-emerald: #72e0d6;
-  --accent-emerald-bg: rgba(114, 224, 214, 0.08);
-  --accent-amber: #ddc7a0;
-  --accent-rose: #ff7a8a;
-  --accent-rose-bg: rgba(255, 122, 138, 0.1);
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-pill: 9999px;
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.45);
-
+  /* Colours, fonts, radii and shadows come from wrist-pocket-ui (--wp-* tokens,
+     imported in App.tsx). Only WearView layout sizes live here. */
   --header-h: 60px;
   --sidebar-w: 320px;
   --app-h: 100vh;
-  color-scheme: dark;
-}
-
-@font-face {
-  font-family: 'Outfit';
-  font-style: normal;
-  font-weight: 300 800;
-  font-display: swap;
-  src: url('./fonts/outfit-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Fira Code';
-  font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
-  src: url('./fonts/fira-code-latin.woff2') format('woff2');
 }
 
 .sr-only {
@@ -82,9 +33,9 @@ html, body, #root {
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--bg-app);
-  color: var(--text-primary);
+  font-family: var(--wp-font-sans);
+  background-color: var(--wp-bg-app);
+  color: var(--wp-text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -97,7 +48,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--wp-accent);
   outline-offset: 2px;
 }
 
@@ -134,8 +85,8 @@ button {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background-color: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--wp-bg-surface);
+  border-bottom: 1px solid var(--wp-border-subtle);
   position: relative;
   z-index: 20;
 }
@@ -155,19 +106,19 @@ button {
   font-weight: 800;
   font-size: 1rem;
   letter-spacing: 2px;
-  color: var(--text-primary);
+  color: var(--wp-text-primary);
   text-decoration: none;
   white-space: nowrap;
-  border-radius: var(--radius-sm);
+  border-radius: var(--wp-radius-sm);
 }
 
-.studio-mark span:first-child { color: var(--accent); }
-.studio-mark span:last-child { color: var(--accent-purple); }
-.studio-mark:hover span:first-child { color: var(--accent-hover); }
-.studio-mark:hover span:last-child { color: #d9bcff; }
+.studio-mark span:first-child { color: var(--wp-accent); }
+.studio-mark span:last-child { color: var(--wp-accent-purple); }
+.studio-mark:hover span:first-child { color: var(--wp-accent-hover); }
+.studio-mark:hover span:last-child { color: var(--wp-accent-purple-hover); }
 
 .brand-divider {
-  color: var(--border-medium);
+  color: var(--wp-border-medium);
   font-weight: 300;
   font-size: 1.3rem;
   line-height: 1;
@@ -184,33 +135,33 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.66rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--accent);
-  background-color: var(--accent-emerald-bg);
-  border: 1px solid var(--accent-border);
+  color: var(--wp-accent);
+  background-color: var(--wp-accent-bg-soft);
+  border: 1px solid var(--wp-accent-border);
   padding: 3px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--wp-radius-sm);
 }
 
 .privacy-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: var(--accent);
+  background-color: var(--wp-accent);
 }
 
 .device-dropdown-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  background-color: var(--wp-bg-surface-elevated);
+  border: 1px solid var(--wp-border-medium);
+  border-radius: var(--wp-radius-md);
   padding: 0 0.6rem 0 0.75rem;
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   min-width: 390px;
@@ -218,19 +169,19 @@ button {
 }
 
 .device-dropdown-wrapper:hover {
-  background-color: var(--bg-surface-hover);
-  border-color: var(--accent-border);
+  background-color: var(--wp-bg-surface-hover);
+  border-color: var(--wp-accent-border);
 }
 
 .device-dropdown-wrapper:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-bg);
+  border-color: var(--wp-accent);
+  box-shadow: 0 0 0 2px var(--wp-accent-bg);
 }
 
 .device-dropdown-label {
   display: flex;
   align-items: center;
-  color: var(--accent);
+  color: var(--wp-accent);
   margin-right: 0.5rem;
   flex-shrink: 0;
 }
@@ -240,8 +191,8 @@ button {
   -webkit-appearance: none;
   background: transparent;
   border: none;
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  color: var(--wp-text-primary);
+  font-family: var(--wp-font-sans);
   font-size: 0.82rem;
   font-weight: 600;
   padding: 7px 1.2rem 7px 0;
@@ -254,16 +205,16 @@ button {
 }
 
 .device-dropdown-select optgroup {
-  background-color: var(--bg-surface-elevated);
-  color: var(--accent);
+  background-color: var(--wp-bg-surface-elevated);
+  color: var(--wp-accent);
   font-weight: 700;
   font-size: 0.78rem;
   padding-top: 4px;
 }
 
 .device-dropdown-select option {
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
+  background-color: var(--wp-bg-surface);
+  color: var(--wp-text-primary);
   font-weight: 500;
   font-size: 0.82rem;
   padding: 4px 8px;
@@ -275,20 +226,20 @@ button {
   pointer-events: none;
   display: flex;
   align-items: center;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
 }
 
 .device-dropdown-wrapper:hover .device-dropdown-arrow {
-  color: var(--accent);
+  color: var(--wp-accent);
 }
 
 .device-select {
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  background-color: var(--wp-bg-surface-elevated);
+  border: 1px solid var(--wp-border-subtle);
+  border-radius: var(--wp-radius-md);
   padding: 3px;
   gap: 2px;
   min-width: 0;
@@ -297,21 +248,21 @@ button {
 .device-select-btn {
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
   font-size: 0.8rem;
   font-weight: 600;
   padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--wp-radius-sm);
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.device-select-btn:hover { color: var(--text-primary); }
+.device-select-btn:hover { color: var(--wp-text-primary); }
 
 .device-select-btn.active {
-  background-color: var(--accent);
-  color: var(--accent-ink);
+  background-color: var(--wp-accent);
+  color: var(--wp-accent-ink);
 }
 
 .device-select::-webkit-scrollbar { display: none; }
@@ -321,22 +272,22 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  background-color: var(--wp-bg-surface-elevated);
+  border: 1px solid var(--wp-border-subtle);
+  color: var(--wp-text-secondary);
   font-size: 0.8rem;
   font-weight: 500;
   padding: 7px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--wp-radius-md);
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-secondary:hover {
-  background-color: var(--bg-surface-hover);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  background-color: var(--wp-bg-surface-hover);
+  color: var(--wp-text-primary);
+  border-color: var(--wp-border-medium);
 }
 
 .btn-secondary.grow { flex: 1; }
@@ -402,14 +353,14 @@ button {
   display: inline-flex;
   align-items: baseline;
   gap: 0.5rem;
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.7rem;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
   background-color: rgba(12, 16, 22, 0.82);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--wp-border-subtle);
+  border-radius: var(--wp-radius-md);
   padding: 4px 10px;
   pointer-events: none;
   white-space: nowrap;
@@ -418,22 +369,22 @@ button {
   z-index: 5;
 }
 
-.spec-pill strong { color: var(--text-primary); font-weight: 600; }
+.spec-pill strong { color: var(--wp-text-primary); font-weight: 600; }
 .spec-pill.interactive { pointer-events: auto; align-items: center; }
 
 .compare-select {
   font: inherit;
-  font-family: var(--font-sans);
+  font-family: var(--wp-font-sans);
   font-weight: 600;
   font-size: 0.72rem;
-  color: var(--text-primary);
+  color: var(--wp-text-primary);
   background: transparent;
   border: none;
   max-width: 16rem;
   cursor: pointer;
 }
 
-.compare-select option, .compare-select optgroup { background: var(--bg-surface); }
+.compare-select option, .compare-select optgroup { background: var(--wp-bg-surface); }
 
 .drop-overlay {
   position: absolute;
@@ -441,14 +392,14 @@ button {
   z-index: 30;
   display: grid;
   place-items: center;
-  border: 2px dashed var(--accent);
-  border-radius: var(--radius-md);
+  border: 2px dashed var(--wp-accent);
+  border-radius: var(--wp-radius-md);
   background: rgba(8, 10, 15, 0.55);
-  color: var(--text-primary);
+  color: var(--wp-text-primary);
   font-weight: 600;
   pointer-events: none;
 }
-.spec-highlight { color: var(--accent); font-weight: 600; }
+.spec-highlight { color: var(--wp-accent); font-weight: 600; }
 
 .empty-hint {
   position: absolute;
@@ -457,11 +408,11 @@ button {
   transform: translateX(-50%);
   pointer-events: none;
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
   background: rgba(12, 16, 22, 0.82);
   backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
+  border: 1px solid var(--wp-border-subtle);
+  border-radius: var(--wp-radius-pill);
   padding: 5px 14px;
   white-space: nowrap;
   z-index: 5;
@@ -472,14 +423,14 @@ button {
   top: 0.75rem;
   right: 0.75rem;
   pointer-events: none;
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.66rem;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
   background-color: rgba(12, 16, 22, 0.72);
   backdrop-filter: blur(6px);
   padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--wp-radius-sm);
+  border: 1px solid var(--wp-border-subtle);
   z-index: 5;
 }
 
@@ -512,8 +463,8 @@ button {
 }
 
 .viewport-error h2 { font-size: 1.15rem; }
-.viewport-error p { max-width: 440px; color: var(--text-secondary); font-size: 0.875rem; }
-.viewport-error-hint { font-size: 0.75rem !important; color: var(--text-tertiary) !important; }
+.viewport-error p { max-width: 440px; color: var(--wp-text-secondary); font-size: 0.875rem; }
+.viewport-error-hint { font-size: 0.75rem !important; color: var(--wp-text-tertiary) !important; }
 
 /* ------------------------------------------------------------------ controls dock */
 
@@ -538,21 +489,21 @@ button {
   background-color: rgba(12, 16, 22, 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-pill);
+  border: 1px solid var(--wp-border-medium);
+  border-radius: var(--wp-radius-pill);
   padding: 3px;
   gap: 2px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--wp-shadow-lg);
 }
 
 .segmented-btn {
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
   font-size: 0.78rem;
   font-weight: 600;
   padding: 6px 12px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--wp-radius-pill);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -561,19 +512,19 @@ button {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.segmented-btn:hover { color: var(--text-primary); }
+.segmented-btn:hover { color: var(--wp-text-primary); }
 
 .segmented-btn.active {
-  background-color: var(--bg-surface-active);
-  border-color: var(--border-medium);
-  color: var(--text-primary);
+  background-color: var(--wp-bg-surface-active);
+  border-color: var(--wp-border-medium);
+  color: var(--wp-text-primary);
 }
 
 /* on/off inspection toggles: tinted, never solid, so two neighbours stay two buttons */
 .segmented-btn.active.accent {
-  background-color: var(--accent-bg);
-  border-color: var(--accent-border);
-  color: var(--accent);
+  background-color: var(--wp-accent-bg);
+  border-color: var(--wp-accent-border);
+  color: var(--wp-accent);
 }
 
 /* ------------------------------------------------------------------ sidebar */
@@ -581,8 +532,8 @@ button {
 .sidebar-panel {
   min-width: 0;
   min-height: 0;
-  background-color: var(--bg-surface);
-  border-left: 1px solid var(--border-subtle);
+  background-color: var(--wp-bg-surface);
+  border-left: 1px solid var(--wp-border-subtle);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -590,16 +541,16 @@ button {
 
 .panel-section {
   padding: 1.1rem 1.1rem 1.25rem;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--wp-border-subtle);
 }
 
 .section-label {
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.68rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--text-tertiary);
+  color: var(--wp-text-tertiary);
   margin-bottom: 0.7rem;
   display: flex;
   align-items: center;
@@ -607,7 +558,7 @@ button {
 }
 
 .section-tag {
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -625,8 +576,8 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  border: 2px dashed var(--border-medium);
-  border-radius: var(--radius-md);
+  border: 2px dashed var(--wp-border-medium);
+  border-radius: var(--wp-radius-md);
   padding: 1.4rem 1rem;
   text-align: center;
   cursor: pointer;
@@ -637,18 +588,18 @@ button {
 .dropzone:hover,
 .dropzone.drag-active,
 .image-card.drag-active {
-  border-color: var(--accent);
-  background-color: var(--accent-bg);
+  border-color: var(--wp-accent);
+  background-color: var(--wp-accent-bg);
 }
 
-.dropzone-icon { width: 30px; height: 30px; color: var(--accent); margin-bottom: 0.25rem; }
+.dropzone-icon { width: 30px; height: 30px; color: var(--wp-accent); margin-bottom: 0.25rem; }
 .dropzone-prompt { font-size: 0.85rem; font-weight: 600; }
-.dropzone-sub { font-size: 0.72rem; color: var(--text-tertiary); }
+.dropzone-sub { font-size: 0.72rem; color: var(--wp-text-tertiary); }
 
 .image-card {
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  background-color: var(--wp-bg-surface-elevated);
+  border: 1px solid var(--wp-border-subtle);
+  border-radius: var(--wp-radius-md);
   padding: 0.8rem;
   display: flex;
   flex-direction: column;
@@ -658,7 +609,7 @@ button {
 .image-meta-row { display: flex; align-items: center; min-width: 0; }
 
 .image-name {
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
@@ -671,11 +622,11 @@ button {
   flex-wrap: wrap;
   gap: 0.25rem 0.9rem;
   font-size: 0.72rem;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
+  color: var(--wp-text-secondary);
+  font-family: var(--wp-font-mono);
 }
 
-.image-fit { color: var(--accent); }
+.image-fit { color: var(--wp-accent); }
 
 .image-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .image-actions > button { flex: 1 1 auto; justify-content: center; }
@@ -683,21 +634,21 @@ button {
 .btn-danger {
   background-color: transparent;
   border: 1px solid rgba(255, 122, 138, 0.3);
-  color: var(--accent-rose);
+  color: var(--wp-err);
   font-size: 0.78rem;
   font-weight: 600;
   padding: 7px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--wp-radius-md);
   cursor: pointer;
 }
 
-.btn-danger:hover { background-color: var(--accent-rose-bg); border-color: rgba(255, 122, 138, 0.5); }
+.btn-danger:hover { background-color: var(--wp-err-bg-soft); border-color: rgba(255, 122, 138, 0.5); }
 
 .link-btn {
   align-self: flex-start;
   background: none;
   border: none;
-  color: var(--text-tertiary);
+  color: var(--wp-text-tertiary);
   font-size: 0.74rem;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -705,7 +656,7 @@ button {
   padding: 2px 0;
 }
 
-.link-btn:hover { color: var(--text-primary); }
+.link-btn:hover { color: var(--wp-text-primary); }
 
 .preset-screens-row {
   display: flex;
@@ -720,7 +671,7 @@ button {
 .preset-screens-label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: var(--text-tertiary);
+  color: var(--wp-text-tertiary);
   white-space: nowrap;
 }
 
@@ -732,33 +683,33 @@ button {
 }
 
 .preset-pill-btn {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  background: var(--wp-bg-surface-elevated);
+  border: 1px solid var(--wp-border-subtle);
+  color: var(--wp-text-secondary);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 3px 9px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--wp-radius-pill);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .preset-pill-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--wp-text-primary);
+  border-color: var(--wp-border-medium);
 }
 
 .preset-pill-btn.active {
-  background-color: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent);
+  background-color: var(--wp-accent-bg);
+  border-color: var(--wp-accent);
+  color: var(--wp-accent);
 }
 
 .alert-error {
   padding: 0.6rem 0.8rem;
-  border-radius: var(--radius-md);
-  background-color: var(--accent-rose-bg);
+  border-radius: var(--wp-radius-md);
+  background-color: var(--wp-err-bg-soft);
   border: 1px solid rgba(255, 122, 138, 0.4);
   color: #fecdd3;
   font-size: 0.75rem;
@@ -766,7 +717,7 @@ button {
 
 .alert-warning {
   padding: 0.6rem 0.8rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--wp-radius-md);
   background-color: rgba(221, 199, 160, 0.12);
   border: 1px solid rgba(221, 199, 160, 0.35);
   color: #f1e3c6;
@@ -778,10 +729,10 @@ button {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  background: var(--bg-surface-elevated);
+  background: var(--wp-bg-surface-elevated);
   padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--wp-radius-md);
+  border: 1px solid var(--wp-border-subtle);
   font-size: 0.75rem;
 }
 
@@ -793,7 +744,7 @@ button {
 }
 
 .spec-row dt {
-  color: var(--text-tertiary);
+  color: var(--wp-text-tertiary);
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -804,23 +755,23 @@ button {
   max-width: 62%;
   overflow-wrap: break-word;
   word-break: break-word;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
 }
 
 .spec-row dd.mono,
 .spec-value.mono {
-  font-family: var(--font-mono);
-  color: var(--text-primary);
+  font-family: var(--wp-font-mono);
+  color: var(--wp-text-primary);
 }
 
 .spec-row dd.estimated,
 .spec-value.estimated {
-  color: var(--accent-amber);
+  color: var(--wp-warn);
 }
 
 .hint-text {
   font-size: 0.72rem;
-  color: var(--text-tertiary);
+  color: var(--wp-text-tertiary);
   line-height: 1.45;
   margin-top: 0.6rem;
 }
@@ -832,22 +783,22 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background-color: var(--accent);
-  border: 1px solid var(--accent);
-  color: var(--accent-ink);
+  background-color: var(--wp-accent);
+  border: 1px solid var(--wp-accent);
+  color: var(--wp-accent-ink);
   font-size: 0.85rem;
   font-weight: 600;
   padding: 9px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--wp-radius-md);
   cursor: pointer;
   white-space: nowrap;
 }
 
-.btn-primary:hover { background-color: var(--accent-hover); }
+.btn-primary:hover { background-color: var(--wp-accent-hover); }
 
 .icon-btn {
   min-width: 40px;
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-weight: 600;
 }
 
@@ -862,12 +813,12 @@ button {
   gap: 0.55rem;
   font-size: 0.74rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--wp-text-primary);
   background: rgba(12, 16, 22, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--radius-pill);
+  border: 1px solid var(--wp-accent-border);
+  border-radius: var(--wp-radius-pill);
   padding: 4px 6px 4px 12px;
   z-index: 6;
 }
@@ -878,22 +829,22 @@ button {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--wp-accent);
   flex-shrink: 0;
 }
 
 .badge-link {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  color: var(--text-secondary);
+  border: 1px solid var(--wp-border-subtle);
+  border-radius: var(--wp-radius-pill);
+  color: var(--wp-text-secondary);
   font-size: 0.72rem;
   padding: 2px 10px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.badge-link:hover { color: var(--text-primary); border-color: var(--border-medium); }
+.badge-link:hover { color: var(--wp-text-primary); border-color: var(--wp-border-medium); }
 
 /* calibration dialog: full screen so the card outline can be any size */
 .calibration-backdrop {
@@ -917,7 +868,7 @@ button {
 }
 
 .calibration-copy h2 { font-size: 1.15rem; margin-bottom: 0.3rem; }
-.calibration-copy p { font-size: 0.85rem; color: var(--text-secondary); }
+.calibration-copy p { font-size: 0.85rem; color: var(--wp-text-secondary); }
 
 .calibration-stage {
   flex: 1;
@@ -929,7 +880,7 @@ button {
 
 .calibration-card {
   position: relative;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--wp-accent);
   background: linear-gradient(135deg, rgba(114, 224, 214, 0.10), rgba(114, 224, 214, 0.03));
 }
 
@@ -957,9 +908,9 @@ button {
   position: absolute;
   right: 8px;
   bottom: 6px;
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.7rem;
-  color: var(--accent);
+  color: var(--wp-accent);
 }
 
 .calibration-controls {
@@ -980,18 +931,18 @@ button {
 .calibration-slider {
   flex: 1;
   min-width: 0;
-  accent-color: var(--accent);
+  accent-color: var(--wp-accent);
   height: 28px;
 }
 
 .calibration-hint {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
   text-align: center;
 }
 
-.calibration-hint.subtle { color: var(--text-tertiary); }
-.calibration-hint .mono { font-family: var(--font-mono); color: var(--text-primary); }
+.calibration-hint.subtle { color: var(--wp-text-tertiary); }
+.calibration-hint .mono { font-family: var(--wp-font-mono); color: var(--wp-text-primary); }
 
 .calibration-actions {
   display: flex;
@@ -1081,9 +1032,9 @@ button {
     position: static;
     pointer-events: auto;
     padding: 0.6rem 0.75rem;
-    background-color: var(--bg-surface);
-    border-top: 1px solid var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--wp-bg-surface);
+    border-top: 1px solid var(--wp-border-subtle);
+    border-bottom: 1px solid var(--wp-border-subtle);
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -1104,16 +1055,16 @@ button {
 
   .segmented-bar {
     box-shadow: none;
-    background-color: var(--bg-surface-elevated);
-    border-color: var(--border-subtle);
-    border-radius: var(--radius-md);
+    background-color: var(--wp-bg-surface-elevated);
+    border-color: var(--wp-border-subtle);
+    border-radius: var(--wp-radius-md);
   }
 
   .segmented-btn {
     flex: 1;
     justify-content: center;
     padding: 9px 4px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--wp-radius-sm);
     font-size: 0.76rem;
   }
 
@@ -1148,16 +1099,16 @@ button {
 
 .uploader-tip {
   font-size: 0.72rem;
-  color: var(--text-tertiary);
+  color: var(--wp-text-tertiary);
   line-height: 1.45;
 }
 
 kbd {
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.68rem;
-  color: var(--text-secondary);
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-medium);
+  color: var(--wp-text-secondary);
+  background: var(--wp-bg-surface-elevated);
+  border: 1px solid var(--wp-border-medium);
   border-bottom-width: 2px;
   border-radius: 4px;
   padding: 0 4px;
@@ -1169,7 +1120,7 @@ kbd {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--accent-rose);
+  background: var(--wp-err);
   flex-shrink: 0;
   margin-right: 0.4rem;
   animation: live-pulse 1.4s ease-in-out infinite;
@@ -1196,7 +1147,7 @@ kbd {
 
 .crop-copy { max-width: 620px; text-align: center; }
 .crop-copy h2 { font-size: 1.1rem; margin-bottom: 0.25rem; }
-.crop-copy p { font-size: 0.82rem; color: var(--text-secondary); }
+.crop-copy p { font-size: 0.82rem; color: var(--wp-text-secondary); }
 
 .crop-stage {
   flex: 1;
@@ -1210,7 +1161,7 @@ kbd {
   position: relative;
   overflow: hidden;
   touch-action: none;
-  box-shadow: 0 0 0 1px var(--border-medium);
+  box-shadow: 0 0 0 1px var(--wp-border-medium);
 }
 
 .crop-canvas {
@@ -1222,7 +1173,7 @@ kbd {
 .crop-box {
   position: absolute;
   cursor: move;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--wp-accent);
   box-shadow: 0 0 0 9999px rgba(6, 8, 13, 0.6);
 }
 
@@ -1241,8 +1192,8 @@ kbd {
   width: 18px;
   height: 18px;
   border-radius: 4px 0 0 0;
-  background: var(--accent);
-  border: 2px solid var(--accent-ink);
+  background: var(--wp-accent);
+  border: 2px solid var(--wp-accent-ink);
   cursor: nwse-resize;
 }
 
@@ -1255,9 +1206,9 @@ kbd {
 }
 
 .crop-readout {
-  font-family: var(--font-mono);
+  font-family: var(--wp-font-mono);
   font-size: 0.72rem;
-  color: var(--text-secondary);
+  color: var(--wp-text-secondary);
 }
 
 .crop-actions {

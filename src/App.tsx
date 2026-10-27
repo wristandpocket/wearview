@@ -27,6 +27,7 @@ import { AodDialog } from './components/AodDialog';
 import { analyzeScreenElementAod, type AodAnalysisResult } from './utils/aodAnalysis';
 import { handleGlobalKeyDown } from './utils/keyboard';
 import { parseHash, toHash, type ShareableState } from './utils/urlState';
+import 'wrist-pocket-ui/tokens.css';
 import './styles/theme.css';
 
 const DEVICE_STORAGE_KEY = 'wearview.device';
