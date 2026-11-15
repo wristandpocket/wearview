@@ -3,35 +3,118 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Preview Wear OS game and app screens on accurate 3D smartwatch models at real physical size: paste, drop or live-capture a window. Runs fully in your browser — nothing is uploaded." />
+    <meta name="description" content="Preview any Wear OS app, watch face, or game screenshot on 21 accurate 3D smartwatches (Pixel Watch 1–4, Galaxy Watch 4–8 Classic & Ultra, OnePlus Watch 2/3, Xiaomi Watch 2 Pro, TicWatch Pro 5). Test 1:1 physical size with bank-card calibration, 80%/90% safe-zone rings, 14mm finger touch targets, 2-second glanceability, OLED AOD &lt;10% OPR burn-in heatmaps, and live Unity/emulator capture in your browser." />
     <meta name="theme-color" content="#0c1016" />
     <meta name="color-scheme" content="dark" />
-    <title>WearView — Preview Wear OS Screens on 3D Watches</title>
+    <title>WearView — 3D Wear OS Smartwatch Screen Preview, Safe Zones &amp; AOD OPR Checker</title>
     <link rel="canonical" href="https://wristandpocket.dev/wearview/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="WearView" />
-    <meta property="og:title" content="WearView — see your Wear OS game on a real watch" />
-    <meta property="og:description" content="Paste a screenshot or mirror the Unity Game view live onto 11 accurate 3D Wear OS watches. Real-size mode, safe zones, native pixels, side-by-side compare. Runs locally." />
+    <meta property="og:title" content="WearView — 3D Wear OS Smartwatch Screen Preview, Safe Zones &amp; AOD OPR Checker" />
+    <meta property="og:description" content="Preview any Wear OS app, watch face, or game screenshot on 21 accurate 3D smartwatches (Pixel Watch 1–4, Galaxy Watch 4–8 Classic & Ultra, OnePlus Watch 2/3, Xiaomi Watch 2 Pro, TicWatch Pro 5). Test 1:1 physical size with bank-card calibration, 80%/90% safe-zone rings, 14mm finger touch targets, 2-second glanceability, OLED AOD &lt;10% OPR burn-in heatmaps, and live Unity/emulator capture in your browser." />
     <meta property="og:url" content="https://wristandpocket.dev/wearview/" />
     <meta property="og:image" content="https://wristandpocket.dev/assets/images/tools/wearview-og.webp" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="WearView: a Wear OS game screen on a 3D smartwatch" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WearView — 3D Wear OS Smartwatch Screen Preview, Safe Zones &amp; AOD OPR Checker" />
+    <meta name="twitter:description" content="Preview any Wear OS app, watch face, or game screenshot on 21 accurate 3D smartwatches (Pixel Watch 1–4, Galaxy Watch 4–8 Classic & Ultra, OnePlus Watch 2/3, Xiaomi Watch 2 Pro, TicWatch Pro 5). Test 1:1 physical size with bank-card calibration, 80%/90% safe-zone rings, 14mm finger touch targets, 2-second glanceability, OLED AOD &lt;10% OPR burn-in heatmaps, and live Unity/emulator capture in your browser." />
     <meta name="twitter:image" content="https://wristandpocket.dev/assets/images/tools/wearview-og.webp" />
     <link rel="alternate" hreflang="en" href="https://wristandpocket.dev/wearview/" />
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"WebApplication","name":"WearView","url":"https://wristandpocket.dev/wearview/","description":"Preview Wear OS game and app screens on accurate 3D smartwatch models at real physical size. Paste, drop or live-capture a window; safe zones, native pixels and side-by-side compare. Runs fully in the browser.","applicationCategory":"DeveloperApplication","operatingSystem":"Web browser","browserRequirements":"Requires WebGL","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT","image":"https://wristandpocket.dev/assets/images/tools/wearview-og.webp","sameAs":["https://wristandpocket.dev/tools/wearview/","https://github.com/wristandpocket/wearview"],"publisher":{"@type":"Organization","name":"Wrist & Pocket Studio","url":"https://wristandpocket.dev/"}}
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "WearView",
+        "alternateName": "WearView 3D Wear OS Smartwatch Screen Previewer",
+        "url": "https://wristandpocket.dev/wearview/",
+        "description": "Preview any Wear OS app, watch face, or game screenshot on 21 accurate 3D smartwatches (Pixel Watch 1–4, Galaxy Watch 4–8 Classic & Ultra, OnePlus Watch 2/3, Xiaomi Watch 2 Pro, TicWatch Pro 5). Test 1:1 physical size with bank-card calibration, 80%/90% safe-zone rings, 14mm finger touch targets, 2-second glanceability, OLED AOD <10% OPR burn-in heatmaps, and live Unity/emulator capture in your browser.",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Wear OS UI & Ergonomics Previewer",
+        "operatingSystem": "Web Browser (Chrome, Edge, Firefox, Safari)",
+        "browserRequirements": "Requires WebGL",
+        "isAccessibleForFree": true,
+        "license": "https://opensource.org/licenses/MIT",
+        "image": "https://wristandpocket.dev/assets/images/tools/wearview-og.webp",
+        "featureList": [
+          "21 accurate 3D Wear OS smartwatch models across 4 device families (Google Pixel Watch, Samsung Galaxy Watch Modern Flat, Classic/Pro/Ultra, OnePlus/Xiaomi/Mobvoi)",
+          "1:1 physical size calibration using standard ISO/IEC 7810 ID-1 bank card (85.60 mm) or PPI slider",
+          "80% text safe zone and 90% action safe zone circular overlays with custom danger threshold",
+          "14mm physical finger touch target overlay in calibrated 1:1 mode",
+          "2-second wrist-raise glanceability test",
+          "OLED Always-On Display (AOD) <10% On-Pixel Ratio (OPR) and luminance burn-in heatmap",
+          "Camera angle presets (0° Front, 35° Wrist Tilt, 75° Extreme Bezel Side View) and 1-click transparent PNG snapshot",
+          "Live screen/window capture from Android Studio Emulator or Unity Editor plus postMessage bridge"
+        ],
+        "author": {
+          "@type": "Person",
+          "name": "Ihor Sivochka",
+          "url": "https://sivochka.com/"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Wrist & Pocket",
+          "url": "https://wristandpocket.dev/"
+        },
+        "sameAs": [
+          "https://wristandpocket.dev/tools/wearview/",
+          "https://github.com/wristandpocket/wearview",
+          "https://wristandpocket.dev/blog/stop-trusting-wear-os-screenshots/"
+        ]
+      }
     </script>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230c1016' stroke='%2372e0d6' stroke-width='6'/><circle cx='50' cy='50' r='32' fill='%23151d28'/><circle cx='50' cy='50' r='6' fill='%23c49bfc'/></svg>" />
   </head>
   <body>
     <div id="root"></div>
     <noscript>
-      <h1>WearView — preview Wear OS screens on 3D watches</h1>
-      <p>WearView needs JavaScript and WebGL. It maps a screenshot or a live window onto accurate 3D Wear OS watch models at real size.
-        <a href="https://wristandpocket.dev/tools/wearview/">About WearView</a> ·
-        <a href="https://github.com/wristandpocket/wearview">Source on GitHub</a></p>
+      <main>
+        <h1>WearView — 3D Wear OS Smartwatch Screen Preview, Safe Zones &amp; AOD Burn-In Checker</h1>
+        <p>WearView is a free, zero-upload WebGL tool for Wear OS app developers, watch face designers, and Unity game creators. Paste, drop, or live-capture your Android Studio Emulator or Unity Game view onto 21 physically accurate 3D smartwatch models directly in the browser.</p>
+        <h2>Key Ergonomics &amp; QA Features</h2>
+        <ul>
+          <li>21 accurate 3D Wear OS smartwatch models across 4 device families (Google Pixel Watch, Samsung Galaxy Watch Modern Flat, Classic/Pro/Ultra, OnePlus/Xiaomi/Mobvoi).</li>
+          <li>1:1 physical size calibration using a standard ISO/IEC 7810 ID-1 bank card (85.60 mm) or manual PPI slider.</li>
+          <li>80% text safe zone and 90% action safe zone circular overlays with custom danger threshold.</li>
+          <li>14mm physical finger touch target overlay in calibrated 1:1 mode.</li>
+          <li>2-second wrist-raise glanceability test.</li>
+          <li>OLED Always-On Display (AOD) &lt;10% On-Pixel Ratio (OPR) and luminance burn-in heatmap.</li>
+          <li>Camera angle presets (0° Front, 35° Wrist Tilt, 75° Extreme Bezel Side View) and 1-click transparent PNG snapshot.</li>
+          <li>Live screen/window capture from Android Studio Emulator or Unity Editor plus postMessage bridge.</li>
+        </ul>
+        <h2>All 21 Supported 3D Wear OS Smartwatches</h2>
+        <ul>
+          <li>Google Pixel Watch 1/2 (41mm — 30.48mm / 1.20&quot;, 384×384px, 320 PPI)</li>
+          <li>Google Pixel Watch 3 (41mm — 32.20mm / 1.27&quot;, 408×408px, 320 PPI)</li>
+          <li>Google Pixel Watch 3 (45mm — 35.56mm / 1.40&quot;, 456×456px, 326 PPI)</li>
+          <li>Google Pixel Watch 4 (41mm — 33.02mm / 1.30&quot; Actua 360, 416×416px, 320 PPI)</li>
+          <li>Google Pixel Watch 4 (45mm — 36.20mm / 1.43&quot; Actua 360, 456×456px, 320 PPI)</li>
+          <li>Samsung Galaxy Watch7 (40mm — 33.27mm / 1.31&quot;, 432×432px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch7 (44mm — 37.34mm / 1.47&quot;, 480×480px, 327 PPI)</li>
+          <li>Samsung Galaxy Watch6 (40mm — 33.27mm / 1.31&quot;, 432×432px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch6 (44mm — 37.34mm / 1.47&quot;, 480×480px, 327 PPI)</li>
+          <li>Samsung Galaxy Watch5 (40mm — 30.23mm / 1.19&quot;, 396×396px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch5 (44mm — 34.60mm / 1.36&quot;, 450×450px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch8 Classic (46mm — 34.04mm / 1.34&quot;, 438×438px, 327 PPI)</li>
+          <li>Samsung Galaxy Watch6 Classic (43mm — 33.27mm / 1.31&quot;, 432×432px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch6 Classic (47mm — 37.34mm / 1.47&quot;, 480×480px, 327 PPI)</li>
+          <li>Samsung Galaxy Watch5 Pro (45mm — 34.60mm / 1.36&quot;, 450×450px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch4 Classic (46mm — 34.60mm / 1.36&quot;, 450×450px, 330 PPI)</li>
+          <li>Samsung Galaxy Watch Ultra (47mm — 37.34mm / 1.47&quot;, 480×480px, 327 PPI)</li>
+          <li>OnePlus Watch 3 (46mm — 38.10mm / 1.50&quot;, 466×466px, 310 PPI)</li>
+          <li>OnePlus Watch 2 (46mm — 36.32mm / 1.43&quot;, 466×466px, 326 PPI)</li>
+          <li>Xiaomi Watch 2 Pro (46mm — 36.32mm / 1.43&quot;, 466×466px, 326 PPI)</li>
+          <li>Mobvoi TicWatch Pro 5 (48mm — 36.32mm / 1.43&quot;, 466×466px, 326 PPI)</li>
+        </ul>
+        <p>
+          <a href="https://wristandpocket.dev/tools/wearview/">WearView Documentation, Hardware Table &amp; FAQ</a> ·
+          <a href="https://wristandpocket.dev/blog/stop-trusting-wear-os-screenshots/">Engineering Devlog</a> ·
+          <a href="https://wristandpocket.dev/">Wrist &amp; Pocket Studio</a> ·
+          <a href="https://github.com/wristandpocket/wearview">GitHub Repository</a> ·
+          <a href="https://sivochka.com/">Ihor Sivochka (Founder)</a>
+        </p>
+      </main>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
