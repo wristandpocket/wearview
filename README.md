@@ -3,6 +3,8 @@
 > **A physically-aware 3D preview tool for Wear OS game developers.**
 
 🌐 **Live Web Application:** [https://wristandpocket.dev/wearview/](https://wristandpocket.dev/wearview/)  
+📖 **Docs, FAQ & 21-Watch Specs:** [EN](https://wristandpocket.dev/tools/wearview/) · [UK](https://wristandpocket.dev/uk/tools/wearview/) · [RU](https://wristandpocket.dev/ru/tools/wearview/) · [KO](https://wristandpocket.dev/ko/tools/wearview/)  
+🛡️ **Safe Zones & AOD OPR Guide:** [Wear OS Ergonomics & Burn-In Guide](https://wristandpocket.dev/blog/wearos-safe-zones-aod-opr-ergonomics/) · [Why Flat Screenshots Lie](https://wristandpocket.dev/blog/stop-trusting-wear-os-screenshots/)  
 📦 **GitHub Repository:** [wristandpocket/wearview](https://github.com/wristandpocket/wearview)
 
 WearView helps smartwatch developers inspect how game and interactive app screens will look on the active circular display of real Wear OS hardware. Rotate the watch in 3D, inspect bezel and rim clearance, test different lighting conditions, and evaluate scale context on a neutral wrist reference.
@@ -104,7 +106,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 # Type check TypeScript in strict mode
 npm run typecheck
 
-# Run Vitest unit tests (1:1 physical math, validation, calibration, crop, URL state, 11 device models)
+# Run Vitest unit tests (1:1 physical math, validation, calibration, crop, URL state, 21 device models)
 npm run test
 ```
 
@@ -127,6 +129,16 @@ Detailed project documentation is available in the `docs/` directory:
 - [Roadmap](docs/ROADMAP.md) — Future physical-scale calibration, additional devices, and developer tooling.
 - [Agent Operating Guidelines](AGENTS.md) — Development rules and verification protocol for AI agents.
 - [Contributing](CONTRIBUTING.md) — How to build, test and add a watch.
+
+---
+
+## Author & Studio Ecosystem
+
+Built by **[Ihor Sivochka (Figarist)](https://sivochka.com/)** at **[Wrist & Pocket Studio](https://wristandpocket.dev/)**:
+
+- 🎮 **Studio Hub & Wear OS Games:** [https://wristandpocket.dev/](https://wristandpocket.dev/) · [Games Catalog](https://wristandpocket.dev/games/) · [Engineering Blog](https://wristandpocket.dev/blog/)
+- 🎨 **Shared Design System:** [Figarist/wrist-pocket-ui](https://github.com/Figarist/wrist-pocket-ui)
+- 👨‍🏫 **Author Site & 1-on-1 Unity / C# Mentoring:** [https://sivochka.com/](https://sivochka.com/) · [Tutoring](https://sivochka.com/tutoring/)
 
 ---
 
