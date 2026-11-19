@@ -123,7 +123,6 @@ The compiled static assets are output to `dist/`. The project includes an automa
 Detailed project documentation is available in the `docs/` directory:
 - [Device Research](docs/DEVICE_RESEARCH.md) — Exact specifications, manufacturer citations, and visual observations.
 - [Architecture](docs/ARCHITECTURE.md) — 3D scene lifecycle, coordinate systems, and Wrist & Pocket integration seams.
-- [Agent Operating Guidelines](AGENTS.md) — Development rules and verification protocol for AI agents.
 - [Contributing](CONTRIBUTING.md) — How to build, test and add a watch.
 
 ---
