@@ -121,12 +121,8 @@ The compiled static assets are output to `dist/`. The project includes an automa
 ## Documentation
 
 Detailed project documentation is available in the `docs/` directory:
-- [Product Brief](docs/PRODUCT_BRIEF.md) — Product vision, user problem, goals, and non-goals.
 - [Device Research](docs/DEVICE_RESEARCH.md) — Exact specifications, manufacturer citations, and visual observations.
 - [Architecture](docs/ARCHITECTURE.md) — 3D scene lifecycle, coordinate systems, and Wrist & Pocket integration seams.
-- [QA Verification Checklist](docs/QA_CHECKLIST.md) — Detailed acceptance criteria and test outcomes.
-- [Deployment & Cloud Infrastructure](docs/DEPLOYMENT.md) — GitHub Pages setup on the `wristandpocket` organization (`wristandpocket.dev/wearview/`).
-- [Roadmap](docs/ROADMAP.md) — Future physical-scale calibration, additional devices, and developer tooling.
 - [Agent Operating Guidelines](AGENTS.md) — Development rules and verification protocol for AI agents.
 - [Contributing](CONTRIBUTING.md) — How to build, test and add a watch.
 
